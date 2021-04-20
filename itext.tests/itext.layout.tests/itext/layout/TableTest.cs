@@ -632,6 +632,26 @@ namespace iText.Layout {
         }
 
         [NUnit.Framework.Test]
+        public virtual void WidthInPercentShouldBeResetAfterOverflow() {
+            String testName = "widthInPercentShouldBeResetAfterOverflow.pdf";
+            String outFileName = destinationFolder + testName;
+            String cmpFileName = sourceFolder + "cmp_" + testName;
+            PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFileName));
+            Document doc = new Document(pdfDoc);
+            doc.Add(new Div().SetHeight(730).SetWidth(523));
+            Table table = new Table(2).UseAllAvailableWidth().SetFixedLayout().AddCell(new Cell().Add(new Paragraph("Hello"
+                )).SetWidth(UnitValue.CreatePercentValue(20))).AddCell(new Cell().Add(new Paragraph("World")).SetWidth
+                (UnitValue.CreatePercentValue(80)));
+            // will be added on the first page
+            doc.Add(table);
+            // will be added on the second page
+            doc.Add(table);
+            doc.Close();
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, destinationFolder
+                , testName + "_diff"));
+        }
+
+        [NUnit.Framework.Test]
         public virtual void BigRowspanTest01() {
             String testName = "bigRowspanTest01.pdf";
             String outFileName = destinationFolder + testName;
@@ -2535,6 +2555,76 @@ namespace iText.Layout {
             document.Close();
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(destinationFolder + filename, sourceFolder
                  + "cmp_" + filename, destinationFolder, "diff"));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void BigRowSpanTooFarFullTest() {
+            // TODO DEVSIX-5250 The first column should be fully red
+            String filename = "bigRowSpanTooFarFullTest.pdf";
+            PdfDocument pdf = new PdfDocument(new PdfWriter(destinationFolder + filename));
+            Document document = new Document(pdf);
+            Table table = new Table(2);
+            int bigRowSpan = 5;
+            table.AddCell(new Cell(bigRowSpan, 1).Add(new Paragraph("row span " + bigRowSpan)).SetBackgroundColor(ColorConstants
+                .RED));
+            for (int i = 0; i < bigRowSpan; i++) {
+                table.AddCell(new Cell().Add(new Paragraph(JavaUtil.IntegerToString(i))).SetHeight(375).SetBackgroundColor
+                    (ColorConstants.BLUE));
+            }
+            document.Add(table);
+            document.Add(new AreaBreak());
+            table.SetBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
+            document.Add(table);
+            document.Close();
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(destinationFolder + filename, sourceFolder
+                 + "cmp_" + filename, destinationFolder));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void BigRowSpanTooFarPartialTest() {
+            // TODO DEVSIX-5250 The first column should be fully red, but on page 2 it is not
+            String filename = "bigRowSpanTooFarPartialTest.pdf";
+            PdfDocument pdf = new PdfDocument(new PdfWriter(destinationFolder + filename));
+            Document document = new Document(pdf);
+            Table table = new Table(2);
+            int bigRowSpan = 5;
+            table.AddCell(new Cell(bigRowSpan, 1).Add(new Paragraph("row span " + bigRowSpan)).SetHeight(800).SetBackgroundColor
+                (ColorConstants.RED));
+            for (int i = 0; i < bigRowSpan; i++) {
+                table.AddCell(new Cell().Add(new Paragraph(JavaUtil.IntegerToString(i))).SetHeight(375).SetBackgroundColor
+                    (ColorConstants.BLUE));
+            }
+            document.Add(table);
+            document.Add(new AreaBreak());
+            table.SetBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
+            document.Add(table);
+            document.Close();
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(destinationFolder + filename, sourceFolder
+                 + "cmp_" + filename, destinationFolder));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(iText.IO.LogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, Count = 1)]
+        public virtual void BigRowSpanTooFarNothingTest() {
+            // TODO DEVSIX-5250 The first column should be fully red
+            String filename = "bigRowSpanTooFarNothingTest.pdf";
+            PdfDocument pdf = new PdfDocument(new PdfWriter(destinationFolder + filename));
+            Document document = new Document(pdf);
+            Table table = new Table(2);
+            int bigRowSpan = 5;
+            table.AddCell(new Cell(bigRowSpan, 1).Add(new Paragraph("row span " + bigRowSpan)).SetHeight(800).SetKeepTogether
+                (true).SetBackgroundColor(ColorConstants.RED));
+            for (int i = 0; i < bigRowSpan; i++) {
+                table.AddCell(new Cell().Add(new Paragraph(JavaUtil.IntegerToString(i))).SetHeight(375).SetBackgroundColor
+                    (ColorConstants.BLUE));
+            }
+            document.Add(table);
+            document.Add(new AreaBreak());
+            table.SetBorderCollapse(BorderCollapsePropertyValue.SEPARATE);
+            document.Add(table);
+            document.Close();
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(destinationFolder + filename, sourceFolder
+                 + "cmp_" + filename, destinationFolder));
         }
 
         private class RotatedDocumentRenderer : DocumentRenderer {
