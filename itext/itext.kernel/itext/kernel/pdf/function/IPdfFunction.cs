@@ -41,38 +41,51 @@ source product.
 For more information, please contact iText Software Corp. at this
 address: sales@itextpdf.com
 */
-using System;
+using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Colorspace;
-using iText.Kernel.Pdf.Function;
 
-namespace iText.Kernel.Colors {
-    public class Separation : Color {
-        public Separation(PdfSpecialCs.Separation cs)
-            : this(cs, 1f) {
-        }
+namespace iText.Kernel.Pdf.Function {
+    public interface IPdfFunction {
+        int GetFunctionType();
 
-        public Separation(PdfSpecialCs.Separation cs, float value)
-            : base(cs, new float[] { value }) {
-        }
+        bool CheckCompatibilityWithColorSpace(PdfColorSpace alternateSpace);
 
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        [System.ObsoleteAttribute(@"Use constructor Separation(System.String, iText.Kernel.Pdf.Colorspace.PdfColorSpace, iText.Kernel.Pdf.Function.IPdfFunction, float)  Separation} instead"
-            )]
-        public Separation(String name, PdfColorSpace alternateCs, PdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
-        }
+        int GetInputSize();
 
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        public Separation(String name, PdfColorSpace alternateCs, IPdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
-        }
+        int GetOutputSize();
+
+        double[] GetDomain();
+
+        void SetDomain(double[] value);
+
+        double[] GetRange();
+
+        void SetRange(double[] value);
+
+        /// <summary>Calculates one set of input components to one set of output components.</summary>
+        /// <param name="input">
+        /// The input values size must contain
+        /// <see cref="GetInputSize()"/>
+        /// items
+        /// </param>
+        /// <returns>
+        /// an array the size of
+        /// <see cref="GetOutputSize()"/>
+        /// items containing the result
+        /// </returns>
+        double[] Calculate(double[] input);
+
+        byte[] CalculateFromByteArray(byte[] bytes, int offset, int length, int wordSizeInputLength, int wordSizeOutputLength
+            );
+
+        byte[] CalculateFromByteArray(byte[] bytes, int offset, int length, int wordSizeInputLength, int wordSizeOutputLength
+            , BaseInputOutPutConvertors.IInputConversionFunction inputConvertor, BaseInputOutPutConvertors.IOutputConversionFunction
+             outputConvertor);
+
+        double[] ClipInput(double[] input);
+
+        double[] ClipOutput(double[] input);
+
+        PdfObject GetAsPdfObject();
     }
 }

@@ -41,38 +41,11 @@ source product.
 For more information, please contact iText Software Corp. at this
 address: sales@itextpdf.com
 */
-using System;
-using iText.Kernel.Pdf.Colorspace;
-using iText.Kernel.Pdf.Function;
+using iText.Commons.Utils;
 
-namespace iText.Kernel.Colors {
-    public class Separation : Color {
-        public Separation(PdfSpecialCs.Separation cs)
-            : this(cs, 1f) {
-        }
-
-        public Separation(PdfSpecialCs.Separation cs, float value)
-            : base(cs, new float[] { value }) {
-        }
-
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        [System.ObsoleteAttribute(@"Use constructor Separation(System.String, iText.Kernel.Pdf.Colorspace.PdfColorSpace, iText.Kernel.Pdf.Function.IPdfFunction, float)  Separation} instead"
-            )]
-        public Separation(String name, PdfColorSpace alternateCs, PdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
-        }
-
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        public Separation(String name, PdfColorSpace alternateCs, IPdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
-        }
+namespace iText.Kernel.Pdf.Function {
+    [FunctionalInterfaceAttribute]
+    public interface IInputConversionFunction {
+        double[] Convert(byte[] input);
     }
 }

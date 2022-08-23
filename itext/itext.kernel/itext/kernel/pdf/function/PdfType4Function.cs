@@ -42,37 +42,30 @@ For more information, please contact iText Software Corp. at this
 address: sales@itextpdf.com
 */
 using System;
+using iText.Kernel.Exceptions;
+using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Colorspace;
-using iText.Kernel.Pdf.Function;
 
-namespace iText.Kernel.Colors {
-    public class Separation : Color {
-        public Separation(PdfSpecialCs.Separation cs)
-            : this(cs, 1f) {
+namespace iText.Kernel.Pdf.Function {
+    public class PdfType4Function : AbstractPdfFunction<PdfStream> {
+        public PdfType4Function(PdfStream dict)
+            : base(dict) {
         }
 
-        public Separation(PdfSpecialCs.Separation cs, float value)
-            : base(cs, new float[] { value }) {
+        public PdfType4Function(double[] domain, double[] range, byte[] code)
+            : base(new PdfStream(code), PdfFunctionFactory.FUNCTION_TYPE_4, domain, range) {
         }
 
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        [System.ObsoleteAttribute(@"Use constructor Separation(System.String, iText.Kernel.Pdf.Colorspace.PdfColorSpace, iText.Kernel.Pdf.Function.IPdfFunction, float)  Separation} instead"
-            )]
-        public Separation(String name, PdfColorSpace alternateCs, PdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
+        public override bool CheckCompatibilityWithColorSpace(PdfColorSpace alternateSpace) {
+            return GetInputSize() == 1 && GetOutputSize() == alternateSpace.GetNumberOfComponents();
         }
 
-        /// <summary>Creates a color in a new separation color space.</summary>
-        /// <param name="name">the name for the separation color</param>
-        /// <param name="alternateCs">the alternative color space</param>
-        /// <param name="tintTransform">the function to transform color to the alternate colorspace</param>
-        /// <param name="value">the color value</param>
-        public Separation(String name, PdfColorSpace alternateCs, IPdfFunction tintTransform, float value)
-            : this(new PdfSpecialCs.Separation(name, alternateCs, tintTransform), value) {
+        public override double[] Calculate(double[] input) {
+            throw new NotSupportedException(KernelExceptionMessageConstant.TYPE4_EXECUTION_NOT_SUPPORTED);
+        }
+
+        protected internal override bool IsWrappedObjectMustBeIndirect() {
+            return false;
         }
     }
 }
