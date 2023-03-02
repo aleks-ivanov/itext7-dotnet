@@ -191,6 +191,8 @@ namespace iText.Barcodes {
             return xObject;
         }
 
+        // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
+        // Android-Conversion-Skip-Block-End
         private byte[] GetBitMatrix() {
             int width = bm.GetWidth();
             int height = bm.GetHeight();

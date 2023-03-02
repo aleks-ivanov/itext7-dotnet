@@ -209,6 +209,7 @@ namespace iText.Signatures {
             NUnit.Framework.Assert.IsNull(signer.temporaryOS);
         }
 
+        // Android-Conversion-Skip-Block-Start (TODO DEVSIX-7372 investigate why a few tests related to PdfA in PdfSignerUnitTest were cut)
         [NUnit.Framework.Test]
         public virtual void InitPdfaDocumentTest() {
             PdfSigner signer = new PdfSigner(new PdfReader(new MemoryStream(CreateSimplePdfaDocument())), new ByteArrayOutputStream
@@ -310,6 +311,7 @@ namespace iText.Signatures {
             NUnit.Framework.Assert.AreEqual(fieldLock, signer.GetFieldLockDict());
         }
 
+        // Android-Conversion-Skip-Block-End
         [NUnit.Framework.Test]
         public virtual void SetFieldNameNullForDefaultSignerTest() {
             PdfReader reader = new PdfReader(new MemoryStream(CreateSimpleDocument()));
@@ -421,6 +423,7 @@ namespace iText.Signatures {
             return outputStream.ToArray();
         }
 
+        // Android-Conversion-Skip-Block-Start (TODO DEVSIX-7372 investigate why a few tests related to PdfA in PdfSignerUnitTest were cut)
         private static byte[] CreateSimplePdfaDocument() {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(outputStream);
@@ -436,6 +439,7 @@ namespace iText.Signatures {
             return outputStream.ToArray();
         }
 
+        // Android-Conversion-Skip-Block-End
         internal class ExtendedPdfSignatureFormField : PdfSignatureFormField {
             public ExtendedPdfSignatureFormField(PdfWidgetAnnotation widgetAnnotation, PdfDocument document)
                 : base(widgetAnnotation, document) {

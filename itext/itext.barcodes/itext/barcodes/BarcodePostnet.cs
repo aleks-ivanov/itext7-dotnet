@@ -124,5 +124,7 @@ namespace iText.Barcodes {
             canvas.Fill();
             return GetBarcodeSize();
         }
+        // Android-Conversion-Skip-Block-Start (java.awt library isn't available on Android)
+        // Android-Conversion-Skip-Block-End
     }
 }

@@ -444,6 +444,7 @@ namespace iText.IO.Util {
 
         [NUnit.Framework.Test]
         public virtual void MatchesFailAfterFindFinish() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6442 fix different Matcher#matches behavior)
             Matcher matcher = iText.Commons.Utils.Matcher.Match(PATTERN, "aaabbbccaabbccaab");
             NUnit.Framework.Assert.IsTrue(matcher.Find());
             NUnit.Framework.Assert.IsTrue(matcher.Find());
@@ -457,6 +458,7 @@ namespace iText.IO.Util {
 
         [NUnit.Framework.Test]
         public virtual void FindAfterMatchesFail() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6442 fix different Matcher#matches behavior)
             Matcher matcher = iText.Commons.Utils.Matcher.Match(PATTERN, "aaabbbccaabbccaab");
             NUnit.Framework.Assert.IsFalse(matcher.Matches());
             NUnit.Framework.Assert.IsTrue(matcher.Find());
@@ -466,6 +468,7 @@ namespace iText.IO.Util {
 
         [NUnit.Framework.Test]
         public virtual void MatchesFailAfterSeveralFind() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6442 fix different Matcher#matches behavior)
             Matcher matcher = iText.Commons.Utils.Matcher.Match(PATTERN, "aaabbbccaabbccaab");
             NUnit.Framework.Assert.IsTrue(matcher.Find());
             NUnit.Framework.Assert.IsTrue(matcher.Find());

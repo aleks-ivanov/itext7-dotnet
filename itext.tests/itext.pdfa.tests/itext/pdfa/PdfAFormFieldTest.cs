@@ -64,6 +64,7 @@ using iText.Test.Attributes;
 using iText.Test.Pdfa;
 
 namespace iText.Pdfa {
+    // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
     [NUnit.Framework.Category("IntegrationTest")]
     public class PdfAFormFieldTest : ExtendedITextTest {
         public static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
@@ -78,7 +79,9 @@ namespace iText.Pdfa {
         }
 
         [NUnit.Framework.Test]
+        [NUnit.Framework.Ignore("DEVSIX-6319")]
         public virtual void PdfAButtonFieldTest() {
+            // TODO DEVSIX-6319 Radio buttons shall be widgets instead of form fields
             PdfDocument pdf;
             Stream @is = new FileStream(SOURCE_FOLDER + "sRGB Color Space Profile.icm", FileMode.Open, FileAccess.Read
                 );
@@ -204,6 +207,7 @@ namespace iText.Pdfa {
             NUnit.Framework.Assert.IsNull(new VeraPdfValidator().Validate(fileName));
         }
 
+        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         [LogMessage(iText.IO.Logs.IoLogMessageConstant.FIELD_VALUE_IS_NOT_CONTAINED_IN_OPT_ARRAY)]
         public virtual void PdfA1DocWithPdfA1ChoiceFieldTest() {
@@ -334,6 +338,7 @@ namespace iText.Pdfa {
             NUnit.Framework.Assert.IsNull(new VeraPdfValidator().Validate(fileName));
         }
 
+        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfA1DocWithPdfA1TextFieldTest() {
             // TODO: DEVSIX-3913 update this test after the ticket will be resolved
@@ -382,6 +387,7 @@ namespace iText.Pdfa {
             NUnit.Framework.Assert.IsNull(new VeraPdfValidator().Validate(fileName));
         }
 
+        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         [NUnit.Framework.Ignore("DEVSIX-3913 update this test after the ticket will be resolved")]
         public virtual void MergePdfADocWithFormTest() {
@@ -405,6 +411,7 @@ namespace iText.Pdfa {
                 }
             }
             NUnit.Framework.Assert.IsNull(new VeraPdfValidator().Validate(fileName));
+            // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
             PdfADocument pdfDocToMerge;
             using (Stream is_1 = new FileStream(SOURCE_FOLDER + "sRGB Color Space Profile.icm", FileMode.Open, FileAccess.Read
                 )) {

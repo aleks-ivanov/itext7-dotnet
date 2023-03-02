@@ -32,6 +32,7 @@ using iText.Commons.Bouncycastle;
 using iText.Commons.Utils;
 
 namespace iText.Bouncycastleconnector {
+    // Android-Conversion-Skip-Line (BC FIPS isn't supported on Android)
     /// <summary>
     /// This class provides the ability to create
     /// <see cref="iText.Commons.Bouncycastle.IBouncyCastleFactory"/>
@@ -123,5 +124,6 @@ namespace iText.Bouncycastleconnector {
             factories.Put("bouncy-castle", () => new BouncyCastleFactory());
             factories.Put("bouncy-castle-fips", () => new BouncyCastleFipsFactory());
         }
+        // Android-Conversion-Skip-Line (BC FIPS isn't supported on Android)
     }
 }
