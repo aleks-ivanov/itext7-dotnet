@@ -43,6 +43,7 @@ address: sales@itextpdf.com
 using System;
 using iText.Forms;
 using iText.Forms.Fields;
+using iText.Forms.Fields.Properties;
 using iText.Forms.Form;
 using iText.Forms.Form.Element;
 using iText.Forms.Util;
@@ -134,9 +135,9 @@ namespace iText.Forms.Form.Renderer {
             if (IsBoxChecked()) {
                 radioGroup.SetValue(GetModelId());
             }
-            PdfFormField radio = new RadioFormFieldBuilder(doc).SetWidgetRectangle(area).CreateRadioButton(radioGroup, 
-                GetModelId());
-            radio.SetCheckType(PdfFormField.TYPE_CIRCLE);
+            PdfFormAnnotation radio = new RadioFormFieldBuilder(doc, null).CreateRadioButton(GetModelId(), area);
+            radioGroup.AddKid(radio);
+            radioGroup.SetCheckType(CheckBoxType.CIRCLE);
             if (addNew) {
                 form.AddField(radioGroup, page);
             }

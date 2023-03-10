@@ -43,8 +43,12 @@ address: sales@itextpdf.com
 */
 using System;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using iText.Commons;
 using iText.Commons.Utils;
+using iText.Forms.Logs;
 using iText.IO.Util;
+using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Annot;
 using iText.Kernel.Pdf.Xobject;
@@ -52,13 +56,39 @@ using iText.Kernel.Pdf.Xobject;
 namespace iText.Forms.Fields {
     /// <summary>An interactive control on the screen that raises events and/or can retain data.</summary>
     public class PdfButtonFormField : PdfFormField {
-        /// <summary>Button field flags</summary>
+        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(iText.Forms.Fields.PdfButtonFormField
+            ));
+
+        /// <summary>If true, clicking the selected button deselects it, leaving no button selected.</summary>
+        /// <remarks>
+        /// If true, clicking the selected button deselects it, leaving no button selected.
+        /// If false, exactly one radio button shall be selected at all times.
+        /// </remarks>
         public static readonly int FF_NO_TOGGLE_TO_OFF = MakeFieldFlag(15);
 
+        /// <summary>If true, the field is a set of radio buttons.</summary>
+        /// <remarks>
+        /// If true, the field is a set of radio buttons.
+        /// If false, the field is a check box.
+        /// This flag should be set only if the
+        /// <see cref="FF_PUSH_BUTTON"/>
+        /// flag is set to false.
+        /// </remarks>
         public static readonly int FF_RADIO = MakeFieldFlag(16);
 
+        /// <summary>If true, the field is a push button that does not retain a permanent value.</summary>
         public static readonly int FF_PUSH_BUTTON = MakeFieldFlag(17);
 
+        /// <summary>
+        /// If true, a group of radio buttons within a radio button field,
+        /// that use the same value for the on state will turn on and off in unison.
+        /// </summary>
+        /// <remarks>
+        /// If true, a group of radio buttons within a radio button field,
+        /// that use the same value for the on state will turn on and off in unison.
+        /// That is if one is checked, they are all checked.
+        /// If false, the buttons are mutually exclusive.
+        /// </remarks>
         public static readonly int FF_RADIOS_IN_UNISON = MakeFieldFlag(26);
 
         protected internal PdfButtonFormField(PdfDocument pdfDocument)
@@ -192,16 +222,54 @@ namespace iText.Forms.Fields {
             return (iText.Forms.Fields.PdfButtonFormField)SetFieldFlag(FF_RADIOS_IN_UNISON, radiosInUnison);
         }
 
+        /// <summary>Set image to be used as a background content in a push button.</summary>
+        /// <param name="image">path to the image to be used.</param>
+        /// <returns>
+        /// this
+        /// <see cref="PdfButtonFormField"/>
+        /// </returns>
         public virtual iText.Forms.Fields.PdfButtonFormField SetImage(String image) {
             Stream @is = new FileStream(image, FileMode.Open, FileAccess.Read);
             String str = Convert.ToBase64String(StreamUtil.InputStreamToArray(@is));
             return (iText.Forms.Fields.PdfButtonFormField)SetValue(str);
         }
 
+        /// <summary>
+        /// Set image to be used as a background content in a push button as
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfFormXObject"/>.
+        /// </summary>
+        /// <param name="form">
+        /// 
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfFormXObject"/>
+        /// to be used as an image
+        /// </param>
+        /// <returns>
+        /// this
+        /// <see cref="PdfButtonFormField"/>
+        /// </returns>
         public virtual iText.Forms.Fields.PdfButtonFormField SetImageAsForm(PdfFormXObject form) {
             this.form = form;
             RegenerateField();
             return this;
+        }
+
+        public override PdfFormField AddKid(AbstractPdfFormField kid) {
+            if (IsRadio() && kid is PdfFormAnnotation) {
+                PdfFormAnnotation kidAsFormAnnotation = (PdfFormAnnotation)kid;
+                // annotation will always be an object because of the assert in getWidget
+                PdfWidgetAnnotation annotation = kidAsFormAnnotation.GetWidget();
+                PdfName appearanceState = annotation.GetPdfObject().GetAsName(PdfName.AS);
+                if (!appearanceState.Equals(GetValue())) {
+                    annotation.SetAppearanceState(new PdfName(PdfFormAnnotation.OFF_STATE_VALUE));
+                }
+                if (annotation.GetRectangle() == null) {
+                    LOGGER.LogWarning(FormsLogMessageConstants.RADIO_HAS_NO_RECTANGLE);
+                    return base.AddKid(kid);
+                }
+                Rectangle r = annotation.GetRectangle().ToRectangle();
+                kidAsFormAnnotation.DrawRadioAppearance(r.GetWidth(), r.GetHeight(), appearanceState.GetValue());
+            }
+            return base.AddKid(kid);
         }
     }
 }

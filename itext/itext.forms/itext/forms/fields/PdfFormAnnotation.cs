@@ -47,6 +47,7 @@ using Microsoft.Extensions.Logging;
 using iText.Commons;
 using iText.Commons.Utils;
 using iText.Forms.Fields.Borders;
+using iText.Forms.Fields.Properties;
 using iText.Forms.Logs;
 using iText.Forms.Util;
 using iText.IO.Font;
@@ -291,7 +292,9 @@ namespace iText.Forms.Fields {
         /// <inheritDoc/>
         /// </returns>
         public override bool RegenerateField() {
-            parent.UpdateDefaultAppearance();
+            if (parent != null) {
+                parent.UpdateDefaultAppearance();
+            }
             return RegenerateWidget();
         }
 
@@ -764,20 +767,10 @@ namespace iText.Forms.Fields {
         /// <param name="height">height of the checkbox</param>
         /// <param name="onStateName">name that corresponds to the "On" state of the checkbox</param>
         /// <param name="checkType">
-        /// the type that determines how the checkbox will look like. Allowed values are
-        /// <see cref="PdfFormField.TYPE_CHECK"/>
-        /// ,
-        /// <see cref="PdfFormField.TYPE_CIRCLE"/>
-        /// ,
-        /// <see cref="PdfFormField.TYPE_CROSS"/>
-        /// ,
-        /// <see cref="PdfFormField.TYPE_DIAMOND"/>
-        /// ,
-        /// <see cref="PdfFormField.TYPE_SQUARE"/>
-        /// ,
-        /// <see cref="PdfFormField.TYPE_STAR"/>
+        /// the type that determines how the checkbox will look like. Instance of
+        /// <see cref="iText.Forms.Fields.Properties.CheckBoxType"/>
         /// </param>
-        protected internal virtual void DrawPdfA2CheckAppearance(float width, float height, String onStateName, int
+        protected internal virtual void DrawPdfA2CheckAppearance(float width, float height, String onStateName, CheckBoxType
              checkType) {
             parent.checkType = checkType;
             Rectangle rect = new Rectangle(0, 0, width, height);
@@ -888,7 +881,7 @@ namespace iText.Forms.Fields {
         /// <param name="height">the width of the button</param>
         /// <param name="fontSize">the size of the font</param>
         protected internal virtual void DrawCheckBox(PdfCanvas canvas, float width, float height, float fontSize) {
-            if (parent.checkType == PdfFormField.TYPE_CROSS) {
+            if (parent.checkType == CheckBoxType.CROSS) {
                 DrawingUtil.DrawCross(canvas, width, height, borderWidth);
                 return;
             }
@@ -908,32 +901,32 @@ namespace iText.Forms.Fields {
                 return;
             }
             switch (parent.checkType) {
-                case PdfFormField.TYPE_CHECK: {
+                case CheckBoxType.CHECK: {
                     DrawingUtil.DrawPdfACheck(canvas, width, height);
                     break;
                 }
 
-                case PdfFormField.TYPE_CIRCLE: {
+                case CheckBoxType.CIRCLE: {
                     DrawingUtil.DrawPdfACircle(canvas, width, height);
                     break;
                 }
 
-                case PdfFormField.TYPE_CROSS: {
+                case CheckBoxType.CROSS: {
                     DrawingUtil.DrawPdfACross(canvas, width, height);
                     break;
                 }
 
-                case PdfFormField.TYPE_DIAMOND: {
+                case CheckBoxType.DIAMOND: {
                     DrawingUtil.DrawPdfADiamond(canvas, width, height);
                     break;
                 }
 
-                case PdfFormField.TYPE_SQUARE: {
+                case CheckBoxType.SQUARE: {
                     DrawingUtil.DrawPdfASquare(canvas, width, height);
                     break;
                 }
 
-                case PdfFormField.TYPE_STAR: {
+                case CheckBoxType.STAR: {
                     DrawingUtil.DrawPdfAStar(canvas, width, height);
                     break;
                 }
@@ -1057,7 +1050,7 @@ namespace iText.Forms.Fields {
             }
         }
 
-        internal virtual void RegenerateCheckboxField(int checkType) {
+        internal virtual void RegenerateCheckboxField(CheckBoxType checkType) {
             parent.SetCheckType(checkType);
             String value = parent.GetValueAsString();
             Rectangle rect = GetRect(GetPdfObject());
@@ -1208,6 +1201,9 @@ namespace iText.Forms.Fields {
         }
 
         internal virtual bool RegenerateWidget() {
+            if (parent == null) {
+                return true;
+            }
             PdfName type = parent.GetFormType();
             if (PdfName.Tx.Equals(type) || PdfName.Ch.Equals(type)) {
                 return RegenerateTextAndChoiceField();
