@@ -48,6 +48,8 @@ using iText.Commons;
 using iText.Commons.Utils;
 using iText.Forms.Fields.Borders;
 using iText.Forms.Fields.Properties;
+using iText.Forms.Form;
+using iText.Forms.Form.Element;
 using iText.Forms.Logs;
 using iText.Forms.Util;
 using iText.IO.Font;
@@ -658,82 +660,12 @@ namespace iText.Forms.Fields {
             canvas.RestoreState();
         }
 
-        protected internal virtual void DrawRadioBorder(PdfCanvas canvas, PdfFormXObject xObject, float width, float
-             height) {
-            canvas.SaveState();
-            float borderWidth = GetBorderWidth();
-            float cx = width / 2;
-            float cy = height / 2;
-            if (borderWidth < 0) {
-                borderWidth = 0;
-            }
-            float r = (Math.Min(width, height) - borderWidth) / 2;
-            if (backgroundColor != null) {
-                canvas.SetFillColor(backgroundColor).Circle(cx, cy, r + borderWidth / 2).Fill();
-            }
-            if (borderWidth > 0 && borderColor != null) {
-                borderWidth = Math.Max(1, borderWidth);
-                canvas.SetStrokeColor(borderColor).SetLineWidth(borderWidth).Circle(cx, cy, r).Stroke();
-            }
-            ApplyRotation(xObject, height, width);
-            canvas.RestoreState();
-        }
-
-        /// <summary>Draws the appearance of a radio button with a specified value.</summary>
-        /// <param name="width">the width of the radio button to draw</param>
-        /// <param name="height">the height of the radio button to draw</param>
-        /// <param name="value">the value of the button</param>
-        protected internal virtual void DrawRadioAppearance(float width, float height, String value) {
-            Rectangle rect = new Rectangle(0, 0, width, height);
-            PdfWidgetAnnotation widget = GetWidget();
-            widget.SetNormalAppearance(new PdfDictionary());
-            //On state
-            PdfFormXObject xObjectOn = new PdfFormXObject(rect);
-            if (value != null) {
-                PdfStream streamOn = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-                PdfCanvas canvasOn = new PdfCanvas(streamOn, new PdfResources(), GetDocument());
-                DrawRadioBorder(canvasOn, xObjectOn, width, height);
-                DrawRadioField(canvasOn, width, height, true);
-                xObjectOn.GetPdfObject().GetOutputStream().WriteBytes(streamOn.GetBytes());
-                widget.GetNormalAppearanceObject().Put(new PdfName(value), xObjectOn.GetPdfObject());
-            }
-            //Off state
-            PdfStream streamOff = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-            PdfCanvas canvasOff = new PdfCanvas(streamOff, new PdfResources(), GetDocument());
-            PdfFormXObject xObjectOff = new PdfFormXObject(rect);
-            DrawRadioBorder(canvasOff, xObjectOff, width, height);
-            xObjectOff.GetPdfObject().GetOutputStream().WriteBytes(streamOff.GetBytes());
-            widget.GetNormalAppearanceObject().Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
-            if (GetPdfAConformanceLevel() != null && ("2".Equals(GetPdfAConformanceLevel().GetPart()) || "3".Equals(GetPdfAConformanceLevel
-                ().GetPart()))) {
-                xObjectOn.GetResources();
-                xObjectOff.GetResources();
-            }
-        }
-
-        /// <summary>Draws a radio button.</summary>
-        /// <param name="canvas">
-        /// the
-        /// <see cref="iText.Kernel.Pdf.Canvas.PdfCanvas"/>
-        /// on which to draw
-        /// </param>
-        /// <param name="width">the width of the radio button to draw</param>
-        /// <param name="height">the height of the radio button to draw</param>
-        /// <param name="on">required to be <c>true</c> for fulfilling the drawing operation</param>
-        protected internal virtual void DrawRadioField(PdfCanvas canvas, float width, float height, bool on) {
-            canvas.SaveState();
-            if (on) {
-                canvas.ResetFillColorRgb();
-                DrawingUtil.DrawCircle(canvas, width / 2, height / 2, Math.Min(width, height) / 4);
-            }
-            canvas.RestoreState();
-        }
-
         /// <summary>Draws the appearance of a checkbox with a specified state value.</summary>
         /// <param name="width">the width of the checkbox to draw</param>
         /// <param name="height">the height of the checkbox to draw</param>
         /// <param name="onStateName">the state of the form field that will be drawn</param>
         protected internal virtual void DrawCheckAppearance(float width, float height, String onStateName) {
+            //TODO DEVSIX-7426 remove method
             Rectangle rect = new Rectangle(0, 0, width, height);
             PdfStream streamOn = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
             PdfCanvas canvasOn = new PdfCanvas(streamOn, new PdfResources(), GetDocument());
@@ -772,6 +704,7 @@ namespace iText.Forms.Fields {
         /// </param>
         protected internal virtual void DrawPdfA2CheckAppearance(float width, float height, String onStateName, CheckBoxType
              checkType) {
+            //TODO DEVSIX-7426 remove method
             parent.checkType = checkType;
             Rectangle rect = new Rectangle(0, 0, width, height);
             PdfStream streamOn = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
@@ -881,6 +814,7 @@ namespace iText.Forms.Fields {
         /// <param name="height">the width of the button</param>
         /// <param name="fontSize">the size of the font</param>
         protected internal virtual void DrawCheckBox(PdfCanvas canvas, float width, float height, float fontSize) {
+            //TODO DEVSIX-7426 remove method
             if (parent.checkType == CheckBoxType.CROSS) {
                 DrawingUtil.DrawCross(canvas, width, height, borderWidth);
                 return;
@@ -896,6 +830,7 @@ namespace iText.Forms.Fields {
                 ).EndText();
         }
 
+        //TODO DEVSIX-7426 remove method
         protected internal virtual void DrawPdfACheckBox(PdfCanvas canvas, float width, float height, bool on) {
             if (!on) {
                 return;
@@ -931,6 +866,36 @@ namespace iText.Forms.Fields {
                     break;
                 }
             }
+        }
+
+        /// <summary>Draws the appearance of a radio button with a specified value and saves it into an appearance stream.
+        ///     </summary>
+        /// <param name="value">the value of the radio button.</param>
+        protected internal virtual void DrawRadioButtonAndSaveAppearance(String value) {
+            Rectangle rectangle = GetRect(this.GetPdfObject());
+            if (rectangle == null) {
+                return;
+            }
+            Radio formField = CreateRadio();
+            // First draw off appearance
+            formField.SetChecked(false);
+            PdfFormXObject xObjectOff = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle.GetHeight
+                ()));
+            iText.Layout.Canvas canvasOff = new iText.Layout.Canvas(xObjectOff, this.GetDocument());
+            canvasOff.Add(formField);
+            PdfDictionary normalAppearance = new PdfDictionary();
+            normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
+            // Draw on appearance
+            if (value != null && !String.IsNullOrEmpty(value) && !iText.Forms.Fields.PdfFormAnnotation.OFF_STATE_VALUE
+                .Equals(value)) {
+                formField.SetChecked(true);
+                PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle.GetHeight(
+                    )));
+                iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
+                canvas.Add(formField);
+                normalAppearance.Put(new PdfName(value), xObject.GetPdfObject());
+            }
+            GetWidget().SetNormalAppearance(normalAppearance);
         }
 
         internal override void RetrieveStyles() {
@@ -1034,22 +999,15 @@ namespace iText.Forms.Fields {
             if (apDic == null) {
                 Put(PdfName.AP, apDic = new PdfDictionary());
             }
-            appearance = DrawPushButtonAppearance(rect.GetWidth(), rect.GetHeight(), parent.text, GetFont(), GetFontSize
-                (widget.GetAsArray(PdfName.Rect), parent.text));
+            appearance = DrawPushButtonAppearance(rect.GetWidth(), rect.GetHeight(), parent.GetDisplayValue(), GetFont
+                (), GetFontSize(widget.GetAsArray(PdfName.Rect), parent.GetDisplayValue()));
             apDic.Put(PdfName.N, appearance.GetPdfObject());
             if (GetPdfAConformanceLevel() != null) {
                 CreatePushButtonAppearanceState(widget);
             }
         }
 
-        internal virtual void RegenerateRadioButtonField() {
-            Rectangle rect = GetRect(GetPdfObject());
-            String value = GetRadioButtonValue();
-            if (rect != null && !"".Equals(value)) {
-                DrawRadioAppearance(rect.GetWidth(), rect.GetHeight(), value);
-            }
-        }
-
+        //TODO DEVSIX-7426 remove method
         internal virtual void RegenerateCheckboxField(CheckBoxType checkType) {
             parent.SetCheckType(checkType);
             String value = parent.GetValueAsString();
@@ -1074,7 +1032,7 @@ namespace iText.Forms.Fields {
         }
 
         internal virtual bool RegenerateTextAndChoiceField() {
-            String value = parent.GetValueAsString();
+            String value = parent.GetDisplayValue();
             PdfName type = parent.GetFormType();
             PdfPage page = PdfAnnotation.MakeAnnotation(GetPdfObject()).GetPage();
             PdfArray bBox = GetPdfObject().GetAsArray(PdfName.Rect);
@@ -1215,16 +1173,47 @@ namespace iText.Forms.Fields {
                     }
                     else {
                         if (parent.GetFieldFlag(PdfButtonFormField.FF_RADIO)) {
-                            RegenerateRadioButtonField();
+                            DrawRadioButtonAndSaveAppearance(GetRadioButtonValue());
                         }
                         else {
-                            RegenerateCheckboxField(parent.checkType);
+                            //TODO DEVSIX-7426 remove flag
+                            if (ExperimentalFeatures.ENABLE_EXPERIMENTAL_CHECKBOX_RENDERING) {
+                                DrawCheckBoxAndSaveAppearanceExperimental(parent.GetValueAsString());
+                            }
+                            else {
+                                //TODO DEVSIX-7426 remove method
+                                RegenerateCheckboxField(parent.checkType);
+                            }
                         }
                     }
                     return true;
                 }
             }
             return false;
+        }
+
+        internal virtual Radio CreateRadio() {
+            Rectangle rect = GetRect(GetPdfObject());
+            if (rect == null) {
+                return null;
+            }
+            // id doesn't matter here
+            Radio radio = new Radio("");
+            // Border
+            if (GetBorderWidth() > 0 && borderColor != null) {
+                Border border = new SolidBorder(Math.Max(1, GetBorderWidth()));
+                border.SetColor(borderColor);
+                radio.SetBorder(border);
+            }
+            if (backgroundColor != null) {
+                radio.SetBackgroundColor(backgroundColor);
+            }
+            // Set fixed size
+            radio.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rect.GetWidth()));
+            radio.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rect.GetHeight()));
+            // Always flatten
+            radio.SetProperty(FormProperty.FORM_FIELD_FLATTEN, true);
+            return radio;
         }
 
         private static double DegreeToRadians(double angle) {
@@ -1471,6 +1460,75 @@ namespace iText.Forms.Fields {
                 }
             }
             return null;
+        }
+
+        /// <summary>Experimental method to draw a checkbox and save its appearance.</summary>
+        /// <param name="onStateName">the name of the appearance state for the checked state</param>
+        protected internal virtual void DrawCheckBoxAndSaveAppearanceExperimental(String onStateName) {
+            //TODO DEVSIX-7426 rename experimental method
+            Rectangle rect = GetRect(this.GetPdfObject());
+            if (rect == null) {
+                return;
+            }
+            CheckBox formField = CreateCheckBox();
+            if (formField == null) {
+                return;
+            }
+            // First draw off appearance
+            if (GetWidget().GetNormalAppearanceObject() == null) {
+                GetWidget().SetNormalAppearance(new PdfDictionary());
+            }
+            PdfDictionary normalAppearance = GetWidget().GetNormalAppearanceObject();
+            // Draw on appearance
+            formField.SetChecked(false);
+            PdfFormXObject xObjectOff = new PdfFormXObject(new Rectangle(0, 0, rect.GetWidth(), rect.GetHeight()));
+            iText.Layout.Canvas canvasOff = new iText.Layout.Canvas(xObjectOff, GetDocument());
+            canvasOff.Add(formField);
+            normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
+            if (onStateName != null && !String.IsNullOrEmpty(onStateName) && !iText.Forms.Fields.PdfFormAnnotation.OFF_STATE_VALUE
+                .Equals(onStateName)) {
+                formField.SetChecked(true);
+                PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rect.GetWidth(), rect.GetHeight()));
+                iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
+                canvas.Add(formField);
+                normalAppearance.Put(new PdfName(onStateName), xObject.GetPdfObject());
+            }
+            PdfDictionary mk = new PdfDictionary();
+            mk.Put(PdfName.CA, new PdfString(parent.text));
+            GetWidget().Put(PdfName.MK, mk);
+            PdfWidgetAnnotation widget = GetWidget();
+            if (widget.GetNormalAppearanceObject() != null && widget.GetNormalAppearanceObject().ContainsKey(new PdfName
+                (onStateName))) {
+                widget.SetAppearanceState(new PdfName(onStateName));
+            }
+            else {
+                widget.SetAppearanceState(new PdfName(OFF_STATE_VALUE));
+            }
+        }
+
+        private CheckBox CreateCheckBox() {
+            Rectangle rect = GetRect(GetPdfObject());
+            if (rect == null) {
+                return null;
+            }
+            // id doesn't matter here
+            CheckBox checkBox = new CheckBox("");
+            if (GetBorderWidth() > 0 && borderColor != null) {
+                Border border = new SolidBorder(Math.Max(1, GetBorderWidth()));
+                border.SetColor(borderColor);
+                checkBox.SetBorder(border);
+            }
+            if (backgroundColor != null) {
+                checkBox.SetBackgroundColor(backgroundColor);
+            }
+            // Set fixed size
+            checkBox.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rect.GetWidth()));
+            checkBox.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rect.GetHeight()));
+            // Always flatten
+            checkBox.SetInteractive(false);
+            checkBox.SetPdfAConformanceLevel(GetPdfAConformanceLevel());
+            checkBox.SetCheckBoxType(parent.checkType);
+            return checkBox;
         }
     }
 }
