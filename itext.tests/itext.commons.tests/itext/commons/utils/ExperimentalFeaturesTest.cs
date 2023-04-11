@@ -20,20 +20,15 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-using System;
-using iText.Commons.Exceptions;
+using iText.Test;
 
-namespace iText.IO.Exceptions {
-    public class FontCompressionException : ITextException {
-        public FontCompressionException() {
-        }
-
-        public FontCompressionException(String message)
-            : base(message) {
-        }
-
-        public FontCompressionException(String message, Exception cause)
-            : base(message, cause) {
+namespace iText.Commons.Utils {
+    [NUnit.Framework.Category("UnitTest")]
+    public class ExperimentalFeaturesTest : ExtendedITextTest {
+        [NUnit.Framework.Test]
+        public virtual void TestDefaults() {
+            NUnit.Framework.Assert.IsFalse(ExperimentalFeatures.ENABLE_EXPERIMENTAL_CHECKBOX_RENDERING);
+            NUnit.Framework.Assert.IsTrue(ExperimentalFeatures.ENABLE_EXPERIMENTAL_TEXT_FORM_RENDERING);
         }
     }
 }
