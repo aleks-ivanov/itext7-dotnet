@@ -1,5 +1,28 @@
+/*
+This file is part of the iText (R) project.
+Copyright (c) 1998-2023 Apryse Group NV
+Authors: Apryse Software.
+
+This program is offered under a commercial and under the AGPL license.
+For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 using System;
 using System.Collections.Generic;
+using iText.Commons.Utils;
 using iText.Forms.Fields.Properties;
 using iText.Forms.Form.Renderer;
 using iText.Forms.Logs;
@@ -18,16 +41,17 @@ namespace iText.Forms.Form.Renderer.Checkboximpl {
     /// <summary>This class is used to draw a checkBox icon in PDF mode this is the default strategy for drawing a checkBox.
     ///     </summary>
     public sealed class PdfCheckBoxRenderingStrategy : ICheckBoxRenderingStrategy {
-        private static readonly Dictionary<CheckBoxType, String> CHECKBOX_TYPE_ZAPFDINGBATS_CODE = new Dictionary<
-            CheckBoxType, String>();
+        public static readonly IDictionary<CheckBoxType, String> CHECKBOX_TYPE_ZAPFDINGBATS_CODE;
 
         static PdfCheckBoxRenderingStrategy() {
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.CHECK, "4");
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.CIRCLE, "l");
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.CROSS, "8");
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.DIAMOND, "u");
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.SQUARE, "n");
-            CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Put(CheckBoxType.STAR, "H");
+            IDictionary<CheckBoxType, String> initialMap = new Dictionary<CheckBoxType, String>();
+            initialMap.Put(CheckBoxType.CHECK, "4");
+            initialMap.Put(CheckBoxType.CIRCLE, "l");
+            initialMap.Put(CheckBoxType.CROSS, "8");
+            initialMap.Put(CheckBoxType.DIAMOND, "u");
+            initialMap.Put(CheckBoxType.SQUARE, "n");
+            initialMap.Put(CheckBoxType.STAR, "H");
+            CHECKBOX_TYPE_ZAPFDINGBATS_CODE = JavaCollectionsUtil.UnmodifiableMap(initialMap);
         }
 
         /// <summary>

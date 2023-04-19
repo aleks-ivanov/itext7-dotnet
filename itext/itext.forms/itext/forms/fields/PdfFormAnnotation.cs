@@ -26,10 +26,10 @@ using Microsoft.Extensions.Logging;
 using iText.Commons;
 using iText.Commons.Utils;
 using iText.Forms.Fields.Borders;
-using iText.Forms.Fields.Properties;
 using iText.Forms.Form;
 using iText.Forms.Form.Element;
 using iText.Forms.Form.Renderer;
+using iText.Forms.Form.Renderer.Checkboximpl;
 using iText.Forms.Logs;
 using iText.Forms.Util;
 using iText.Kernel.Colors;
@@ -90,7 +90,7 @@ namespace iText.Forms.Fields {
 
         private const String LINE_ENDINGS_REGEXP = "\\r\\n|\\r|\\n";
 
-        private Button formFieldElement;
+        private IFormField formFieldElement;
 
         /// <summary>
         /// Creates a form field annotation as a wrapper of a
@@ -386,13 +386,23 @@ namespace iText.Forms.Fields {
             return this;
         }
 
-        /// <summary>Sets an element associated with the current field.</summary>
+        /// <summary>
+        /// This method sets the model element associated with the current annotation and can be useful to take into account
+        /// when drawing those properties that the annotation does not have.
+        /// </summary>
+        /// <remarks>
+        /// This method sets the model element associated with the current annotation and can be useful to take into account
+        /// when drawing those properties that the annotation does not have. Note that annotation properties will take
+        /// precedence, so such properties cannot be overridden by using this method (e.g. background, text color, etc.).
+        /// <para />
+        /// Also note that the model element won't be used for annotations for choice form field.
+        /// </remarks>
         /// <param name="element">model element to set.</param>
         /// <returns>
         /// this
         /// <see cref="PdfFormAnnotation"/>.
         /// </returns>
-        public virtual iText.Forms.Fields.PdfFormAnnotation SetFormFieldElement(Button element) {
+        public virtual iText.Forms.Fields.PdfFormAnnotation SetFormFieldElement(IFormField element) {
             this.formFieldElement = element;
             RegenerateWidget();
             return this;
@@ -644,76 +654,6 @@ namespace iText.Forms.Fields {
             canvas.RestoreState();
         }
 
-        /// <summary>Draws the appearance of a checkbox with a specified state value.</summary>
-        /// <param name="width">the width of the checkbox to draw</param>
-        /// <param name="height">the height of the checkbox to draw</param>
-        /// <param name="onStateName">the state of the form field that will be drawn</param>
-        protected internal virtual void DrawCheckAppearance(float width, float height, String onStateName) {
-            //TODO DEVSIX-7443 remove method
-            Rectangle rect = new Rectangle(0, 0, width, height);
-            PdfStream streamOn = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-            PdfCanvas canvasOn = new PdfCanvas(streamOn, new PdfResources(), GetDocument());
-            PdfFormXObject xObjectOn = new PdfFormXObject(rect);
-            DrawBorder(canvasOn, xObjectOn, width, height);
-            DrawCheckBox(canvasOn, width, height, GetFontSize());
-            xObjectOn.GetPdfObject().GetOutputStream().WriteBytes(streamOn.GetBytes());
-            xObjectOn.GetResources().AddFont(GetDocument(), GetFont());
-            PdfStream streamOff = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-            PdfCanvas canvasOff = new PdfCanvas(streamOff, new PdfResources(), GetDocument());
-            PdfFormXObject xObjectOff = new PdfFormXObject(rect);
-            DrawBorder(canvasOff, xObjectOff, width, height);
-            xObjectOff.GetPdfObject().GetOutputStream().WriteBytes(streamOff.GetBytes());
-            xObjectOff.GetResources().AddFont(GetDocument(), GetFont());
-            PdfDictionary normalAppearance = new PdfDictionary();
-            normalAppearance.Put(new PdfName(onStateName), xObjectOn.GetPdfObject());
-            normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
-            PdfDictionary mk = new PdfDictionary();
-            mk.Put(PdfName.CA, new PdfString(parent.text));
-            PdfWidgetAnnotation widget = GetWidget();
-            widget.Put(PdfName.MK, mk);
-            widget.SetNormalAppearance(normalAppearance);
-        }
-
-        /// <summary>Draws PDF/A-2 compliant check appearance.</summary>
-        /// <remarks>
-        /// Draws PDF/A-2 compliant check appearance.
-        /// Actually it's just PdfA check appearance. According to corrigendum there is no difference between them
-        /// </remarks>
-        /// <param name="width">width of the checkbox</param>
-        /// <param name="height">height of the checkbox</param>
-        /// <param name="onStateName">name that corresponds to the "On" state of the checkbox</param>
-        /// <param name="checkType">
-        /// the type that determines how the checkbox will look like. Instance of
-        /// <see cref="iText.Forms.Fields.Properties.CheckBoxType"/>
-        /// </param>
-        protected internal virtual void DrawPdfA2CheckAppearance(float width, float height, String onStateName, CheckBoxType
-             checkType) {
-            //TODO DEVSIX-7443 remove method
-            parent.checkType = checkType;
-            Rectangle rect = new Rectangle(0, 0, width, height);
-            PdfStream streamOn = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-            PdfCanvas canvasOn = new PdfCanvas(streamOn, new PdfResources(), GetDocument());
-            PdfFormXObject xObjectOn = new PdfFormXObject(rect);
-            xObjectOn.GetResources();
-            DrawBorder(canvasOn, xObjectOn, width, height);
-            DrawPdfACheckBox(canvasOn, width, height, true);
-            xObjectOn.GetPdfObject().GetOutputStream().WriteBytes(streamOn.GetBytes());
-            PdfStream streamOff = (PdfStream)new PdfStream().MakeIndirect(GetDocument());
-            PdfCanvas canvasOff = new PdfCanvas(streamOff, new PdfResources(), GetDocument());
-            PdfFormXObject xObjectOff = new PdfFormXObject(rect);
-            xObjectOff.GetResources();
-            DrawBorder(canvasOff, xObjectOff, width, height);
-            xObjectOff.GetPdfObject().GetOutputStream().WriteBytes(streamOff.GetBytes());
-            PdfDictionary normalAppearance = new PdfDictionary();
-            normalAppearance.Put(new PdfName(onStateName), xObjectOn.GetPdfObject());
-            normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
-            PdfDictionary mk = new PdfDictionary();
-            mk.Put(PdfName.CA, new PdfString(parent.text));
-            PdfWidgetAnnotation widget = GetWidget();
-            widget.Put(PdfName.MK, mk);
-            widget.SetNormalAppearance(normalAppearance);
-        }
-
         /// <summary>Draws the appearance of a push button and saves it into an appearance stream.</summary>
         protected internal virtual void DrawPushButtonFieldAndSaveAppearance() {
             Rectangle rectangle = GetRect(this.GetPdfObject());
@@ -732,7 +672,7 @@ namespace iText.Forms.Fields {
             SetMetaInfoToCanvas(canvas);
             String caption = parent.GetDisplayValue();
             if (caption != null && !String.IsNullOrEmpty(caption)) {
-                formFieldElement.SetSingleLineValue(caption);
+                ((Button)formFieldElement).SetSingleLineValue(caption);
             }
             float imagePadding = borderColor == null ? 0 : borderWidth;
             if (parent.img != null) {
@@ -742,7 +682,7 @@ namespace iText.Forms.Fields {
                 Image image = new Image(new PdfImageXObject(parent.img), imagePadding, imagePadding);
                 image.SetHeight(height - 2 * imagePadding);
                 image.SetWidth(width - 2 * imagePadding);
-                formFieldElement.Add(image);
+                ((Button)formFieldElement).Add(image);
             }
             else {
                 if (parent.form != null) {
@@ -751,7 +691,7 @@ namespace iText.Forms.Fields {
                     formFieldElement.GetChildren().Clear();
                     Image image = new Image(parent.form, imagePadding, imagePadding);
                     image.SetHeight(height - 2 * imagePadding);
-                    formFieldElement.Add(image);
+                    ((Button)formFieldElement).Add(image);
                 }
                 else {
                     xObject.GetResources().AddFont(GetDocument(), GetFont());
@@ -778,81 +718,6 @@ namespace iText.Forms.Fields {
             canvas.Close();
         }
 
-        /// <summary>Performs the low-level drawing operations to draw a checkbox object.</summary>
-        /// <param name="canvas">
-        /// the
-        /// <see cref="iText.Kernel.Pdf.Canvas.PdfCanvas"/>
-        /// of the page to draw on.
-        /// </param>
-        /// <param name="width">the width of the button</param>
-        /// <param name="height">the width of the button</param>
-        /// <param name="fontSize">the size of the font</param>
-        protected internal virtual void DrawCheckBox(PdfCanvas canvas, float width, float height, float fontSize) {
-            //TODO DEVSIX-7443 remove method
-            if (parent.checkType == CheckBoxType.CROSS) {
-                DrawingUtil.DrawCross(canvas, width, height, borderWidth);
-                return;
-            }
-            PdfFont ufont = GetFont();
-            if (fontSize <= 0) {
-                // there is no min font size for checkbox, however we can't set 0, because it means auto size.
-                float minFontSize = 0.1F;
-                fontSize = FontSizeUtil.ApproximateFontSizeToFitSingleLine(ufont, new Rectangle(width, height), parent.text
-                    , minFontSize, borderWidth);
-            }
-            // PdfFont gets all width in 1000 normalized units
-            canvas.BeginText().SetFontAndSize(ufont, fontSize).ResetFillColorRgb().SetTextMatrix((width - ufont.GetWidth
-                (parent.text, fontSize)) / 2, (height - ufont.GetAscent(parent.text, fontSize)) / 2).ShowText(parent.text
-                ).EndText();
-        }
-
-        /// <summary>Performs the low-level drawing operations to draw a PDF A complication checkbox.</summary>
-        /// <param name="canvas">
-        /// the
-        /// <see cref="iText.Kernel.Pdf.Canvas.PdfCanvas"/>
-        /// of the page to draw on.
-        /// </param>
-        /// <param name="width">the width of the button</param>
-        /// <param name="height">the height of the button</param>
-        /// <param name="on">the state of the checkbox</param>
-        protected internal virtual void DrawPdfACheckBox(PdfCanvas canvas, float width, float height, bool on) {
-            //TODO DEVSIX-7443 remove method
-            if (!on) {
-                return;
-            }
-            switch (parent.checkType) {
-                case CheckBoxType.CHECK: {
-                    DrawingUtil.DrawPdfACheck(canvas, width, height);
-                    break;
-                }
-
-                case CheckBoxType.CIRCLE: {
-                    DrawingUtil.DrawPdfACircle(canvas, width, height);
-                    break;
-                }
-
-                case CheckBoxType.CROSS: {
-                    DrawingUtil.DrawPdfACross(canvas, width, height);
-                    break;
-                }
-
-                case CheckBoxType.DIAMOND: {
-                    DrawingUtil.DrawPdfADiamond(canvas, width, height);
-                    break;
-                }
-
-                case CheckBoxType.SQUARE: {
-                    DrawingUtil.DrawPdfASquare(canvas, width, height);
-                    break;
-                }
-
-                case CheckBoxType.STAR: {
-                    DrawingUtil.DrawPdfAStar(canvas, width, height);
-                    break;
-                }
-            }
-        }
-
         /// <summary>Draws the appearance of a radio button with a specified value and saves it into an appearance stream.
         ///     </summary>
         /// <param name="value">the value of the radio button.</param>
@@ -861,23 +726,27 @@ namespace iText.Forms.Fields {
             if (rectangle == null) {
                 return;
             }
-            Radio formField = CreateRadio();
+            if (!(formFieldElement is Radio)) {
+                // Create it one time and re-set properties during each widget regeneration.
+                formFieldElement = new Radio("");
+            }
+            SetModelElementProperties(GetRect(GetPdfObject()));
             // First draw off appearance
-            formField.SetChecked(false);
+            ((Radio)formFieldElement).SetChecked(false);
             PdfFormXObject xObjectOff = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle.GetHeight
                 ()));
             iText.Layout.Canvas canvasOff = new iText.Layout.Canvas(xObjectOff, this.GetDocument());
-            canvasOff.Add(formField);
+            canvasOff.Add(formFieldElement);
             PdfDictionary normalAppearance = new PdfDictionary();
             normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
             // Draw on appearance
             if (value != null && !String.IsNullOrEmpty(value) && !iText.Forms.Fields.PdfFormAnnotation.OFF_STATE_VALUE
                 .Equals(value)) {
-                formField.SetChecked(true);
+                ((Radio)formFieldElement).SetChecked(true);
                 PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle.GetHeight(
                     )));
                 iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
-                canvas.Add(formField);
+                canvas.Add(formFieldElement);
                 normalAppearance.Put(new PdfName(value), xObject.GetPdfObject());
             }
             GetWidget().SetNormalAppearance(normalAppearance);
@@ -889,32 +758,28 @@ namespace iText.Forms.Fields {
             if (rectangle == null) {
                 return;
             }
-            IFormField textFormField;
             String value = parent.GetDisplayValue();
+            if (!(parent.IsMultiline() && formFieldElement is TextArea || !parent.IsMultiline() && formFieldElement is
+                 InputField)) {
+                // Create it one time and re-set properties during each widget regeneration.
+                formFieldElement = parent.IsMultiline() ? (IFormField)new TextArea("") : (IFormField)new InputField("");
+            }
             if (parent.IsMultiline()) {
-                textFormField = new TextArea("");
-                textFormField.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize()));
+                formFieldElement.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize()));
             }
             else {
-                textFormField = new InputField("");
-                textFormField.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize(new PdfArray(rectangle
+                formFieldElement.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize(new PdfArray(rectangle
                     ), parent.GetValueAsString())));
                 value = iText.Commons.Utils.StringUtil.ReplaceAll(value, LINE_ENDINGS_REGEXP, " ");
             }
-            textFormField.SetProperty(FormProperty.FORM_FIELD_VALUE, value);
-            textFormField.SetProperty(Property.FONT, GetFont());
-            textFormField.SetProperty(Property.TEXT_ALIGNMENT, parent.GetJustification());
-            textFormField.SetProperty(FormProperty.FORM_FIELD_PASSWORD_FLAG, GetParentField().IsPassword());
-            textFormField.SetProperty(Property.ADD_MARKED_CONTENT_TEXT, true);
+            formFieldElement.SetValue(value);
+            formFieldElement.SetProperty(Property.FONT, GetFont());
+            formFieldElement.SetProperty(Property.TEXT_ALIGNMENT, parent.GetJustification());
+            formFieldElement.SetProperty(FormProperty.FORM_FIELD_PASSWORD_FLAG, GetParentField().IsPassword());
+            formFieldElement.SetProperty(Property.ADD_MARKED_CONTENT_TEXT, true);
             if (GetColor() != null) {
-                textFormField.SetProperty(Property.FONT_COLOR, new TransparentColor(GetColor()));
+                formFieldElement.SetProperty(Property.FONT_COLOR, new TransparentColor(GetColor()));
             }
-            textFormField.SetProperty(Property.BORDER, GetBorder());
-            if (backgroundColor != null) {
-                textFormField.SetProperty(Property.BACKGROUND, new Background(backgroundColor, 1f, 0, 0, 0, 0));
-            }
-            // Always flatten
-            textFormField.SetProperty(FormProperty.FORM_FIELD_FLATTEN, true);
             // Rotation
             int fieldRotation = GetRotation() % 360;
             PdfArray matrix = GetRotationMatrix(fieldRotation, rectangle.GetHeight(), rectangle.GetWidth());
@@ -924,9 +789,7 @@ namespace iText.Forms.Fields {
                 invertedRectangle.SetHeight(rectangle.GetWidth());
                 rectangle = invertedRectangle;
             }
-            // Set fixed size
-            textFormField.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rectangle.GetWidth()));
-            textFormField.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rectangle.GetHeight()));
+            SetModelElementProperties(rectangle);
             PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle.GetHeight(
                 )));
             if (matrix != null) {
@@ -934,7 +797,7 @@ namespace iText.Forms.Fields {
             }
             iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
             canvas.SetProperty(Property.APPEARANCE_STREAM_LAYOUT, true);
-            canvas.Add(textFormField);
+            canvas.Add(formFieldElement);
             GetWidget().SetNormalAppearance(xObject.GetPdfObject());
         }
 
@@ -954,30 +817,6 @@ namespace iText.Forms.Fields {
             MetaInfoContainer metaInfo = FormsMetaInfoStaticContainer.GetMetaInfoForLayout();
             if (metaInfo != null) {
                 canvas.SetProperty(Property.META_INFO, metaInfo);
-            }
-        }
-
-        //TODO DEVSIX-7443 remove method
-        internal virtual void RegenerateCheckboxField(CheckBoxType checkType) {
-            parent.SetCheckType(checkType);
-            String value = parent.GetValueAsString();
-            Rectangle rect = GetRect(GetPdfObject());
-            PdfWidgetAnnotation widget = (PdfWidgetAnnotation)PdfAnnotation.MakeAnnotation(GetPdfObject());
-            if (GetPdfAConformanceLevel() == null) {
-                DrawCheckAppearance(rect.GetWidth(), rect.GetHeight(), OFF_STATE_VALUE.Equals(value) ? ON_STATE_VALUE : value
-                    );
-            }
-            else {
-                DrawPdfA2CheckAppearance(rect.GetWidth(), rect.GetHeight(), OFF_STATE_VALUE.Equals(value) ? ON_STATE_VALUE
-                     : value, parent.checkType);
-                widget.SetFlag(PdfAnnotation.PRINT);
-            }
-            if (widget.GetNormalAppearanceObject() != null && widget.GetNormalAppearanceObject().ContainsKey(new PdfName
-                (value))) {
-                widget.SetAppearanceState(new PdfName(value));
-            }
-            else {
-                widget.SetAppearanceState(new PdfName(OFF_STATE_VALUE));
             }
         }
 
@@ -1121,14 +960,7 @@ namespace iText.Forms.Fields {
                                 DrawRadioButtonAndSaveAppearance(GetRadioButtonValue());
                             }
                             else {
-                                //TODO DEVSIX-7443 remove flag
-                                if (ExperimentalFeatures.ENABLE_EXPERIMENTAL_CHECKBOX_RENDERING) {
-                                    DrawCheckBoxAndSaveAppearanceExperimental(parent.GetValueAsString());
-                                }
-                                else {
-                                    //TODO DEVSIX-7443 remove method
-                                    RegenerateCheckboxField(parent.checkType);
-                                }
+                                DrawCheckBoxAndSaveAppearance(parent.GetValueAsString());
                             }
                         }
                         return true;
@@ -1139,60 +971,17 @@ namespace iText.Forms.Fields {
         }
 
         internal virtual void CreateInputButton() {
-            Rectangle rect = GetRect(GetPdfObject());
-            if (rect == null) {
-                formFieldElement = null;
-                return;
-            }
-            if (formFieldElement == null) {
+            if (!(formFieldElement is Button)) {
                 // Create it one time and re-set properties during each widget regeneration.
                 formFieldElement = new Button(parent.GetFieldName().ToUnicodeString());
             }
-            formFieldElement.SetFont(GetFont());
-            formFieldElement.SetFontSize(GetFontSize(GetPdfObject().GetAsArray(PdfName.Rect), parent.GetDisplayValue()
-                ));
-            if (GetColor() == null) {
-                TransparentColor transparentColor = formFieldElement.GetProperty<TransparentColor>(Property.FONT_COLOR);
-                color = transparentColor == null ? ColorConstants.BLACK : transparentColor.GetColor();
+            ((Button)formFieldElement).SetFont(GetFont());
+            ((Button)formFieldElement).SetFontSize(GetFontSize(GetPdfObject().GetAsArray(PdfName.Rect), parent.GetDisplayValue
+                ()));
+            if (GetColor() != null) {
+                ((Button)formFieldElement).SetFontColor(color);
             }
-            formFieldElement.SetFontColor(color);
-            formFieldElement.SetBackgroundColor(backgroundColor);
-            if (borderWidth > 0 && borderColor != null) {
-                float borderWidth = Math.Max(1, GetBorderWidth());
-                // Don't take border into account as it will be drawn inside
-                Border border = FormBorderFactory.GetBorder(GetWidget().GetBorderStyle(), borderWidth, borderColor, backgroundColor
-                    );
-                formFieldElement.SetBorder(border != null ? border : new SolidBorder(borderColor, borderWidth));
-            }
-            // Set fixed size
-            formFieldElement.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rect.GetWidth()));
-            formFieldElement.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rect.GetHeight()));
-            // Always flatten
-            formFieldElement.SetInteractive(false);
-        }
-
-        internal virtual Radio CreateRadio() {
-            Rectangle rect = GetRect(GetPdfObject());
-            if (rect == null) {
-                return null;
-            }
-            // id doesn't matter here
-            Radio radio = new Radio("");
-            // Border
-            if (GetBorderWidth() > 0 && borderColor != null) {
-                Border border = new SolidBorder(Math.Max(1, GetBorderWidth()));
-                border.SetColor(borderColor);
-                radio.SetBorder(border);
-            }
-            if (backgroundColor != null) {
-                radio.SetBackgroundColor(backgroundColor);
-            }
-            // Set fixed size
-            radio.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rect.GetWidth()));
-            radio.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rect.GetHeight()));
-            // Always flatten
-            radio.SetInteractive(false);
-            return radio;
+            SetModelElementProperties(GetRect(GetPdfObject()));
         }
 
         internal virtual float GetFontSize(PdfArray bBox, String value) {
@@ -1403,43 +1192,43 @@ namespace iText.Forms.Fields {
             return null;
         }
 
-        /// <summary>Experimental method to draw a checkbox and save its appearance.</summary>
+        /// <summary>Draw a checkbox and save its appearance.</summary>
         /// <param name="onStateName">the name of the appearance state for the checked state</param>
-        protected internal virtual void DrawCheckBoxAndSaveAppearanceExperimental(String onStateName) {
-            //TODO DEVSIX-7443 rename experimental method
+        protected internal virtual void DrawCheckBoxAndSaveAppearance(String onStateName) {
             Rectangle rect = GetRect(this.GetPdfObject());
             if (rect == null) {
                 return;
             }
-            CheckBox formField = CreateCheckBox();
-            if (formField == null) {
-                return;
-            }
+            CreateCheckBox();
             if (GetWidget().GetNormalAppearanceObject() == null) {
                 GetWidget().SetNormalAppearance(new PdfDictionary());
             }
-            PdfDictionary normalAppearance = GetWidget().GetNormalAppearanceObject();
-            formField.SetChecked(false);
+            PdfDictionary normalAppearance = new PdfDictionary();
+            ((CheckBox)formFieldElement).SetChecked(false);
             PdfFormXObject xObjectOff = new PdfFormXObject(new Rectangle(0, 0, rect.GetWidth(), rect.GetHeight()));
             iText.Layout.Canvas canvasOff = new iText.Layout.Canvas(xObjectOff, GetDocument());
-            canvasOff.Add(formField);
-            xObjectOff.GetResources().AddFont(GetDocument(), GetFont());
+            canvasOff.Add(formFieldElement);
+            if (GetPdfAConformanceLevel() == null) {
+                xObjectOff.GetResources().AddFont(GetDocument(), GetFont());
+            }
             normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
-            if (onStateName != null && !String.IsNullOrEmpty(onStateName) && !iText.Forms.Fields.PdfFormAnnotation.OFF_STATE_VALUE
+            String onStateNameForAp = onStateName;
+            if (onStateName == null || String.IsNullOrEmpty(onStateName) || iText.Forms.Fields.PdfFormAnnotation.OFF_STATE_VALUE
                 .Equals(onStateName)) {
-                formField.SetChecked(true);
-                PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rect.GetWidth(), rect.GetHeight()));
-                iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
-                canvas.Add(formField);
-                normalAppearance.Put(new PdfName(onStateName), xObject.GetPdfObject());
+                onStateNameForAp = ON_STATE_VALUE;
             }
-            if (GetWidget().GetAppearanceCharacteristics() == null) {
-                GetWidget().SetAppearanceCharacteristics(new PdfDictionary());
-            }
-            PdfDictionary mk = GetWidget().GetAppearanceCharacteristics();
-            if (parent.text != null) {
-                mk.Put(PdfName.CA, new PdfString(parent.text));
-            }
+            ((CheckBox)formFieldElement).SetChecked(true);
+            PdfFormXObject xObject = new PdfFormXObject(new Rectangle(0, 0, rect.GetWidth(), rect.GetHeight()));
+            iText.Layout.Canvas canvas = new iText.Layout.Canvas(xObject, this.GetDocument());
+            canvas.Add(formFieldElement);
+            normalAppearance.Put(new PdfName(onStateNameForAp), xObject.GetPdfObject());
+            GetWidget().SetNormalAppearance(normalAppearance);
+            PdfDictionary mk = new PdfDictionary();
+            // We put the zapfDingbats code of the checkbox in the MK dictionary to make sure there is a way
+            // to retrieve the checkbox type even if the appearance is not present.
+            mk.Put(PdfName.CA, new PdfString(PdfCheckBoxRenderingStrategy.CHECKBOX_TYPE_ZAPFDINGBATS_CODE.Get(parent.checkType
+                )));
+            GetWidget().Put(PdfName.MK, mk);
             SetCheckBoxAppearanceState(onStateName);
         }
 
@@ -1452,47 +1241,35 @@ namespace iText.Forms.Fields {
             else {
                 widget.SetAppearanceState(new PdfName(OFF_STATE_VALUE));
             }
-            // Remove appearance state if it is not used
-            int amountOfAppearanceStatesAllowed = 2;
-            if (widget.GetNormalAppearanceObject().KeySet().Count > amountOfAppearanceStatesAllowed && !ON_STATE_VALUE
-                .Equals(onStateName)) {
-                widget.GetNormalAppearanceObject().Remove(new PdfName(ON_STATE_VALUE));
-            }
         }
 
-        private CheckBox CreateCheckBox() {
-            Rectangle rect = GetRect(GetPdfObject());
-            if (rect == null) {
-                return null;
+        private void CreateCheckBox() {
+            if (!(formFieldElement is CheckBox)) {
+                // Create it one time and re-set properties during each widget regeneration.
+                formFieldElement = new CheckBox("");
             }
-            rect = rect.Clone();
-            CheckBox checkBox = new CheckBox("");
-            if (GetBorderWidth() > 0 && borderColor != null) {
-                float borderWidth = GetBorderWidth();
-                PdfDictionary bs = GetWidget().GetBorderStyle();
-                Border border = FormBorderFactory.GetBorder(bs, borderWidth, borderColor, backgroundColor);
-                if (border == null) {
-                    // TODO DEVSIX-7443 1 is copied from the previous implementation, but it is not clear why it is needed
-                    // we should actually check if we want to use a fallback value or if we would allow the user to have a
-                    // very thin border
-                    borderWidth = Math.Max(1, GetBorderWidth());
-                    border = new SolidBorder(borderColor, borderWidth);
-                }
-                checkBox.SetBorder(border);
-            }
+            // Make font size auto calculated
+            formFieldElement.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize()));
+            SetModelElementProperties(GetRect(GetPdfObject()));
+            ((CheckBox)formFieldElement).SetPdfAConformanceLevel(GetPdfAConformanceLevel());
+            ((CheckBox)formFieldElement).SetCheckBoxType(parent.checkType);
+        }
+
+        private void SetModelElementProperties(Rectangle rectangle) {
             if (backgroundColor != null) {
-                checkBox.SetBackgroundColor(backgroundColor);
+                formFieldElement.SetProperty(Property.BACKGROUND, new Background(backgroundColor));
             }
-            //make font size auto calculated
-            checkBox.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(GetFontSize()));
+            formFieldElement.SetProperty(Property.BORDER, GetBorder());
             // Set fixed size
-            checkBox.SetProperty(Property.WIDTH, UnitValue.CreatePointValue(rect.GetWidth()));
-            checkBox.SetProperty(Property.HEIGHT, UnitValue.CreatePointValue(rect.GetHeight()));
+            BoxSizingPropertyValue? boxSizing = formFieldElement.GetProperty<BoxSizingPropertyValue?>(Property.BOX_SIZING
+                );
+            // Borders are already taken into account for rectangle area, but shouldn't be included into width and height
+            // of the field in case of content-box value of box-sizing property.
+            float extraBorderWidth = BoxSizingPropertyValue.CONTENT_BOX == boxSizing ? 2 * borderWidth : 0;
+            formFieldElement.SetWidth(rectangle.GetWidth() - extraBorderWidth);
+            formFieldElement.SetHeight(rectangle.GetHeight() - extraBorderWidth);
             // Always flatten
-            checkBox.SetProperty(FormProperty.FORM_FIELD_FLATTEN, true);
-            checkBox.SetPdfAConformanceLevel(GetPdfAConformanceLevel());
-            checkBox.SetCheckBoxType(parent.checkType);
-            return checkBox;
+            formFieldElement.SetInteractive(false);
         }
     }
 }

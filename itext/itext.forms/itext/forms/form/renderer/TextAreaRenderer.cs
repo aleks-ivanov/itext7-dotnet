@@ -32,6 +32,7 @@ using iText.Forms.Form.Element;
 using iText.Forms.Logs;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
+using iText.Layout.Element;
 using iText.Layout.Layout;
 using iText.Layout.Minmaxwidth;
 using iText.Layout.Properties;
@@ -127,6 +128,9 @@ namespace iText.Forms.Form.Renderer {
                 flatBBox.SetHeight(0);
             }
             else {
+                if (!HasOwnOrModelProperty(FormProperty.FORM_FIELD_ROWS)) {
+                    SetProperty(FormProperty.FORM_FIELD_ROWS, flatLines.Count);
+                }
                 CropContentLines(flatLines, flatBBox);
             }
             flatBBox.SetWidth((float)RetrieveWidth(layoutContext.GetArea().GetBBox().GetWidth()));
@@ -144,7 +148,15 @@ namespace iText.Forms.Form.Renderer {
                 )modelElement).GetPlaceholder().IsEmpty()) {
                 return ((TextArea)modelElement).GetPlaceholder().CreateRendererSubTree();
             }
-            return base.CreateParagraphRenderer(defaultValue);
+            if (String.IsNullOrEmpty(defaultValue)) {
+                defaultValue = "\u00a0";
+            }
+            Text text = new Text(defaultValue);
+            FormFieldValueNonTrimmingTextRenderer nextRenderer = new FormFieldValueNonTrimmingTextRenderer(text);
+            text.SetNextRenderer(nextRenderer);
+            IRenderer flatRenderer = new Paragraph(text).SetMargin(0).CreateRendererSubTree();
+            flatRenderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.FIT);
+            return flatRenderer;
         }
 
         /* (non-Javadoc)
@@ -162,14 +174,20 @@ namespace iText.Forms.Form.Renderer {
             }
             PdfDocument doc = drawContext.GetDocument();
             Rectangle area = GetOccupiedArea().GetBBox().Clone();
+            ApplyMargins(area, false);
+            DeleteMargins();
             PdfPage page = doc.GetPage(occupiedArea.GetPageNumber());
             float fontSizeValue = fontSize.GetValue();
             PdfString defaultValue = new PdfString(GetDefaultValue());
+            // Default html2pdf text area appearance differs from the default one for form fields.
+            // That's why we got rid of several properties we set by default during TextArea instance creation.
+            modelElement.SetProperty(Property.BOX_SIZING, BoxSizingPropertyValue.BORDER_BOX);
             PdfFormField inputField = new TextFormFieldBuilder(doc, name).SetWidgetRectangle(area).CreateMultilineText
                 ().SetValue(value);
             inputField.SetFont(font).SetFontSize(fontSizeValue);
             inputField.SetDefaultValue(defaultValue);
             ApplyDefaultFieldProperties(inputField);
+            inputField.GetFirstFormAnnotation().SetFormFieldElement((TextArea)modelElement);
             PdfAcroForm.GetAcroForm(doc, true).AddField(inputField, page);
             WriteAcroFormFieldLangAttribute(doc);
         }
@@ -184,9 +202,13 @@ namespace iText.Forms.Form.Renderer {
                         logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                             , Property.FONT_SIZE));
                     }
+                    float fontSizeValue = fontSize.GetValue();
+                    if (fontSizeValue < EPS) {
+                        fontSizeValue = DEFAULT_FONT_SIZE;
+                    }
                     int cols = GetCols();
-                    return (T1)(Object)UnitValue.CreatePointValue(UpdateHtmlColsSizeBasedWidth(fontSize.GetValue() * (cols * 0.5f
-                         + 2) + 2));
+                    return (T1)(Object)UnitValue.CreatePointValue(UpdateHtmlColsSizeBasedWidth(fontSizeValue * (cols * 0.5f + 
+                        2) + 2));
                 }
                 return width;
             }
@@ -241,7 +263,16 @@ namespace iText.Forms.Form.Renderer {
             float lFontSize = MIN_FONT_SIZE;
             float rFontSize = DEFAULT_FONT_SIZE;
             flatRenderer.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(DEFAULT_FONT_SIZE));
-            if (flatRenderer.Layout(layoutContext).GetStatus() == LayoutResult.FULL) {
+            float? areaWidth = RetrieveWidth(layoutContext.GetArea().GetBBox().GetWidth());
+            float? areaHeight = RetrieveHeight();
+            LayoutContext newLayoutContext;
+            if (areaWidth == null || areaHeight == null) {
+                modelElement.SetFontSize(DEFAULT_FONT_SIZE);
+                return;
+            }
+            newLayoutContext = new LayoutContext(new LayoutArea(1, new Rectangle((float)areaWidth, (float)areaHeight))
+                );
+            if (flatRenderer.Layout(newLayoutContext).GetStatus() == LayoutResult.FULL) {
                 lFontSize = DEFAULT_FONT_SIZE;
             }
             else {
@@ -249,7 +280,7 @@ namespace iText.Forms.Form.Renderer {
                 for (int i = 0; i < numberOfIterations; i++) {
                     float mFontSize = (lFontSize + rFontSize) / 2;
                     flatRenderer.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(mFontSize));
-                    LayoutResult result = flatRenderer.Layout(layoutContext);
+                    LayoutResult result = flatRenderer.Layout(newLayoutContext);
                     if (result.GetStatus() == LayoutResult.FULL) {
                         lFontSize = mFontSize;
                     }

@@ -115,13 +115,12 @@ namespace iText.Forms.Form.Element {
 
         [NUnit.Framework.Test]
         public virtual void HugeMarginPaddingBorderTest() {
-            // TODO Paddings are not taken into account in interactive form. Shall be fixed in DEVSIX-7423
             String outPdf = DESTINATION_FOLDER + "hugeMarginPaddingBorder.pdf";
             String cmpPdf = SOURCE_FOLDER + "cmp_hugeMarginPaddingBorder.pdf";
             using (Document document = new Document(new PdfDocument(new PdfWriter(outPdf)))) {
-                TextArea formTextArea = new TextArea("flatten text area with height");
+                TextArea formTextArea = new TextArea("interactive text area with paddings");
                 formTextArea.SetInteractive(true);
-                formTextArea.SetValue("flatten\ntext area\nwith height");
+                formTextArea.SetValue("interactive\ntext area\nwith paddings");
                 formTextArea.SetBorder(new SolidBorder(20));
                 formTextArea.SetProperty(Property.PADDING_BOTTOM, UnitValue.CreatePointValue(20));
                 formTextArea.SetProperty(Property.PADDING_TOP, UnitValue.CreatePointValue(20));
@@ -132,9 +131,9 @@ namespace iText.Forms.Form.Element {
                 formTextArea.SetProperty(Property.MARGIN_RIGHT, UnitValue.CreatePointValue(20));
                 formTextArea.SetProperty(Property.MARGIN_LEFT, UnitValue.CreatePointValue(20));
                 document.Add(formTextArea);
-                TextArea flattenTextArea = new TextArea("flatten text area with height");
+                TextArea flattenTextArea = new TextArea("flatten text area with paddings");
                 flattenTextArea.SetInteractive(false);
-                flattenTextArea.SetValue("flatten\ntext area\nwith height");
+                flattenTextArea.SetValue("flatten\ntext area\nwith paddings");
                 flattenTextArea.SetBorder(new SolidBorder(20));
                 flattenTextArea.SetProperty(Property.PADDING_BOTTOM, UnitValue.CreatePointValue(20));
                 flattenTextArea.SetProperty(Property.PADDING_TOP, UnitValue.CreatePointValue(20));
@@ -184,6 +183,15 @@ namespace iText.Forms.Form.Element {
                 textArea.SetFontSize(0);
                 textArea.SetHeight(75);
                 document.Add(textArea);
+                document.Add(new Div().SetBackgroundColor(ColorConstants.RED).SetHeight(695));
+                TextArea flattenTextArea = new TextArea("text area");
+                flattenTextArea.SetInteractive(false);
+                flattenTextArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will \nbe approximated\nbased on the content"
+                    );
+                flattenTextArea.SetProperty(Property.BORDER, new SolidBorder(1f));
+                flattenTextArea.SetFontSize(0);
+                flattenTextArea.SetHeight(75);
+                document.Add(flattenTextArea);
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
         }
@@ -195,12 +203,43 @@ namespace iText.Forms.Form.Element {
             using (Document document = new Document(new PdfDocument(new PdfWriter(outPdf)))) {
                 TextArea textArea = new TextArea("text area");
                 textArea.SetInteractive(true);
-                textArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will not \nbe approximated\nbased on the content"
+                textArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will \nbe approximated\nbased on the content"
                     );
                 textArea.SetProperty(Property.BORDER, new SolidBorder(1f));
                 textArea.SetFontSize(0);
                 textArea.SetHeight(75);
                 document.Add(textArea);
+                TextArea flattenTextArea = new TextArea("text area");
+                flattenTextArea.SetInteractive(false);
+                flattenTextArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will \nbe approximated\nbased on the content"
+                    );
+                flattenTextArea.SetProperty(Property.BORDER, new SolidBorder(1f));
+                flattenTextArea.SetFontSize(0);
+                flattenTextArea.SetHeight(75);
+                document.Add(flattenTextArea);
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TextAreaWith0FontSizeWithoutHeightTest() {
+            String outPdf = DESTINATION_FOLDER + "textAreaWith0FontSizeWithoutHeight.pdf";
+            String cmpPdf = SOURCE_FOLDER + "cmp_textAreaWith0FontSizeWithoutHeight.pdf";
+            using (Document document = new Document(new PdfDocument(new PdfWriter(outPdf)))) {
+                TextArea textArea = new TextArea("text area");
+                textArea.SetInteractive(true);
+                textArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will not " + "\nbe approximated\nbased on the content\nbecause height is not set"
+                    );
+                textArea.SetProperty(Property.BORDER, new SolidBorder(1f));
+                textArea.SetFontSize(0);
+                document.Add(textArea);
+                TextArea flattenTextArea = new TextArea("text area");
+                flattenTextArea.SetInteractive(false);
+                flattenTextArea.SetProperty(FormProperty.FORM_FIELD_VALUE, "Font\n size \nof this\nText Area will not " + 
+                    "\nbe approximated\nbased on the content\nbecause height is not set");
+                flattenTextArea.SetProperty(Property.BORDER, new SolidBorder(1f));
+                flattenTextArea.SetFontSize(0);
+                document.Add(flattenTextArea);
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
         }
@@ -270,6 +309,38 @@ namespace iText.Forms.Form.Element {
                 flattenTextArea.SetProperty(Property.MAX_HEIGHT, new UnitValue(UnitValue.POINT, 28));
                 flattenTextArea.SetProperty(Property.BORDER, new SolidBorder(2f));
                 document.Add(flattenTextArea);
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TextAreaWithCustomLeadingTest() {
+            String outPdf = DESTINATION_FOLDER + "textAreaWithCustomLeading.pdf";
+            String cmpPdf = SOURCE_FOLDER + "cmp_textAreaWithCustomLeading.pdf";
+            using (Document document = new Document(new PdfDocument(new PdfWriter(outPdf)))) {
+                TextArea textArea = new TextArea("text1").SetBorder(new SolidBorder(ColorConstants.PINK, 1));
+                textArea.SetValue("text area with 1 used as the basis for the leading calculation");
+                textArea.SetInteractive(true);
+                textArea.SetProperty(Property.LEADING, new Leading(Leading.MULTIPLIED, 1));
+                textArea.SetProperty(Property.MARGIN_BOTTOM, UnitValue.CreatePointValue(5));
+                document.Add(textArea);
+                TextArea textArea2 = new TextArea("text2").SetBorder(new SolidBorder(ColorConstants.YELLOW, 1));
+                textArea2.SetValue("text area with 3 used as the basis for the leading calculation");
+                textArea2.SetInteractive(true);
+                textArea2.SetProperty(Property.LEADING, new Leading(Leading.MULTIPLIED, 3));
+                textArea2.SetProperty(Property.MARGIN_BOTTOM, UnitValue.CreatePointValue(5));
+                document.Add(textArea2);
+                TextArea flattenedTextArea = new TextArea("text3").SetBorder(new SolidBorder(ColorConstants.PINK, 1));
+                flattenedTextArea.SetValue("text area with 5 used as the basis for the leading calculation");
+                flattenedTextArea.SetInteractive(false);
+                flattenedTextArea.SetProperty(Property.LEADING, new Leading(Leading.MULTIPLIED, 5));
+                flattenedTextArea.SetProperty(Property.MARGIN_BOTTOM, UnitValue.CreatePointValue(5));
+                document.Add(flattenedTextArea);
+                TextArea flattenedTextArea2 = new TextArea("text4").SetBorder(new SolidBorder(ColorConstants.YELLOW, 1));
+                flattenedTextArea2.SetValue("text area with 0.5 used as the basis for the leading calculation");
+                flattenedTextArea2.SetInteractive(false);
+                flattenedTextArea2.SetProperty(Property.LEADING, new Leading(Leading.MULTIPLIED, 0.5f));
+                document.Add(flattenedTextArea2);
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER));
         }

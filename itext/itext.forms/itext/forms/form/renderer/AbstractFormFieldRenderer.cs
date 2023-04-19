@@ -24,14 +24,17 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using iText.Commons;
+using iText.Forms.Fields;
 using iText.Forms.Form;
 using iText.Forms.Form.Element;
 using iText.Forms.Logs;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Annot;
 using iText.Kernel.Pdf.Tagging;
 using iText.Kernel.Pdf.Tagutils;
 using iText.Layout;
+using iText.Layout.Borders;
 using iText.Layout.Layout;
 using iText.Layout.Minmaxwidth;
 using iText.Layout.Properties;
@@ -61,7 +64,6 @@ namespace iText.Forms.Form.Renderer {
         /// <summary>Checks if form fields need to be flattened.</summary>
         /// <returns>true, if fields need to be flattened</returns>
         public virtual bool IsFlatten() {
-            bool? flatten;
             if (parent != null) {
                 // First check parent. This is a workaround for the case when some fields are inside other fields
                 // either directly or via other elements (input text field inside div inside input button field). In this
@@ -74,7 +76,7 @@ namespace iText.Forms.Form.Renderer {
                     nextParent = nextParent.GetParent();
                 }
             }
-            flatten = GetPropertyAsBoolean(FormProperty.FORM_FIELD_FLATTEN);
+            bool? flatten = GetPropertyAsBoolean(FormProperty.FORM_FIELD_FLATTEN);
             return flatten == null ? (bool)modelElement.GetDefaultProperty<bool>(FormProperty.FORM_FIELD_FLATTEN) : (bool
                 )flatten;
         }
@@ -95,8 +97,12 @@ namespace iText.Forms.Form.Renderer {
             float parentWidth = layoutContext.GetArea().GetBBox().GetWidth();
             float parentHeight = layoutContext.GetArea().GetBBox().GetHeight();
             IRenderer renderer = CreateFlatRenderer();
-            renderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
-            renderer.SetProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+            if (renderer.GetOwnProperty<OverflowPropertyValue?>(Property.OVERFLOW_X) == null) {
+                renderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
+            }
+            if (renderer.GetOwnProperty<OverflowPropertyValue?>(Property.OVERFLOW_Y) == null) {
+                renderer.SetProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
+            }
             AddChild(renderer);
             Rectangle bBox = layoutContext.GetArea().GetBBox().Clone().MoveDown(INF - parentHeight).SetHeight(INF);
             layoutContext.GetArea().SetBBox(bBox);
@@ -236,6 +242,36 @@ namespace iText.Forms.Form.Renderer {
             }
         }
 
+        /// <summary>Deletes all margin properties.</summary>
+        /// <remarks>
+        /// Deletes all margin properties. Used in
+        /// <c>applyAcroField</c>
+        /// to not apply margins twice as we already use area
+        /// with margins applied (margins shouldn't be an interactive part of the field, i.e. included into its occupied
+        /// area).
+        /// </remarks>
+        internal virtual void DeleteMargins() {
+            modelElement.DeleteOwnProperty(Property.MARGIN_RIGHT);
+            modelElement.DeleteOwnProperty(Property.MARGIN_LEFT);
+            modelElement.DeleteOwnProperty(Property.MARGIN_TOP);
+            modelElement.DeleteOwnProperty(Property.MARGIN_BOTTOM);
+        }
+
+        /// <summary>Applies the border property.</summary>
+        /// <param name="annotation">the annotation to set border characteristics to.</param>
+        internal virtual void ApplyBorderProperty(PdfFormAnnotation annotation) {
+            Border border = this.GetProperty<Border>(Property.BORDER);
+            if (border == null) {
+                // For now, we set left border to an annotation, but appropriate borders for an element will be drawn.
+                border = this.GetProperty<Border>(Property.BORDER_LEFT);
+            }
+            if (border != null) {
+                annotation.SetBorderStyle(TransformBorderTypeToBorderStyleDictionary(border.GetBorderType()));
+                annotation.SetBorderColor(border.GetColor());
+                annotation.SetBorderWidth(border.GetWidth());
+            }
+        }
+
         private void ProcessLangAttribute() {
             IPropertyContainer propertyContainer = flatRenderer.GetModelElement();
             String lang = GetLang();
@@ -245,6 +281,42 @@ namespace iText.Forms.Form.Renderer {
                     properties.SetLanguage(lang);
                 }
             }
+        }
+
+        private static PdfDictionary TransformBorderTypeToBorderStyleDictionary(int borderType) {
+            PdfDictionary bs = new PdfDictionary();
+            PdfName style;
+            switch (borderType) {
+                case 1001: {
+                    style = PdfAnnotation.STYLE_UNDERLINE;
+                    break;
+                }
+
+                case 1002: {
+                    style = PdfAnnotation.STYLE_BEVELED;
+                    break;
+                }
+
+                case 1003: {
+                    style = PdfAnnotation.STYLE_INSET;
+                    break;
+                }
+
+                case Border.DASHED_FIXED:
+                case Border.DASHED:
+                case Border.DOTTED: {
+                    // Default dash array will be used.
+                    style = PdfAnnotation.STYLE_DASHED;
+                    break;
+                }
+
+                default: {
+                    style = PdfAnnotation.STYLE_SOLID;
+                    break;
+                }
+            }
+            bs.Put(PdfName.S, style);
+            return bs;
         }
     }
 }

@@ -27,7 +27,6 @@ using iText.Forms.Form.Element;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf.Annot;
-using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
 using iText.Layout.Renderer;
@@ -57,7 +56,7 @@ namespace iText.Forms.Form.Renderer {
         /// <returns>the renderer</returns>
         internal virtual IRenderer CreateParagraphRenderer(String defaultValue) {
             if (String.IsNullOrEmpty(defaultValue.Trim())) {
-                defaultValue = "\u00A0";
+                defaultValue = "\u00a0";
             }
             Paragraph paragraph = new Paragraph(defaultValue).SetMargin(0);
             return paragraph.CreateRendererSubTree();
@@ -72,15 +71,7 @@ namespace iText.Forms.Form.Renderer {
                 inputField.SetColor(color.GetColor());
             }
             inputField.SetJustification(this.GetProperty<TextAlignment?>(Property.TEXT_ALIGNMENT));
-            Border border = this.GetProperty<Border>(Property.BORDER);
-            if (border == null) {
-                // TODO For now we will use left border everywhere, shall be fixed in DEVSIX-7423.
-                border = this.GetProperty<Border>(Property.BORDER_LEFT);
-            }
-            if (border != null) {
-                inputField.GetFirstFormAnnotation().SetBorderColor(border.GetColor());
-                inputField.GetFirstFormAnnotation().SetBorderWidth(border.GetWidth());
-            }
+            ApplyBorderProperty(inputField.GetFirstFormAnnotation());
             Background background = this.GetProperty<Background>(Property.BACKGROUND);
             if (background != null) {
                 inputField.GetFirstFormAnnotation().SetBackgroundColor(background.GetColor());
@@ -144,8 +135,10 @@ namespace iText.Forms.Form.Renderer {
         /// <param name="height">the desired height of content</param>
         internal virtual void AdjustNumberOfContentLines(IList<LineRenderer> lines, Rectangle bBox, float height) {
             float averageLineHeight = bBox.GetHeight() / lines.Count;
-            int visibleLinesNumber = (int)Math.Ceiling(height / averageLineHeight);
-            AdjustNumberOfContentLines(lines, bBox, visibleLinesNumber, height);
+            if (averageLineHeight > EPS) {
+                int visibleLinesNumber = (int)Math.Ceiling(height / averageLineHeight);
+                AdjustNumberOfContentLines(lines, bBox, visibleLinesNumber, height);
+            }
         }
 
         private static void AdjustNumberOfContentLines(IList<LineRenderer> lines, Rectangle bBox, int linesNumber, 
