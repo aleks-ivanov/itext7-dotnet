@@ -24,40 +24,31 @@ using System.Collections.Generic;
 using iText.Layout.Properties;
 
 namespace iText.Layout.Renderer {
-    /// <summary>This class is responsible for left to right placement of flex items.</summary>
-    internal class LtrFlexItemMainDirector : IFlexItemMainDirector {
-        internal LtrFlexItemMainDirector() {
+    internal class TopToBottomFlexItemMainDirector : IFlexItemMainDirector {
+        internal TopToBottomFlexItemMainDirector() {
         }
 
-        /// <summary><inheritDoc/></summary>
         public virtual IList<IRenderer> ApplyDirection(IList<IList<FlexItemInfo>> lines) {
-            IList<IRenderer> renderers = new List<IRenderer>();
-            foreach (IList<FlexItemInfo> line in lines) {
-                foreach (FlexItemInfo itemInfo in line) {
-                    renderers.Add(itemInfo.GetRenderer());
-                }
-            }
-            return renderers;
+            // TODO DEVSIX-7595 Shall be implemented in the scope of this ticket
+            return null;
         }
 
         public virtual void ApplyDirectionForLine<T>(IList<T> renderers) {
         }
 
-        // Do nothing
-        /// <summary><inheritDoc/></summary>
+        // TODO DEVSIX-7595 Shall be implemented in the scope of this ticket
         public virtual void ApplyJustifyContent(IList<FlexUtil.FlexItemCalculationInfo> line, JustifyContent justifyContent
             , float freeSpace) {
             switch (justifyContent) {
-                case JustifyContent.RIGHT:
                 case JustifyContent.END:
                 case JustifyContent.SELF_END:
                 case JustifyContent.FLEX_END: {
-                    line[0].xShift = freeSpace;
+                    line[0].yShift = freeSpace;
                     break;
                 }
 
                 case JustifyContent.CENTER: {
-                    line[0].xShift = freeSpace / 2;
+                    line[0].yShift = freeSpace / 2;
                     break;
                 }
 
@@ -66,6 +57,7 @@ namespace iText.Layout.Renderer {
                 case JustifyContent.STRETCH:
                 case JustifyContent.START:
                 case JustifyContent.LEFT:
+                case JustifyContent.RIGHT:
                 case JustifyContent.SELF_START:
                 default: {
                     break;
