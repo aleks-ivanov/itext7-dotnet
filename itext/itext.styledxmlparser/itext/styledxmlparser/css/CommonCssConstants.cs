@@ -196,6 +196,9 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant COLUMN_GAP.</summary>
         public const String COLUMN_GAP = "column-gap";
 
+        /// <summary>The Constant COLUMNS</summary>
+        public const String COLUMNS = "columns";
+
         /// <summary>The Constant DARKEN.</summary>
         public const String DARKEN = "darken";
 
@@ -551,7 +554,11 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant COLUMN_REVERSE.</summary>
         public const String COLUMN_REVERSE = "column-reverse";
 
+        /// <summary>The Constant COLUMN_COUNT.</summary>
         public const String COLUMN_COUNT = "column-count";
+
+        /// <summary>The Constant COLUMN_WIDTH.</summary>
+        public const String COLUMN_WIDTH = "column-width";
 
         /// <summary>The Constant CONTAIN.</summary>
         public const String CONTAIN = "contain";
