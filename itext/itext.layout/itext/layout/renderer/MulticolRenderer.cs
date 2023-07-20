@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using iText.Kernel.Geom;
+using iText.Kernel.Pdf.Canvas;
 using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Exceptions;
@@ -48,6 +49,8 @@ namespace iText.Layout.Renderer {
 
         private float columnGap;
 
+        private bool isFirstLayout = true;
+
         /// <summary>Creates a DivRenderer from its corresponding layout object.</summary>
         /// <param name="modelElement">
         /// the
@@ -72,6 +75,7 @@ namespace iText.Layout.Renderer {
             Rectangle actualBBox = layoutContext.GetArea().GetBBox().Clone();
             float originalWidth = actualBBox.GetWidth();
             ApplyWidth(actualBBox, originalWidth);
+            ContinuousContainer.SetupContinuousContainerIfNeeded(this);
             ApplyPaddings(actualBBox, false);
             ApplyBorderBox(actualBBox, false);
             ApplyMargins(actualBBox, false);
@@ -90,6 +94,11 @@ namespace iText.Layout.Renderer {
             }
             else {
                 if (layoutResult.GetOverflowRenderer() == null) {
+                    ContinuousContainer continuousContainer = this.GetProperty<ContinuousContainer>(Property.TREAT_AS_CONTINUOUS_CONTAINER_RESULT
+                        );
+                    if (continuousContainer != null) {
+                        continuousContainer.ReApplyProperties(this);
+                    }
                     this.childRenderers.Clear();
                     AddAllChildRenderers(layoutResult.GetSplitRenderers());
                     this.occupiedArea = CalculateContainerOccupiedArea(layoutContext, true);
@@ -107,6 +116,41 @@ namespace iText.Layout.Renderer {
         public override IRenderer GetNextRenderer() {
             LogWarningIfGetNextRendererNotOverridden(typeof(iText.Layout.Renderer.MulticolRenderer), this.GetType());
             return new iText.Layout.Renderer.MulticolRenderer((MulticolContainer)modelElement);
+        }
+
+        /// <summary>
+        /// Performs the drawing operation for the border of this renderer, if
+        /// defined by any of the
+        /// <see cref="iText.Layout.Properties.Property.BORDER"/>
+        /// values in either the layout
+        /// element or this
+        /// <see cref="IRenderer"/>
+        /// itself.
+        /// </summary>
+        /// <param name="drawContext">the context (canvas, document, etc) of this drawing operation.</param>
+        public override void DrawBorder(DrawContext drawContext) {
+            base.DrawBorder(drawContext);
+            Rectangle borderRect = ApplyMargins(occupiedArea.GetBBox().Clone(), GetMargins(), false);
+            bool isAreaClipped = ClipBorderArea(drawContext, borderRect);
+            Border gap = this.GetProperty<Border>(Property.COLUMN_GAP_BORDER);
+            if (GetChildRenderers().IsEmpty() || gap == null || gap.GetWidth() <= ZERO_DELTA) {
+                return;
+            }
+            DrawTaggedWhenNeeded(drawContext, (canvas) => {
+                for (int i = 0; i < GetChildRenderers().Count - 1; ++i) {
+                    Rectangle columnBBox = GetChildRenderers()[i].GetOccupiedArea().GetBBox();
+                    Rectangle columnSpaceBBox = new Rectangle(columnBBox.GetX() + columnBBox.GetWidth(), columnBBox.GetY(), columnGap
+                        , columnBBox.GetHeight());
+                    float x1 = columnSpaceBBox.GetX() + columnSpaceBBox.GetWidth() / 2 + gap.GetWidth() / 2;
+                    float y1 = columnSpaceBBox.GetY();
+                    float y2 = columnSpaceBBox.GetY() + columnSpaceBBox.GetHeight();
+                    gap.Draw(canvas, x1, y1, x1, y2, Border.Side.RIGHT, 0, 0);
+                }
+                if (isAreaClipped) {
+                    drawContext.GetCanvas().RestoreState();
+                }
+            }
+            );
         }
 
         protected internal virtual MulticolRenderer.MulticolLayoutResult LayoutInColumns(LayoutContext layoutContext
@@ -149,7 +193,9 @@ namespace iText.Layout.Renderer {
         /// instance
         /// </returns>
         protected internal virtual AbstractRenderer CreateOverflowRenderer(IRenderer overflowedContentRenderer) {
-            AbstractRenderer overflowRenderer = (AbstractRenderer)GetNextRenderer();
+            iText.Layout.Renderer.MulticolRenderer overflowRenderer = (iText.Layout.Renderer.MulticolRenderer)GetNextRenderer
+                ();
+            overflowRenderer.isFirstLayout = false;
             overflowRenderer.parent = parent;
             overflowRenderer.modelElement = modelElement;
             overflowRenderer.AddAllProperties(GetOwnProperties());
@@ -167,6 +213,17 @@ namespace iText.Layout.Renderer {
             renderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
             foreach (IRenderer child in renderer.GetChildRenderers()) {
                 SetOverflowForAllChildren(child);
+            }
+        }
+
+        private void DrawTaggedWhenNeeded(DrawContext drawContext, Action<PdfCanvas> action) {
+            PdfCanvas canvas = drawContext.GetCanvas();
+            if (drawContext.IsTaggingEnabled()) {
+                canvas.OpenTag(new CanvasArtifact());
+            }
+            action(canvas);
+            if (drawContext.IsTaggingEnabled()) {
+                canvas.CloseTag();
             }
         }
 
@@ -198,9 +255,10 @@ namespace iText.Layout.Renderer {
             return height;
         }
 
-        private void RecalculateHeightWidthAfterLayouting(Rectangle parentBBox) {
+        private void RecalculateHeightWidthAfterLayouting(Rectangle parentBBox, bool isFull) {
             float? height = DetermineHeight(parentBBox);
             if (height != null) {
+                height = UpdateOccupiedHeight((float)height, isFull);
                 float heightDelta = parentBBox.GetHeight() - (float)height;
                 parentBBox.MoveUp(heightDelta);
                 parentBBox.SetHeight((float)height);
@@ -235,13 +293,6 @@ namespace iText.Layout.Renderer {
                 float workingHeight = approximateHeight;
                 if (heightFromProperties != null) {
                     workingHeight = Math.Min((float)heightFromProperties, (float)approximateHeight);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.PADDING_TOP);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.PADDING_BOTTOM);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.BORDER_TOP);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.BORDER_BOTTOM);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.BORDER) * 2;
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.MARGIN_TOP);
-                    workingHeight -= SafelyRetrieveFloatProperty(Property.MARGIN_BOTTOM);
                 }
                 result = LayoutColumnsAndReturnOverflowRenderer(prelayoutContext, actualBbox, workingHeight);
                 if (result.GetOverflowRenderer() == null || isLastLayout) {
@@ -259,27 +310,39 @@ namespace iText.Layout.Renderer {
             return result;
         }
 
-        //algorithm is based on pseudo algorithm from https://www.w3.org/TR/css-multicol-1/#propdef-column-span
+        // Algorithm is based on pseudo algorithm from https://www.w3.org/TR/css-multicol-1/#propdef-column-span
         private void CalculateColumnCountAndWidth(float initialWidth) {
-            int? columnCount = (int?)this.GetProperty<int?>(Property.COLUMN_COUNT);
-            float? columnWidth = (float?)this.GetProperty<float?>(Property.COLUMN_WIDTH);
-            float? columnGap = (float?)this.GetProperty<float?>(Property.COLUMN_GAP);
-            this.columnGap = columnGap != null ? columnGap.Value : 0;
-            if ((columnCount == null && columnWidth == null) || (columnCount != null && columnCount.Value < 0) || (columnWidth
-                 != null && columnWidth.Value < 0)) {
+            int? columnCountTemp = (int?)this.GetProperty<int?>(Property.COLUMN_COUNT);
+            float? columnWidthTemp = (float?)this.GetProperty<float?>(Property.COLUMN_WIDTH);
+            float? columnGapTemp = (float?)this.GetProperty<float?>(Property.COLUMN_GAP);
+            this.columnGap = columnGapTemp == null ? 0f : columnGapTemp.Value;
+            if ((columnCountTemp == null && columnWidthTemp == null) || (columnCountTemp != null && columnCountTemp.Value
+                 < 0) || (columnWidthTemp != null && columnWidthTemp.Value < 0) || (this.columnGap < 0)) {
                 throw new InvalidOperationException(LayoutExceptionMessageConstant.INVALID_COLUMN_PROPERTIES);
             }
-            if (columnWidth == null) {
-                this.columnCount = columnCount.Value;
+            if (columnWidthTemp == null) {
+                this.columnCount = columnCountTemp.Value;
             }
             else {
-                if (columnCount == null) {
-                    this.columnCount = Math.Max(1, (int)Math.Floor((double)((initialWidth + this.columnGap) / (columnWidth.Value
-                         + this.columnGap))));
+                if (columnCountTemp == null) {
+                    float columnWidthPlusGap = columnWidthTemp.Value + this.columnGap;
+                    if (columnWidthPlusGap > ZERO_DELTA) {
+                        this.columnCount = Math.Max(1, (int)Math.Floor((double)((initialWidth + this.columnGap) / columnWidthPlusGap
+                            )));
+                    }
+                    else {
+                        this.columnCount = 1;
+                    }
                 }
                 else {
-                    this.columnCount = Math.Min((int)columnCount, Math.Max(1, (int)Math.Floor((double)((initialWidth + this.columnGap
-                        ) / (columnWidth.Value + this.columnGap)))));
+                    float columnWidthPlusGap = columnWidthTemp.Value + this.columnGap;
+                    if (columnWidthPlusGap > ZERO_DELTA) {
+                        this.columnCount = Math.Min((int)columnCountTemp, Math.Max(1, (int)Math.Floor((double)((initialWidth + this
+                            .columnGap) / columnWidthPlusGap))));
+                    }
+                    else {
+                        this.columnCount = 1;
+                    }
                 }
             }
             this.columnWidth = Math.Max(0.0f, ((initialWidth + this.columnGap) / this.columnCount - this.columnGap));
@@ -295,22 +358,36 @@ namespace iText.Layout.Renderer {
 
         private LayoutArea CalculateContainerOccupiedArea(LayoutContext layoutContext, bool isFull) {
             LayoutArea area = layoutContext.GetArea().Clone();
-            float totalHeight = approximateHeight;
-            if (isFull) {
-                totalHeight += SafelyRetrieveFloatProperty(Property.PADDING_BOTTOM);
-                totalHeight += SafelyRetrieveFloatProperty(Property.MARGIN_BOTTOM);
-                totalHeight += SafelyRetrieveFloatProperty(Property.BORDER_BOTTOM);
-            }
-            totalHeight += SafelyRetrieveFloatProperty(Property.PADDING_TOP);
-            totalHeight += SafelyRetrieveFloatProperty(Property.MARGIN_TOP);
-            totalHeight += SafelyRetrieveFloatProperty(Property.BORDER_TOP);
-            float TOP_AND_BOTTOM = isFull ? 2 : 1;
-            totalHeight += SafelyRetrieveFloatProperty(Property.BORDER) * TOP_AND_BOTTOM;
+            float totalHeight = UpdateOccupiedHeight(approximateHeight, isFull);
             area.GetBBox().SetHeight(totalHeight);
             Rectangle initialBBox = layoutContext.GetArea().GetBBox();
             area.GetBBox().SetY(initialBBox.GetY() + initialBBox.GetHeight() - area.GetBBox().GetHeight());
-            RecalculateHeightWidthAfterLayouting(area.GetBBox());
+            RecalculateHeightWidthAfterLayouting(area.GetBBox(), isFull);
             return area;
+        }
+
+        private float UpdateOccupiedHeight(float initialHeight, bool isFull) {
+            if (isFull) {
+                initialHeight += SafelyRetrieveFloatProperty(Property.PADDING_BOTTOM);
+                initialHeight += SafelyRetrieveFloatProperty(Property.MARGIN_BOTTOM);
+                if (!this.HasOwnProperty(Property.BORDER) || this.GetProperty<Border>(Property.BORDER) == null) {
+                    initialHeight += SafelyRetrieveFloatProperty(Property.BORDER_BOTTOM);
+                }
+            }
+            initialHeight += SafelyRetrieveFloatProperty(Property.PADDING_TOP);
+            initialHeight += SafelyRetrieveFloatProperty(Property.MARGIN_TOP);
+            if (!this.HasOwnProperty(Property.BORDER) || this.GetProperty<Border>(Property.BORDER) == null) {
+                initialHeight += SafelyRetrieveFloatProperty(Property.BORDER_TOP);
+            }
+            // isFirstLayout is necessary to handle the case when multicol container layouted in more
+            // than 2 pages, and on the last page layout result is full, but there is no bottom border
+            float TOP_AND_BOTTOM = isFull && isFirstLayout ? 2 : 1;
+            // Multicol container layouted in more than 3 pages, and there is a page where there are no bottom and top borders
+            if (!isFull && !isFirstLayout) {
+                TOP_AND_BOTTOM = 0;
+            }
+            initialHeight += SafelyRetrieveFloatProperty(Property.BORDER) * TOP_AND_BOTTOM;
+            return initialHeight;
         }
 
         private BlockRenderer GetElementsRenderer() {
