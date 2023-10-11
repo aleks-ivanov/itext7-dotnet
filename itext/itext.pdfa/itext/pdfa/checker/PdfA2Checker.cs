@@ -187,18 +187,25 @@ namespace iText.Pdfa.Checker {
                 if (colorSpace is PdfSpecialCs.DeviceN) {
                     PdfSpecialCs.DeviceN deviceN = (PdfSpecialCs.DeviceN)colorSpace;
                     CheckNumberOfDeviceNComponents(deviceN);
-                    //TODO DEVSIX-4203 Fix IndexOutOfBounds exception being thrown for DeviceN (not NChannel) colorspace without
-                    // attributes. According to the spec PdfAConformanceException should be thrown.
+                    //According to spec DeviceN is an array of size 4 or 5 depending on whether it contains attributes or not (see ISO 32000-2:2020 8.6.6.5)
+                    //for the pdf/a-2 it should look as follows: [/DeviceN names alternateSpace tintTransform attributes], since colourants dictionary is
+                    // located in attributes and according to pdf/a-2 spec it should always be present.
+                    if (((PdfArray)deviceN.GetPdfObject()).Size() != 5) {
+                        throw new PdfAConformanceException(PdfaExceptionMessageConstant.COLORANTS_DICTIONARY_SHALL_NOT_BE_EMPTY_IN_DEVICE_N_COLORSPACE
+                            );
+                    }
                     PdfDictionary attributes = ((PdfArray)deviceN.GetPdfObject()).GetAsDictionary(4);
                     PdfDictionary colorants = attributes.GetAsDictionary(PdfName.Colorants);
-                    //TODO DEVSIX-4203 Colorants dictionary is mandatory in PDF/A-2 spec. Need to throw an appropriate exception
-                    // if it is not present.
-                    if (colorants != null) {
+                    if (colorants != null && !colorants.IsEmpty()) {
                         foreach (KeyValuePair<PdfName, PdfObject> entry in colorants.EntrySet()) {
                             PdfArray separation = (PdfArray)entry.Value;
                             CheckSeparationInsideDeviceN(separation, ((PdfArray)deviceN.GetPdfObject()).Get(2), ((PdfArray)deviceN.GetPdfObject
                                 ()).Get(3));
                         }
+                    }
+                    else {
+                        throw new PdfAConformanceException(PdfaExceptionMessageConstant.COLORANTS_DICTIONARY_SHALL_NOT_BE_EMPTY_IN_DEVICE_N_COLORSPACE
+                            );
                     }
                     if (checkAlternate) {
                         CheckColorSpace(deviceN.GetBaseCs(), pdfObject, currentColorSpaces, false, fill);
@@ -553,31 +560,7 @@ namespace iText.Pdfa.Checker {
                 throw new PdfAConformanceException(PdfaExceptionMessageConstant.A_CATALOG_DICTIONARY_SHALL_NOT_CONTAIN_ALTERNATEPRESENTATIONS_NAMES_ENTRY
                     );
             }
-            PdfDictionary oCProperties = catalogDict.GetAsDictionary(PdfName.OCProperties);
-            if (oCProperties != null) {
-                IList<PdfDictionary> configList = new List<PdfDictionary>();
-                PdfDictionary d = oCProperties.GetAsDictionary(PdfName.D);
-                if (d != null) {
-                    configList.Add(d);
-                }
-                PdfArray configs = oCProperties.GetAsArray(PdfName.Configs);
-                if (configs != null) {
-                    foreach (PdfObject config in configs) {
-                        configList.Add((PdfDictionary)config);
-                    }
-                }
-                HashSet<PdfObject> ocgs = new HashSet<PdfObject>();
-                PdfArray ocgsArray = oCProperties.GetAsArray(PdfName.OCGs);
-                if (ocgsArray != null) {
-                    foreach (PdfObject ocg in ocgsArray) {
-                        ocgs.Add(ocg);
-                    }
-                }
-                HashSet<String> names = new HashSet<String>();
-                foreach (PdfDictionary config in configList) {
-                    CheckCatalogConfig(config, ocgs, names);
-                }
-            }
+            CheckOCProperties(catalogDict.GetAsDictionary(PdfName.OCProperties));
         }
 
         protected internal override void CheckPageSize(PdfDictionary page) {
@@ -765,6 +748,33 @@ namespace iText.Pdfa.Checker {
             }
         }
 
+        private void CheckOCProperties(PdfDictionary oCProperties) {
+            if (oCProperties != null) {
+                IList<PdfDictionary> configList = new List<PdfDictionary>();
+                PdfDictionary d = oCProperties.GetAsDictionary(PdfName.D);
+                if (d != null) {
+                    configList.Add(d);
+                }
+                PdfArray configs = oCProperties.GetAsArray(PdfName.Configs);
+                if (configs != null) {
+                    foreach (PdfObject config in configs) {
+                        configList.Add((PdfDictionary)config);
+                    }
+                }
+                HashSet<PdfObject> ocgs = new HashSet<PdfObject>();
+                PdfArray ocgsArray = oCProperties.GetAsArray(PdfName.OCGs);
+                if (ocgsArray != null) {
+                    foreach (PdfObject ocg in ocgsArray) {
+                        ocgs.Add(ocg);
+                    }
+                }
+                HashSet<String> names = new HashSet<String>();
+                foreach (PdfDictionary config in configList) {
+                    CheckCatalogConfig(config, ocgs, names);
+                }
+            }
+        }
+
         protected internal override void CheckImage(PdfStream image, PdfDictionary currentColorSpaces) {
             PdfColorSpace colorSpace = null;
             if (IsAlreadyChecked(image)) {
@@ -891,6 +901,17 @@ namespace iText.Pdfa.Checker {
             }
         }
 
+        /// <summary>
+        /// For pdf/a-2+ checkers use the
+        /// <c>checkFormXObject(PdfStream form, PdfStream contentStream)</c>
+        /// method
+        /// </summary>
+        /// <param name="form">
+        /// the
+        /// <see cref="iText.Kernel.Pdf.PdfStream"/>
+        /// to check
+        /// </param>
+        [Obsolete]
         protected internal override void CheckFormXObject(PdfStream form) {
             CheckFormXObject(form, null);
         }
@@ -934,6 +955,24 @@ namespace iText.Pdfa.Checker {
             CheckContentStream(form);
         }
 
+        /// <summary>
+        /// Verify the conformity of the transparency group XObject with appropriate
+        /// specification.
+        /// </summary>
+        /// <remarks>
+        /// Verify the conformity of the transparency group XObject with appropriate
+        /// specification. Throws PdfAConformanceException if any discrepancy was found
+        /// </remarks>
+        /// <param name="form">
+        /// the
+        /// <see cref="iText.Kernel.Pdf.PdfStream"/>
+        /// transparency group XObject.
+        /// </param>
+        /// <param name="contentStream">
+        /// the
+        /// <see cref="iText.Kernel.Pdf.PdfStream"/>
+        /// current content stream
+        /// </param>
         protected internal virtual void CheckTransparencyGroup(PdfStream form, PdfStream contentStream) {
             if (IsContainsTransparencyGroup(form)) {
                 if (contentStream != null) {
