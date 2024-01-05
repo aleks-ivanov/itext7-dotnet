@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2023 Apryse Group NV
+    Copyright (c) 1998-2024 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -22,6 +22,7 @@
  */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using iText.Bouncycastleconnector.Logs;
 using iText.Commons.Bouncycastle;
@@ -206,6 +207,10 @@ namespace iText.Bouncycastleconnector {
         }
 
         public IDerEnumerated CreateASN1Enumerated(int i) {
+            throw new NotSupportedException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+        }
+        
+        public IDerEnumerated CreateASN1Enumerated(IAsn1Encodable i) {
             throw new NotSupportedException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
         }
 
@@ -551,6 +556,10 @@ namespace iText.Bouncycastleconnector {
         }
 
         public IX509Crl CreateX509Crl(Stream input) {
+            throw new NotSupportedException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
+        }
+
+        public ICollection<IX509Crl> CreateX509Crls(Stream input) {
             throw new NotSupportedException(BouncyCastleLogMessageConstant.BOUNCY_CASTLE_DEPENDENCY_MUST_PRESENT);
         }
 

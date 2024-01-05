@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2023 Apryse Group NV
+Copyright (c) 1998-2024 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -74,5 +74,7 @@ namespace iText.Signatures {
         public const String ID_MGF1 = "1.2.840.113549.1.1.8";
 
         public const String ID_AA_TIME_STAMP_TOKEN = "1.2.840.113549.1.9.16.2.14";
+
+        public const String ID_RI_OCSP_RESPONSE = "1.3.6.1.5.5.7.16.2";
     }
 }

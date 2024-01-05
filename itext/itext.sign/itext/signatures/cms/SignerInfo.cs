@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2023 Apryse Group NV
+Copyright (c) 1998-2024 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -49,9 +49,9 @@ namespace iText.Signatures.Cms {
 
         private AlgorithmIdentifier signingAlgorithm;
 
-        private readonly ICollection<Attribute> signedAttributes = new List<Attribute>();
+        private readonly ICollection<CmsAttribute> signedAttributes = new List<CmsAttribute>();
 
-        private readonly ICollection<Attribute> unSignedAttributes;
+        private readonly ICollection<CmsAttribute> unSignedAttributes;
 
         private byte[] serializedSignedAttributes;
 
@@ -67,10 +67,10 @@ namespace iText.Signatures.Cms {
 
         /// <summary>Creates an empty SignerInfo structure.</summary>
         public SignerInfo() {
-            Attribute contentType = new Attribute(SecurityIDs.ID_CONTENT_TYPE, BC_FACTORY.CreateDERSet(BC_FACTORY.CreateASN1ObjectIdentifier
-                (SecurityIDs.ID_PKCS7_DATA)));
+            CmsAttribute contentType = new CmsAttribute(SecurityIDs.ID_CONTENT_TYPE, BC_FACTORY.CreateDERSet(BC_FACTORY
+                .CreateASN1ObjectIdentifier(SecurityIDs.ID_PKCS7_DATA)));
             signedAttributes.Add(contentType);
-            unSignedAttributes = new List<Attribute>();
+            unSignedAttributes = new List<CmsAttribute>();
         }
 
         /// <summary>Creates a SignerInfo structure from an ASN1 structure.</summary>
@@ -106,7 +106,7 @@ namespace iText.Signatures.Cms {
                     unSignedAttributes = ProcessAttributeSet(BC_FACTORY.CreateASN1Set(taggedUnsingedAttributes, false));
                 }
                 else {
-                    unSignedAttributes = new List<Attribute>();
+                    unSignedAttributes = new List<CmsAttribute>();
                 }
             }
             catch (NullReferenceException npe) {
@@ -132,7 +132,7 @@ namespace iText.Signatures.Cms {
             if (signedAttributesReadOnly) {
                 throw new InvalidOperationException(SignExceptionMessageConstant.CMS_SIGNERINFO_READONLY);
             }
-            Attribute digestAttribute = new Attribute(SecurityIDs.ID_MESSAGE_DIGEST, BC_FACTORY.CreateDERSet(BC_FACTORY
+            CmsAttribute digestAttribute = new CmsAttribute(SecurityIDs.ID_MESSAGE_DIGEST, BC_FACTORY.CreateDERSet(BC_FACTORY
                 .CreateDEROctetString(digest)));
             signedAttributes.Add(digestAttribute);
         }
@@ -141,13 +141,6 @@ namespace iText.Signatures.Cms {
         /// <param name="certificate">the certificate that is used to sign</param>
         public virtual void SetSigningCertificate(IX509Certificate certificate) {
             this.signerCertificate = certificate;
-            if (certificate.GetSigAlgParams() != null) {
-                this.signingAlgorithm = new AlgorithmIdentifier(certificate.GetSigAlgOID(), BC_FACTORY.CreateASN1Primitive
-                    (certificate.GetSigAlgParams()));
-            }
-            else {
-                this.signingAlgorithm = new AlgorithmIdentifier(certificate.GetSigAlgOID());
-            }
         }
 
         /// <summary>Gets the certificate that is used to sign.</summary>
@@ -185,7 +178,7 @@ namespace iText.Signatures.Cms {
             SetRevocationInfo();
         }
 
-        /// <summary>Adds the signer certificate to the signed attributes as a issuerAndSerialNumber structure.</summary>
+        /// <summary>Adds the signer certificate to the signed attributes as a SigningCertificateV2 structure.</summary>
         /// <param name="cert">the certificate to add</param>
         /// <param name="digestAlgorithmOid">the digest algorithm oid that will be used</param>
         public virtual void AddSignerCertificateToSignedAttributes(IX509Certificate cert, String digestAlgorithmOid
@@ -203,11 +196,13 @@ namespace iText.Signatures.Cms {
             }
             byte[] dig = md.Digest(cert.GetEncoded());
             certContents.Add(BC_FACTORY.CreateDEROctetString(dig));
-            IAsn1Sequence issuer = BC_FACTORY.CreateASN1Sequence(CertificateInfo.GetIssuer(cert.GetTbsCertificate()));
-            IDerTaggedObject issuerTagged = BC_FACTORY.CreateDERTaggedObject(true, 4, issuer);
+            IAsn1Sequence issuerName = BC_FACTORY.CreateASN1Sequence(CertificateInfo.GetIssuer(cert.GetTbsCertificate(
+                )));
+            IDerTaggedObject issuerTagged = BC_FACTORY.CreateDERTaggedObject(true, 4, issuerName);
+            IDerSequence issuer = BC_FACTORY.CreateDERSequence(issuerTagged);
             IDerInteger serial = BC_FACTORY.CreateASN1Integer(cert.GetSerialNumber());
             IAsn1EncodableVector v = BC_FACTORY.CreateASN1EncodableVector();
-            v.Add(issuerTagged);
+            v.Add(issuer);
             v.Add(serial);
             IDerSequence issuerS = BC_FACTORY.CreateDERSequence(v);
             certContents.Add(issuerS);
@@ -215,7 +210,8 @@ namespace iText.Signatures.Cms {
             IDerSequence certContentsSeqSeq = BC_FACTORY.CreateDERSequence(certContentsSeq);
             IDerSequence certContentsSeqSeqSeq = BC_FACTORY.CreateDERSequence(certContentsSeqSeq);
             IDerSet certContentsSeqSeqSeqSet = BC_FACTORY.CreateDERSet(certContentsSeqSeqSeq);
-            Attribute attribute = new Attribute(SecurityIDs.ID_AA_SIGNING_CERTIFICATE_V2, certContentsSeqSeqSeqSet);
+            CmsAttribute attribute = new CmsAttribute(SecurityIDs.ID_AA_SIGNING_CERTIFICATE_V2, certContentsSeqSeqSeqSet
+                );
             signedAttributes.Add(attribute);
         }
 
@@ -255,7 +251,7 @@ namespace iText.Signatures.Cms {
         /// Attributes that should be part of the signed content
         /// optional, but it MUST be present if the content type of
         /// the EncapsulatedContentInfo value being signed is not id-data.
-        /// In that case it must at least contain it MUSTthe following two attributes:
+        /// In that case it must at least contain the following two attributes:
         /// <para />
         /// A content-type attribute having as its value the content type
         /// of the EncapsulatedContentInfo value being signed.  Section
@@ -268,7 +264,7 @@ namespace iText.Signatures.Cms {
         /// attribute.
         /// </remarks>
         /// <returns>collection of the signed attributes.</returns>
-        public virtual ICollection<Attribute> GetSignedAttributes() {
+        public virtual ICollection<CmsAttribute> GetSignedAttributes() {
             return JavaCollectionsUtil.UnmodifiableCollection(signedAttributes);
         }
 
@@ -279,7 +275,7 @@ namespace iText.Signatures.Cms {
         /// <see cref="SerializeSignedAttributes()"/>.
         /// </remarks>
         /// <param name="attribute">the attribute to add</param>
-        public virtual void AddSignedAttribute(Attribute attribute) {
+        public virtual void AddSignedAttribute(CmsAttribute attribute) {
             if (signedAttributesReadOnly) {
                 throw new InvalidOperationException(SignExceptionMessageConstant.CMS_SIGNERINFO_READONLY);
             }
@@ -288,7 +284,7 @@ namespace iText.Signatures.Cms {
 
         /// <summary>Retrieves the optional unsigned attributes.</summary>
         /// <returns>the optional unsigned attributes.</returns>
-        public virtual ICollection<Attribute> GetUnSignedAttributes() {
+        public virtual ICollection<CmsAttribute> GetUnSignedAttributes() {
             return JavaCollectionsUtil.UnmodifiableCollection(unSignedAttributes);
         }
 
@@ -299,7 +295,7 @@ namespace iText.Signatures.Cms {
         /// Adds attribute that should not or can not be part of the signed content.
         /// </remarks>
         /// <param name="attribute">the attribute to add</param>
-        public virtual void AddUnSignedAttribute(Attribute attribute) {
+        public virtual void AddUnSignedAttribute(CmsAttribute attribute) {
             unSignedAttributes.Add(attribute);
         }
 
@@ -376,12 +372,12 @@ namespace iText.Signatures.Cms {
             issuerAndSerialNumberV.Add(CertificateInfo.GetIssuer(signerCertificate.GetTbsCertificate()));
             issuerAndSerialNumberV.Add(BC_FACTORY.CreateASN1Integer(signerCertificate.GetSerialNumber()));
             signerInfoV.Add(BC_FACTORY.CreateDERSequence(issuerAndSerialNumberV));
-            // digestalgorithm
+            // digest algorithm
             IAsn1EncodableVector digestalgorithmV = BC_FACTORY.CreateASN1EncodableVector();
             digestalgorithmV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(this.digestAlgorithm.GetAlgorithmOid()));
             digestalgorithmV.Add(digestAlgorithm.GetParameters());
             signerInfoV.Add(BC_FACTORY.CreateDERSequence(digestalgorithmV));
-            // signedattributes
+            // signed attributes
             if (!signedAttributes.IsEmpty() || signedAttributesReadOnly) {
                 if (estimationRun || !signedAttributesReadOnly) {
                     signerInfoV.Add(BC_FACTORY.CreateDERTaggedObject(false, 0, GetAttributesAsDERSet(signedAttributes)));
@@ -398,10 +394,12 @@ namespace iText.Signatures.Cms {
                 }
             }
             // signatureAlgorithm
-            IAsn1EncodableVector signatureAlgorithmV = BC_FACTORY.CreateASN1EncodableVector();
-            signatureAlgorithmV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(signingAlgorithm.GetAlgorithmOid()));
-            signatureAlgorithmV.Add(signingAlgorithm.GetParameters());
-            signerInfoV.Add(BC_FACTORY.CreateDERSequence(signatureAlgorithmV));
+            if (signingAlgorithm != null) {
+                IAsn1EncodableVector signatureAlgorithmV = BC_FACTORY.CreateASN1EncodableVector();
+                signatureAlgorithmV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(signingAlgorithm.GetAlgorithmOid()));
+                signatureAlgorithmV.Add(signingAlgorithm.GetParameters());
+                signerInfoV.Add(BC_FACTORY.CreateDERSequence(signatureAlgorithmV));
+            }
             // signatureValue
             byte[] workingSignatureData;
             if (signatureData == null) {
@@ -453,14 +451,14 @@ namespace iText.Signatures.Cms {
             }
         }
 
-        private static ICollection<Attribute> ProcessAttributeSet(IAsn1Encodable asnStruct) {
+        private static ICollection<CmsAttribute> ProcessAttributeSet(IAsn1Encodable asnStruct) {
             IAsn1Set usaSet = BC_FACTORY.CreateASN1Set(asnStruct);
-            ICollection<Attribute> attributes = new List<Attribute>(usaSet.Size());
+            ICollection<CmsAttribute> attributes = new List<CmsAttribute>(usaSet.Size());
             for (int i = 0; i < usaSet.Size(); i++) {
                 IAsn1Sequence attrSeq = BC_FACTORY.CreateASN1Sequence(usaSet.GetObjectAt(i));
                 IDerObjectIdentifier attrType = BC_FACTORY.CreateASN1ObjectIdentifier(attrSeq.GetObjectAt(0));
                 IAsn1Object attrVal = BC_FACTORY.CreateASN1Primitive(attrSeq.GetObjectAt(1));
-                attributes.Add(new Attribute(attrType.GetId(), attrVal));
+                attributes.Add(new CmsAttribute(attrType.GetId(), attrVal));
             }
             return attributes;
         }
@@ -471,8 +469,8 @@ namespace iText.Signatures.Cms {
                 IAsn1EncodableVector revocationV = BC_FACTORY.CreateASN1EncodableVector();
                 CreateCRLStructure(revocationV);
                 CreateOCPSStructure(revocationV);
-                Attribute digestAttribute = new Attribute(SecurityIDs.ID_ADBE_REVOCATION, BC_FACTORY.CreateDERSequence(revocationV
-                    ));
+                CmsAttribute digestAttribute = new CmsAttribute(SecurityIDs.ID_ADBE_REVOCATION, BC_FACTORY.CreateDERSequence
+                    (revocationV));
                 signedAttributes.Add(digestAttribute);
             }
         }
@@ -521,9 +519,9 @@ namespace iText.Signatures.Cms {
                 ());
         }
 
-        private static IDerSet GetAttributesAsDERSet(ICollection<Attribute> attributeSet) {
+        private static IDerSet GetAttributesAsDERSet(ICollection<CmsAttribute> attributeSet) {
             IAsn1EncodableVector attributes = BC_FACTORY.CreateASN1EncodableVector();
-            foreach (Attribute attr in attributeSet) {
+            foreach (CmsAttribute attr in attributeSet) {
                 IAsn1EncodableVector v = BC_FACTORY.CreateASN1EncodableVector();
                 v.Add(BC_FACTORY.CreateASN1ObjectIdentifier(attr.GetType()));
                 v.Add(attr.GetValue());
