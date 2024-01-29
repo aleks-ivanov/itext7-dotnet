@@ -20,26 +20,28 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-namespace iText.Kernel.Pdf {
-    /// <summary>Type of object to conform.</summary>
-    public enum IsoKey {
-        CANVAS_STACK,
-        FILL_COLOR,
-        EXTENDED_GRAPHICS_STATE,
-        INLINE_IMAGE,
-        PAGE,
-        PDF_OBJECT,
-        RENDERING_INTENT,
-        STROKE_COLOR,
-        TAG_STRUCTURE_ELEMENT,
-        FONT_GLYPHS,
-        XREF_TABLE,
-        SIGNATURE,
-        SIGNATURE_TYPE,
-        CRYPTO,
-        FONT,
-        CANVAS_BEGIN_MARKED_CONTENT,
-        CANVAS_WRITING_CONTENT,
-        LAYOUT
+using System;
+using iText.Layout.Element;
+
+namespace iText.Pdfua.Checkers.Utils {
+    /// <summary>Utility class for delegating the layout checks to the correct checking logic.</summary>
+    public sealed class LayoutCheckUtil {
+        /// <summary>
+        /// Creates a new
+        /// <see cref="LayoutCheckUtil"/>
+        /// instance.
+        /// </summary>
+        private LayoutCheckUtil() {
+        }
+
+        // Empty constructor
+        /// <summary>Checks if a layout element is valid against the PDF/UA specification.</summary>
+        /// <param name="layoutElement">layout element to check</param>
+        public static void CheckLayoutElements(Object layoutElement) {
+            if (layoutElement is Image) {
+                GraphicsCheckUtil.CheckLayoutImage((Image)layoutElement);
+                return;
+            }
+        }
     }
 }
