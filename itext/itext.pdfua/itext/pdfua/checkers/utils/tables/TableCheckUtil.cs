@@ -20,33 +20,24 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-using System;
 using iText.Layout.Element;
-using iText.Pdfua.Checkers.Utils.Tables;
 
-namespace iText.Pdfua.Checkers.Utils {
-    /// <summary>Utility class for delegating the layout checks to the correct checking logic.</summary>
-    public sealed class LayoutCheckUtil {
+namespace iText.Pdfua.Checkers.Utils.Tables {
+    /// <summary>Class that provides methods for checking PDF/UA compliance of table elements.</summary>
+    public sealed class TableCheckUtil {
         /// <summary>
         /// Creates a new
-        /// <see cref="LayoutCheckUtil"/>
+        /// <see cref="TableCheckUtil"/>
         /// instance.
         /// </summary>
-        private LayoutCheckUtil() {
+        private TableCheckUtil() {
         }
 
         // Empty constructor
-        /// <summary>Checks if a layout element is valid against the PDF/UA specification.</summary>
-        /// <param name="layoutElement">layout element to check</param>
-        public static void CheckLayoutElements(Object layoutElement) {
-            if (layoutElement is Image) {
-                GraphicsCheckUtil.CheckLayoutImage((Image)layoutElement);
-                return;
-            }
-            if (layoutElement is Table) {
-                TableCheckUtil.CheckLayoutTable((Table)layoutElement);
-                return;
-            }
+        /// <summary>Checks if the table is pdf/ua compliant.</summary>
+        /// <param name="table">the table to check.</param>
+        public static void CheckLayoutTable(Table table) {
+            new CellResultMatrix(table.GetNumberOfColumns(), table).CheckValidTableTagging();
         }
     }
 }
