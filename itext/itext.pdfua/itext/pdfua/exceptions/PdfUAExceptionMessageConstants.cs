@@ -62,6 +62,8 @@ namespace iText.Pdfua.Exceptions {
         public const String FORMULA_SHALL_HAVE_ALT = "Formula tags shall include an alternative representation or "
              + "replacement text.";
 
+        public const String NOTE_TAG_SHALL_HAVE_ID_ENTRY = "Note tags shall include a unique ID entry.";
+
         public const String EMBEDDED_FONTS_SHALL_DEFINE_ALL_REFERENCED_GLYPHS = "Embedded fonts shall define all "
              + "glyphs referenced for rendering within the conforming file.";
 
@@ -89,7 +91,18 @@ namespace iText.Pdfua.Exceptions {
         public const String VIEWER_PREFERENCES_IS_FALSE = "ViewerPreferences dictionary of the Catalog dictionary "
              + "contains a DisplayDocTitle entry with a value of false.";
 
+        public const String NAME_ENTRY_IS_MISSING_OR_EMPTY_IN_OCG = "Name entry is missing or has " + "an empty string as its value in an Optional Content Configuration Dictionary.";
+
+        public const String OCG_SHALL_NOT_CONTAIN_AS_ENTRY = "An AS entry appears in an Optional Content.";
+
+        public const String OCG_PROPERTIES_CONFIG_SHALL_BE_AN_ARRAY = "Optional Content properties " + "configs shall be an array.";
+
         public const String DYNAMIC_XFA_FORMS_SHALL_NOT_BE_USED = "Dynamic XFA forms shall not be used.";
+
+        public const String FILE_SPECIFICATION_DICTIONARY_SHALL_CONTAIN_F_KEY_AND_UF_KEY = "File specification dictionary shall contain f key and uf key.";
+
+        public const String NON_UNIQUE_ID_ENTRY_IN_STRUCT_TREE_ROOT = "ID entry '{0}' shall be unique among all elements "
+             + "in the document’s structure hierarchy";
 
         private PdfUAExceptionMessageConstants() {
         }
