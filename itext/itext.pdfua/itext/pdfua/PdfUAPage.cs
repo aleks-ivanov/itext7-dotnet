@@ -20,29 +20,26 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 
 namespace iText.Pdfua {
-    /// <summary>PdfDocument extension for testing purposes.</summary>
-    public class PdfUATestPdfDocument : PdfUADocument {
-        public PdfUATestPdfDocument(PdfWriter writer)
-            : base(writer, CreateConfig()) {
+    internal class PdfUAPage : PdfPage {
+        protected internal PdfUAPage(PdfDictionary pdfObject)
+            : base(pdfObject) {
         }
 
-        public PdfUATestPdfDocument(PdfWriter writer, DocumentProperties properties)
-            : base(writer, properties, CreateConfig()) {
+        protected internal PdfUAPage(PdfDocument pdfDocument, PageSize pageSize)
+            : base(pdfDocument, pageSize) {
         }
 
-        public PdfUATestPdfDocument(PdfReader reader, PdfWriter writer)
-            : base(reader, writer, CreateConfig()) {
-        }
-
-        public PdfUATestPdfDocument(PdfReader reader, PdfWriter writer, StampingProperties properties)
-            : base(reader, writer, properties, CreateConfig()) {
-        }
-
-        private static PdfUAConfig CreateConfig() {
-            return new PdfUAConfig(PdfUAConformanceLevel.PDFUA_1, "English pangram", "en-US");
+        public override void Flush(bool flushResourcesContentStreams) {
+            PdfDocument document = GetDocument();
+            if (((PdfUADocument)document).IsClosing()) {
+                base.Flush(flushResourcesContentStreams);
+                return;
+            }
+            ((PdfUADocument)document).WarnOnPageFlush();
         }
     }
 }

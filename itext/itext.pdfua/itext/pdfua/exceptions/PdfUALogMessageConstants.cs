@@ -20,29 +20,16 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-using iText.Kernel.Pdf;
+using System;
 
-namespace iText.Pdfua {
-    /// <summary>PdfDocument extension for testing purposes.</summary>
-    public class PdfUATestPdfDocument : PdfUADocument {
-        public PdfUATestPdfDocument(PdfWriter writer)
-            : base(writer, CreateConfig()) {
-        }
+namespace iText.Pdfua.Exceptions {
+    /// <summary>Class containing the log message constants.</summary>
+    public sealed class PdfUALogMessageConstants {
+        public const String PAGE_FLUSHING_DISABLED = "Page flushing is disabled in PDF/UA mode to allow UA checks "
+             + "to be applied. Page will only be flushed on closing.";
 
-        public PdfUATestPdfDocument(PdfWriter writer, DocumentProperties properties)
-            : base(writer, properties, CreateConfig()) {
+        private PdfUALogMessageConstants() {
         }
-
-        public PdfUATestPdfDocument(PdfReader reader, PdfWriter writer)
-            : base(reader, writer, CreateConfig()) {
-        }
-
-        public PdfUATestPdfDocument(PdfReader reader, PdfWriter writer, StampingProperties properties)
-            : base(reader, writer, properties, CreateConfig()) {
-        }
-
-        private static PdfUAConfig CreateConfig() {
-            return new PdfUAConfig(PdfUAConformanceLevel.PDFUA_1, "English pangram", "en-US");
-        }
+        // empty constructor
     }
 }
