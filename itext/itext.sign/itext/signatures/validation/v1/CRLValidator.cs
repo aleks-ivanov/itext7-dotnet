@@ -43,6 +43,8 @@ namespace iText.Signatures.Validation.V1 {
         internal const String ATTRIBUTE_CERTS_ASSERTED = "The onlyContainsAttributeCerts is asserted. Conforming CRLs "
              + "issuers MUST set the onlyContainsAttributeCerts boolean to FALSE.";
 
+        internal const String CERTIFICATE_IS_EXPIRED = "Certificate is expired on {0} and could have been removed from the CRL.";
+
         internal const String CERTIFICATE_IS_UNREVOKED = "The certificate was unrevoked.";
 
         internal const String CERTIFICATE_IS_NOT_IN_THE_CRL_SCOPE = "Certificate isn't in the current CRL scope.";
@@ -62,6 +64,10 @@ namespace iText.Signatures.Validation.V1 {
         internal const String SAME_REASONS_CHECK = "CRLs that cover the same reason codes were already verified.";
 
         internal const String UPDATE_DATE_BEFORE_CHECK_DATE = "nextUpdate: {0} of CRLResponse is before validation date {1}.";
+
+        internal const String NEXT_UPDATE_VALIDATION = "Using crl nextUpdate date as validation date.";
+
+        internal const String THIS_UPDATE_VALIDATION = "Using crl thisUpdate date as validation date.";
 
         // All reasons without unspecified.
         internal const int ALL_REASONS = 32895;
@@ -120,6 +126,16 @@ namespace iText.Signatures.Validation.V1 {
                 report.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, MessageFormatUtil.Format(UPDATE_DATE_BEFORE_CHECK_DATE
                     , crl.GetNextUpdate(), validationDate), ReportItem.ReportItemStatus.INDETERMINATE));
                 return;
+            }
+            // Check expiredCertOnCrl extension in case the certificate is expired.
+            if (certificate.GetNotAfter().Before(crl.GetThisUpdate())) {
+                DateTime startExpirationDate = GetExpiredCertsOnCRLExtensionDate(crl);
+                if (TimestampConstants.UNDEFINED_TIMESTAMP_DATE == startExpirationDate || certificate.GetNotAfter().Before
+                    (startExpirationDate)) {
+                    report.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, MessageFormatUtil.Format(CERTIFICATE_IS_EXPIRED
+                        , certificate.GetNotAfter()), ReportItem.ReportItemStatus.INDETERMINATE));
+                    return;
+                }
             }
             IIssuingDistributionPoint issuingDistPoint = GetIssuingDistributionPointExtension(crl);
             IDistributionPoint distributionPoint = null;
@@ -202,6 +218,28 @@ namespace iText.Signatures.Validation.V1 {
             return FACTORY.CreateIssuingDistributionPoint(issuingDistPointExtension);
         }
 
+        private static DateTime GetExpiredCertsOnCRLExtensionDate(IX509Crl crl) {
+            IAsn1Encodable expiredCertsOnCRL = null;
+            try {
+                // The scope of a CRL containing this extension is extended to include the revocation status of the
+                // certificates that expired after the date specified in ExpiredCertsOnCRL or at that date.
+                expiredCertsOnCRL = CertificateUtil.GetExtensionValue(crl, FACTORY.CreateExtensions().GetExpiredCertsOnCRL
+                    ().GetId());
+            }
+            catch (System.IO.IOException) {
+            }
+            // Ignore exception.
+            if (expiredCertsOnCRL != null) {
+                try {
+                    return FACTORY.CreateASN1GeneralizedTime(expiredCertsOnCRL).GetDate();
+                }
+                catch (Exception) {
+                }
+            }
+            // Ignore exception.
+            return (DateTime)TimestampConstants.UNDEFINED_TIMESTAMP_DATE;
+        }
+
         private static int ComputeInterimReasonsMask(IIssuingDistributionPoint issuingDistPoint, IDistributionPoint
              distributionPoint) {
             int interimReasonsMask = ALL_REASONS;
@@ -247,12 +285,12 @@ namespace iText.Signatures.Validation.V1 {
             DateTime crlIssuerDate;
             if (TimestampConstants.UNDEFINED_TIMESTAMP_DATE != crl.GetNextUpdate()) {
                 crlIssuerDate = crl.GetNextUpdate();
-                report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, "Using crl nextUpdate date as validation date"
+                report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, NEXT_UPDATE_VALIDATION
                     , ReportItem.ReportItemStatus.INFO));
             }
             else {
                 crlIssuerDate = crl.GetThisUpdate();
-                report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, "Using crl thisUpdate date as validation date"
+                report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, THIS_UPDATE_VALIDATION
                     , ReportItem.ReportItemStatus.INFO));
             }
             builder.GetCertificateChainValidator().Validate(report, context.SetCertificateSource(CertificateSource.CRL_ISSUER
