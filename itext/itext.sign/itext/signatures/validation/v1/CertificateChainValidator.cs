@@ -126,8 +126,10 @@ namespace iText.Signatures.Validation.V1 {
         /// </param>
         /// <returns>
         /// same instance of
-        /// <see cref="CertificateChainValidator"/>
+        /// <see cref="CertificateChainValidator"/>.
         /// </returns>
+        [System.ObsoleteAttribute(@"in favour of either SignatureValidationProperties.AddCrlClient(iText.Signatures.ICrlClient) or RevocationDataValidator.AddCrlClient(iText.Signatures.ICrlClient) . TODO DEVSIX-8398 To be removed."
+            )]
         public virtual iText.Signatures.Validation.V1.CertificateChainValidator AddCrlClient(ICrlClient crlClient) {
             revocationDataValidator.AddCrlClient(crlClient);
             return this;
@@ -145,8 +147,10 @@ namespace iText.Signatures.Validation.V1 {
         /// </param>
         /// <returns>
         /// same instance of
-        /// <see cref="CertificateChainValidator"/>
+        /// <see cref="CertificateChainValidator"/>.
         /// </returns>
+        [System.ObsoleteAttribute(@"in favour of either SignatureValidationProperties.AddOcspClient(iText.Signatures.IOcspClient) or RevocationDataValidator.AddOcspClient(iText.Signatures.IOcspClient) . TODO DEVSIX-8398 To be removed."
+            )]
         public virtual iText.Signatures.Validation.V1.CertificateChainValidator AddOcspClient(IOcspClient ocpsClient
             ) {
             revocationDataValidator.AddOcspClient(ocpsClient);
@@ -169,7 +173,7 @@ namespace iText.Signatures.Validation.V1 {
         /// <returns>
         /// 
         /// <see cref="iText.Signatures.Validation.V1.Report.ValidationReport"/>
-        /// which contains detailed validation results
+        /// which contains detailed validation results.
         /// </returns>
         public virtual ValidationReport ValidateCertificate(ValidationContext context, IX509Certificate certificate
             , DateTime validationDate) {
@@ -202,13 +206,18 @@ namespace iText.Signatures.Validation.V1 {
         /// <returns>
         /// 
         /// <see cref="iText.Signatures.Validation.V1.Report.ValidationReport"/>
-        /// which contains both provided and new validation results
+        /// which contains both provided and new validation results.
         /// </returns>
         public virtual ValidationReport Validate(ValidationReport result, ValidationContext context, IX509Certificate
              certificate, DateTime validationDate) {
+            return Validate(result, context, certificate, validationDate, 0);
+        }
+
+        private ValidationReport Validate(ValidationReport result, ValidationContext context, IX509Certificate certificate
+            , DateTime validationDate, int certificateChainSize) {
             ValidationContext localContext = context.SetValidatorContext(ValidatorContext.CERTIFICATE_CHAIN_VALIDATOR);
             ValidateValidityPeriod(result, certificate, validationDate);
-            ValidateRequiredExtensions(result, localContext, certificate);
+            ValidateRequiredExtensions(result, localContext, certificate, certificateChainSize);
             if (StopValidation(result, localContext)) {
                 return result;
             }
@@ -221,7 +230,7 @@ namespace iText.Signatures.Validation.V1 {
             if (StopValidation(result, localContext)) {
                 return result;
             }
-            ValidateChain(result, localContext, certificate, validationDate);
+            ValidateChain(result, localContext, certificate, validationDate, certificateChainSize);
             return result;
         }
 
@@ -315,10 +324,13 @@ namespace iText.Signatures.Validation.V1 {
         }
 
         private void ValidateRequiredExtensions(ValidationReport result, ValidationContext context, IX509Certificate
-             certificate) {
+             certificate, int certificateChainSize) {
             IList<CertificateExtension> requiredExtensions = properties.GetRequiredExtensions(context);
             if (requiredExtensions != null) {
                 foreach (CertificateExtension requiredExtension in requiredExtensions) {
+                    if (requiredExtension is DynamicCertificateExtension) {
+                        ((DynamicCertificateExtension)requiredExtension).WithCertificateChainSize(certificateChainSize);
+                    }
                     if (!requiredExtension.ExistsInCertificate(certificate)) {
                         result.AddReportItem(new CertificateReportItem(certificate, EXTENSIONS_CHECK, MessageFormatUtil.Format(EXTENSION_MISSING
                             , requiredExtension.GetExtensionOid()), ReportItem.ReportItemStatus.INVALID));
@@ -335,7 +347,7 @@ namespace iText.Signatures.Validation.V1 {
         }
 
         private void ValidateChain(ValidationReport result, ValidationContext context, IX509Certificate certificate
-            , DateTime validationDate) {
+            , DateTime validationDate, int certificateChainSize) {
             IX509Certificate issuerCertificate = null;
             try {
                 issuerCertificate = (IX509Certificate)certificateRetriever.RetrieveIssuerCertificate(certificate);
@@ -366,7 +378,7 @@ namespace iText.Signatures.Validation.V1 {
                 return;
             }
             this.Validate(result, context.SetCertificateSource(CertificateSource.CERT_ISSUER), issuerCertificate, validationDate
-                );
+                , certificateChainSize + 1);
         }
     }
 }

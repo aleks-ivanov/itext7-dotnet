@@ -20,65 +20,34 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-using System;
 using iText.Bouncycastleconnector;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Signatures;
 
 namespace iText.Signatures.Validation.V1.Extensions {
-    /// <summary>Class representing "Basic Constraints" certificate extension.</summary>
-    [System.ObsoleteAttribute(@"since 8.0.5. To be removed.")]
-    public class BasicConstraintsExtension : CertificateExtension {
+    /// <summary>
+    /// Class representing "Basic Constraints" certificate extension,
+    /// which uses provided amount of certificates in chain during the comparison.
+    /// </summary>
+    public class DynamicBasicConstraintsExtension : DynamicCertificateExtension {
         private static readonly IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.GetFactory();
 
-        private readonly int pathLength;
-
         /// <summary>
-        /// Create new
-        /// <see cref="BasicConstraintsExtension"/>
-        /// instance using provided
-        /// <c>boolean</c>
-        /// value.
+        /// Create new instance of
+        /// <see cref="DynamicBasicConstraintsExtension"/>.
         /// </summary>
-        /// <param name="ca">
-        /// 
-        /// <c>boolean</c>
-        /// value, which represents if this certificate is a "Certificate Authority"
-        /// </param>
-        public BasicConstraintsExtension(bool ca)
-            : base(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.CreateBasicConstraints(ca).ToASN1Primitive()) {
-            if (ca) {
-                this.pathLength = int.MaxValue;
-            }
-            else {
-                this.pathLength = -1;
-            }
-        }
-
-        /// <summary>
-        /// Create new
-        /// <see cref="BasicConstraintsExtension"/>
-        /// instance using provided
-        /// <c>int</c>
-        /// path length.
-        /// </summary>
-        /// <param name="pathLength">
-        /// 
-        /// <c>int</c>
-        /// value, which represents acceptable path length for this certificate as a "CA"
-        /// </param>
-        public BasicConstraintsExtension(int pathLength)
-            : base(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.CreateBasicConstraints(pathLength).ToASN1Primitive()) {
-            this.pathLength = pathLength;
+        public DynamicBasicConstraintsExtension()
+            : base(OID.X509Extensions.BASIC_CONSTRAINTS, FACTORY.CreateBasicConstraints(true).ToASN1Primitive()) {
         }
 
         /// <summary>Check if this extension is present in the provided certificate.</summary>
         /// <remarks>
-        /// Check if this extension is present in the provided certificate. In case of
-        /// <see cref="BasicConstraintsExtension"/>
-        /// ,
-        /// check if path length for this extension is less or equal to the path length, specified in the certificate.
+        /// Check if this extension is present in the provided certificate.
+        /// In case of
+        /// <see cref="DynamicBasicConstraintsExtension"/>
+        /// , check if path length for this extension is less or equal
+        /// to the path length, specified in the certificate.
         /// </remarks>
         /// <param name="certificate">
         /// 
@@ -101,13 +70,7 @@ namespace iText.Signatures.Validation.V1.Extensions {
             catch (System.IO.IOException) {
                 return false;
             }
-            catch (Exception) {
-                return false;
-            }
-            if (pathLength >= 0) {
-                return certificate.GetBasicConstraints() >= pathLength;
-            }
-            return certificate.GetBasicConstraints() < 0;
+            return certificate.GetBasicConstraints() >= GetCertificateChainSize();
         }
     }
 }
