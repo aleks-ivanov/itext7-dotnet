@@ -56,8 +56,7 @@ namespace iText.Layout.Renderer {
 
         /// <summary><inheritDoc/></summary>
         public override LayoutResult Layout(LayoutContext layoutContext) {
-            //TODO DEVSIX-8331 enable continuous container
-            //this.setProperty(Property.TREAT_AS_CONTINUOUS_CONTAINER, Boolean.TRUE);
+            this.SetProperty(Property.TREAT_AS_CONTINUOUS_CONTAINER, true);
             Rectangle actualBBox = layoutContext.GetArea().GetBBox().Clone();
             float? blockWidth = RetrieveWidth(actualBBox.GetWidth());
             ContinuousContainer.SetupContinuousContainerIfNeeded(this);
@@ -75,6 +74,9 @@ namespace iText.Layout.Renderer {
                 .GetHeight()));
             GridContainerRenderer.GridLayoutResult layoutResult = LayoutGrid(layoutContext, actualBBox, grid);
             if (layoutResult.GetOverflowRenderers().IsEmpty()) {
+                ContinuousContainer continuousContainer = this.GetProperty<ContinuousContainer>(Property.TREAT_AS_CONTINUOUS_CONTAINER_RESULT
+                    );
+                continuousContainer.ReApplyProperties(this);
                 this.occupiedArea = CalculateContainerOccupiedArea(layoutContext, true);
                 return new LayoutResult(LayoutResult.FULL, this.occupiedArea, null, null);
             }
@@ -280,7 +282,7 @@ namespace iText.Layout.Renderer {
             }
             // 8. Placing Grid Items
             iText.Layout.Renderer.Grid grid = Grid.Builder.ForItems(renderer.GetChildRenderers()).Columns(templateColumns
-                 == null ? 1 : templateColumns.Count).Rows(templateRows == null ? 1 : templateRows.Count).Flow(flow).Build
+                 == null ? 0 : templateColumns.Count).Rows(templateRows == null ? 0 : templateRows.Count).Flow(flow).Build
                 ();
             // Collapse any empty repeated tracks if auto-fit was used
             if (rowRepeatResolver.IsCollapseNullLines()) {
