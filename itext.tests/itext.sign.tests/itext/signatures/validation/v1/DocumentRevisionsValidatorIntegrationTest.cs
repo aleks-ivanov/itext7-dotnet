@@ -115,6 +115,17 @@ namespace iText.Signatures.Validation.V1 {
         }
 
         [NUnit.Framework.TestCaseSource("CreateParameters")]
+        public virtual void EolNotIncludedIntoByteRangeTest(bool continueValidationAfterFail) {
+            SetUp(continueValidationAfterFail);
+            using (PdfDocument document = new PdfDocument(new PdfReader(SOURCE_FOLDER + "eolNotIncludedIntoByteRange.pdf"
+                ))) {
+                DocumentRevisionsValidator validator = builder.BuildDocumentRevisionsValidator();
+                ValidationReport report = validator.ValidateAllDocumentRevisions(validationContext, document);
+                AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID));
+            }
+        }
+
+        [NUnit.Framework.TestCaseSource("CreateParameters")]
         public virtual void TwoCertificationSignaturesTest(bool continueValidationAfterFail) {
             SetUp(continueValidationAfterFail);
             using (PdfDocument document = new PdfDocument(new PdfReader(SOURCE_FOLDER + "twoCertificationSignatures.pdf"
@@ -193,7 +204,10 @@ namespace iText.Signatures.Validation.V1 {
                 ))) {
                 DocumentRevisionsValidator validator = builder.BuildDocumentRevisionsValidator();
                 ValidationReport report = validator.ValidateAllDocumentRevisions(validationContext, document);
-                AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID));
+                AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.INDETERMINATE
+                    ).HasNumberOfFailures(1).HasLogItem((l) => l.WithCheckName(DocumentRevisionsValidator.DOC_MDP_CHECK).WithMessage
+                    (DocumentRevisionsValidator.NOT_ALLOWED_CERTIFICATION_SIGNATURE).WithStatus(ReportItem.ReportItemStatus
+                    .INDETERMINATE)));
                 NUnit.Framework.Assert.AreEqual(AccessPermissions.FORM_FIELDS_MODIFICATION, validator.GetAccessPermissions
                     ());
             }
