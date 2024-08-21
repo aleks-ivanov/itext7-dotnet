@@ -99,10 +99,10 @@ namespace iText.Forms.Form.Renderer {
 
         protected internal override IRenderer CreateFlatRenderer() {
             AbstractSelectField selectField = (AbstractSelectField)modelElement;
-            IList<IBlockElement> options = selectField.GetOptions();
+            IList<SelectFieldItem> options = selectField.GetOptions();
             Div optionsContainer = new Div();
-            foreach (IBlockElement option in options) {
-                optionsContainer.Add(option);
+            foreach (SelectFieldItem option in options) {
+                optionsContainer.Add(option.GetElement());
             }
             String lang = GetLang();
             if (lang != null) {
@@ -174,8 +174,8 @@ namespace iText.Forms.Form.Renderer {
                 ));
             ListBoxField lbModelElement = (ListBoxField)modelElement;
             IList<String> selectedOptions = lbModelElement.GetSelectedStrings();
-            ChoiceFormFieldBuilder builder = new ChoiceFormFieldBuilder(doc, GetModelId()).SetGenericConformanceLevel(
-                GetGenericConformanceLevel(doc)).SetFont(font).SetWidgetRectangle(area);
+            ChoiceFormFieldBuilder builder = new ChoiceFormFieldBuilder(doc, GetModelId()).SetConformanceLevel(GetConformanceLevel
+                (doc)).SetFont(font).SetWidgetRectangle(area);
             SetupBuilderValues(builder, lbModelElement);
             PdfChoiceFormField choiceField = builder.CreateList();
             choiceField.DisableFieldRegeneration();

@@ -110,7 +110,7 @@ namespace iText.Forms.Form.Element {
                 InputField flattenInputField = new InputField("input field with lang");
                 flattenInputField.SetProperty(FormProperty.FORM_FIELD_FLATTEN, false);
                 flattenInputField.SetProperty(FormProperty.FORM_FIELD_VALUE, "input field with lang");
-                flattenInputField.SetProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE, "random_lang");
+                flattenInputField.GetAccessibilityProperties().SetLanguage("random_lang");
                 flattenInputField.SetProperty(Property.BORDER, new SolidBorder(2f));
                 document.Add(flattenInputField);
             }
@@ -126,7 +126,7 @@ namespace iText.Forms.Form.Element {
                 InputField flattenInputField = new InputField("input field with null lang");
                 flattenInputField.SetProperty(FormProperty.FORM_FIELD_FLATTEN, false);
                 flattenInputField.SetProperty(FormProperty.FORM_FIELD_VALUE, "input field with null lang");
-                flattenInputField.SetProperty(FormProperty.FORM_ACCESSIBILITY_LANGUAGE, null);
+                flattenInputField.GetAccessibilityProperties().SetLanguage(null);
                 flattenInputField.SetProperty(Property.BORDER, new SolidBorder(2f));
                 document.Add(flattenInputField);
             }
