@@ -24,14 +24,14 @@ using System;
 using System.IO;
 
 namespace iText.IO.Source {
-	public class OutputStream<T> : Stream
+	public class HighPrecisionOutputStream<T> : Stream
 		where T : Stream
 	{
 		private readonly ByteBuffer numBuffer = new ByteBuffer(32);
 		
 		private bool? localHighPrecision;
 
-		private Stream outputStream = null;
+		protected Stream outputStream = null;
 
 		private long currentPos = 0;
 
@@ -58,17 +58,17 @@ namespace iText.IO.Source {
 			this.localHighPrecision = value;
 		}
 
-		public OutputStream()
+		public HighPrecisionOutputStream()
 			: base()
 		{
 		}
-		public OutputStream(Stream outputStream)
+		public HighPrecisionOutputStream(Stream outputStream)
 			: base()
 		{
 			this.outputStream = outputStream;
 		}
 		
-		public OutputStream(Stream outputStream, bool localHighPrecision)
+		public HighPrecisionOutputStream(Stream outputStream, bool localHighPrecision)
 			: base()
 		{
 			this.outputStream = outputStream;
