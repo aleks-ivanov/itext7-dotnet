@@ -25,17 +25,15 @@ using System.IO;
 using iText.Bouncycastleconnector;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Asn1;
-using iText.Commons.Bouncycastle.Security;
 using iText.Commons.Digest;
 using iText.Commons.Utils;
 using iText.IO.Source;
-using iText.Kernel.Events;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Pdf;
 
 namespace iText.Kernel.Mac {
     /// <summary>Class responsible for integrity protection in encrypted documents, which uses MAC container.</summary>
-    public class MacIntegrityProtector {
+    public abstract class AbstractMacIntegrityProtector {
         private static readonly IBouncyCastleFactory BC_FACTORY = BouncyCastleFactoryCreator.GetFactory();
 
         private const String ID_AUTHENTICATED_DATA = "1.2.840.113549.1.9.16.1.2";
@@ -52,55 +50,57 @@ namespace iText.Kernel.Mac {
 
         private const String PDF_MAC = "PDFMAC";
 
-        private MacPdfObject macPdfObject;
+        protected internal readonly PdfDocument document;
 
-        private readonly PdfDocument document;
+        protected internal readonly MacProperties macProperties;
 
-        private readonly MacProperties macProperties;
+        protected internal byte[] kdfSalt = null;
 
-        private byte[] kdfSalt = null;
+        protected internal byte[] fileEncryptionKey = new byte[0];
 
-        private byte[] fileEncryptionKey = new byte[0];
+        private readonly MacContainerReader macContainerReader;
 
         /// <summary>
         /// Creates
-        /// <see cref="MacIntegrityProtector"/>
+        /// <see cref="AbstractMacIntegrityProtector"/>
         /// instance from the provided
         /// <see cref="MacProperties"/>.
         /// </summary>
         /// <param name="document">
         /// 
         /// <see cref="iText.Kernel.Pdf.PdfDocument"/>
-        /// , for which integrity protection is required
+        /// for which integrity protection is required
         /// </param>
         /// <param name="macProperties">
         /// 
         /// <see cref="MacProperties"/>
         /// used to provide MAC algorithm properties
         /// </param>
-        public MacIntegrityProtector(PdfDocument document, MacProperties macProperties) {
+        protected internal AbstractMacIntegrityProtector(PdfDocument document, MacProperties macProperties) {
             this.document = document;
+            this.macContainerReader = null;
             this.macProperties = macProperties;
         }
 
         /// <summary>
         /// Creates
-        /// <see cref="MacIntegrityProtector"/>
+        /// <see cref="AbstractMacIntegrityProtector"/>
         /// instance from the Auth dictionary.
         /// </summary>
         /// <param name="document">
         /// 
         /// <see cref="iText.Kernel.Pdf.PdfDocument"/>
-        /// , for which integrity protection is required
+        /// for which integrity protection is required
         /// </param>
         /// <param name="authDictionary">
         /// 
         /// <see cref="iText.Kernel.Pdf.PdfDictionary"/>
-        /// , representing Auth dictionary, in which MAC container is stored
+        /// representing Auth dictionary in which MAC container is stored
         /// </param>
-        public MacIntegrityProtector(PdfDocument document, PdfDictionary authDictionary) {
+        protected internal AbstractMacIntegrityProtector(PdfDocument document, PdfDictionary authDictionary) {
             this.document = document;
-            this.macProperties = ParseMacProperties(authDictionary.GetAsString(PdfName.MAC).GetValueBytes());
+            this.macContainerReader = MacContainerReader.GetInstance(authDictionary);
+            this.macProperties = new MacProperties(GetMacDigestAlgorithm(macContainerReader.ParseDigestAlgorithm()));
         }
 
         /// <summary>Sets file encryption key to be used during MAC calculation.</summary>
@@ -143,104 +143,129 @@ namespace iText.Kernel.Mac {
         /// in case of any modifications,
         /// introduced to the document in question, after MAC container is integrated.
         /// </remarks>
-        /// <param name="authDictionary">
-        /// 
-        /// <see cref="iText.Kernel.Pdf.PdfDictionary"/>
-        /// which represents AuthCode entry in the trailer and container MAC.
-        /// </param>
-        public virtual void ValidateMacToken(PdfDictionary authDictionary) {
-            byte[] expectedMac;
-            byte[] actualMac;
-            byte[] expectedMessageDigest;
-            byte[] actualMessageDigest;
+        public virtual void ValidateMacToken() {
             try {
-                byte[] macContainer = authDictionary.GetAsString(PdfName.MAC).GetValueBytes();
-                byte[] macKey = ParseMacKey(macContainer);
-                PdfArray byteRange = authDictionary.GetAsArray(PdfName.ByteRange);
-                byte[] dataDigest = DigestBytes(document.GetReader().GetSafeFile().CreateSourceView(), byteRange.ToLongArray
-                    ());
-                byte[] expectedData = ParseAuthAttributes(macContainer).GetEncoded();
-                expectedMac = GenerateMac(macKey, expectedData);
-                expectedMessageDigest = CreateMessageDigestSequence(CreateMessageBytes(dataDigest)).GetEncoded();
-                actualMessageDigest = ParseMessageDigest(macContainer).GetEncoded();
-                actualMac = ParseMac(macContainer);
+                byte[] macKey = GenerateDecryptedKey(macContainerReader.ParseMacKey());
+                long[] byteRange = macContainerReader.GetByteRange();
+                byte[] dataDigest;
+                IRandomAccessSource randomAccessSource = document.GetReader().GetSafeFile().CreateSourceView();
+                using (Stream rg = new RASInputStream(new RandomAccessSourceFactory().CreateRanged(randomAccessSource, byteRange
+                    ))) {
+                    dataDigest = DigestBytes(rg);
+                }
+                byte[] expectedData = macContainerReader.ParseAuthAttributes().GetEncoded();
+                byte[] expectedMac = GenerateMac(macKey, expectedData);
+                byte[] signatureDigest = DigestBytes(macContainerReader.GetSignature());
+                byte[] expectedMessageDigest = CreateMessageDigestSequence(CreatePdfMacIntegrityInfo(dataDigest, signatureDigest
+                    )).GetEncoded();
+                byte[] actualMessageDigest = macContainerReader.ParseMessageDigest().GetEncoded();
+                byte[] actualMac = macContainerReader.ParseMac();
+                if (!JavaUtil.ArraysEquals(expectedMac, actualMac) || !JavaUtil.ArraysEquals(expectedMessageDigest, actualMessageDigest
+                    )) {
+                    throw new PdfException(KernelExceptionMessageConstant.MAC_VALIDATION_FAILED);
+                }
+            }
+            catch (PdfException e) {
+                throw;
             }
             catch (Exception e) {
-                throw new PdfException(KernelExceptionMessageConstant.VALIDATION_EXCEPTION, e);
-            }
-            if (!JavaUtil.ArraysEquals(expectedMac, actualMac) || !JavaUtil.ArraysEquals(expectedMessageDigest, actualMessageDigest
-                )) {
-                throw new PdfException(KernelExceptionMessageConstant.MAC_VALIDATION_FAILED);
+                throw new PdfException(KernelExceptionMessageConstant.MAC_VALIDATION_EXCEPTION, e);
             }
         }
 
-        /// <summary>Prepare the document for MAC protection.</summary>
-        public virtual void PrepareDocument() {
-            document.AddEventHandler(PdfDocumentEvent.START_DOCUMENT_CLOSING, new MacIntegrityProtector.MacPdfObjectAdder
-                (this));
-            document.AddEventHandler(PdfDocumentEvent.END_WRITER_FLUSH, new MacIntegrityProtector.MacContainerEmbedder
-                (this));
+        /// <summary>Digests provided bytes based on hash algorithm, specified for this class instance.</summary>
+        /// <param name="bytes">
+        /// 
+        /// <c>byte[]</c>
+        /// to be digested
+        /// </param>
+        /// <returns>digested bytes.</returns>
+        protected internal virtual byte[] DigestBytes(byte[] bytes) {
+            return bytes == null ? null : DigestBytes(new MemoryStream(bytes));
         }
 
-        private int GetContainerSizeEstimate() {
-            try {
-                IMessageDigest digest = GetMessageDigest();
-                digest.Update(new byte[0]);
-                return CreateMacContainer(digest.Digest(), GenerateRandomBytes(32)).Length * 2 + 2;
+        /// <summary>Digests provided input stream based on hash algorithm, specified for this class instance.</summary>
+        /// <param name="inputStream">
+        /// 
+        /// <see cref="System.IO.Stream"/>
+        /// to be digested
+        /// </param>
+        /// <returns>digested bytes.</returns>
+        protected internal virtual byte[] DigestBytes(Stream inputStream) {
+            if (inputStream == null) {
+                return null;
             }
-            catch (AbstractGeneralSecurityException e) {
-                throw new PdfException(KernelExceptionMessageConstant.CONTAINER_GENERATION_EXCEPTION, e);
-            }
-            catch (System.IO.IOException e) {
-                throw new PdfException(KernelExceptionMessageConstant.CONTAINER_GENERATION_EXCEPTION, e);
-            }
-        }
-
-        private void EmbedMacContainer() {
-            byte[] documentBytes = GetDocumentByteArrayOutputStream().ToArray();
-            long[] byteRange = macPdfObject.ComputeByteRange(documentBytes.Length);
-            long byteRangePosition = macPdfObject.GetByteRangePosition();
-            MemoryStream localBaos = new MemoryStream();
-            PdfOutputStream os = new PdfOutputStream(localBaos);
-            os.Write('[');
-            foreach (long l in byteRange) {
-                os.WriteLong(l).Write(' ');
-            }
-            os.Write(']');
-            Array.Copy(localBaos.ToArray(), 0, documentBytes, (int)byteRangePosition, localBaos.Length);
-            IRandomAccessSource ras = new RandomAccessSourceFactory().CreateSource(documentBytes);
-            // Here we should create MAC
-            byte[] mac;
-            try {
-                byte[] dataDigest = DigestBytes(ras, byteRange);
-                mac = CreateMacContainer(dataDigest, GenerateRandomBytes(32));
-            }
-            catch (AbstractGeneralSecurityException e) {
-                throw new PdfException(KernelExceptionMessageConstant.CONTAINER_GENERATION_EXCEPTION, e);
-            }
-            PdfString macString = new PdfString(mac).SetHexWriting(true);
-            // fill in the MAC
-            localBaos.JReset();
-            os.Write(macString);
-            Array.Copy(localBaos.ToArray(), 0, documentBytes, (int)byteRange[1], localBaos.Length);
-            GetDocumentByteArrayOutputStream().JReset();
-            document.GetWriter().GetOutputStream().Write(documentBytes, 0, documentBytes.Length);
-        }
-
-        private MemoryStream GetDocumentByteArrayOutputStream() {
-            return ((MemoryStream)document.GetWriter().GetOutputStream());
-        }
-
-        private byte[] DigestBytes(IRandomAccessSource ras, long[] byteRange) {
             IMessageDigest digest = GetMessageDigest();
-            using (Stream rg = new RASInputStream(new RandomAccessSourceFactory().CreateRanged(ras, byteRange))) {
-                byte[] buf = new byte[8192];
-                int rd;
-                while ((rd = rg.JRead(buf, 0, buf.Length)) > 0) {
-                    digest.Update(buf, 0, rd);
-                }
-                return digest.Digest();
+            byte[] buf = new byte[8192];
+            int rd;
+            while ((rd = inputStream.JRead(buf, 0, buf.Length)) > 0) {
+                digest.Update(buf, 0, rd);
             }
+            return digest.Digest();
+        }
+
+        /// <summary>Creates MAC container as ASN1 object based on data digest, MAC key and signature parameters.</summary>
+        /// <param name="dataDigest">
+        /// data digest as
+        /// <c>byte[]</c>
+        /// to be used during MAC container creation
+        /// </param>
+        /// <param name="macKey">
+        /// MAC key as
+        /// <c>byte[]</c>
+        /// to be used during MAC container creation
+        /// </param>
+        /// <param name="signature">
+        /// signature value as
+        /// <c>byte[]</c>
+        /// to be used during MAC container creation
+        /// </param>
+        /// <returns>
+        /// MAC container as
+        /// <see cref="iText.Commons.Bouncycastle.Asn1.IDerSequence"/>.
+        /// </returns>
+        protected internal virtual IDerSequence CreateMacContainer(byte[] dataDigest, byte[] macKey, byte[] signature
+            ) {
+            IAsn1EncodableVector contentInfoV = BC_FACTORY.CreateASN1EncodableVector();
+            contentInfoV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(ID_AUTHENTICATED_DATA));
+            // Recipient info
+            IAsn1EncodableVector recInfoV = BC_FACTORY.CreateASN1EncodableVector();
+            recInfoV.Add(BC_FACTORY.CreateASN1Integer(0));
+            // version
+            recInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateASN1ObjectIdentifier(ID_KDF_PDF_MAC_WRAP_KDF
+                )));
+            recInfoV.Add(BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier(GetKeyWrappingAlgorithmOid
+                ())));
+            ////////////////////// KEK
+            byte[] macKek = BC_FACTORY.GenerateHKDF(fileEncryptionKey, kdfSalt, PDF_MAC.GetBytes(System.Text.Encoding.
+                UTF8));
+            byte[] encryptedKey = GenerateEncryptedKey(macKey, macKek);
+            recInfoV.Add(BC_FACTORY.CreateDEROctetString(encryptedKey));
+            // Digest info
+            byte[] messageBytes = CreatePdfMacIntegrityInfo(dataDigest, signature == null ? null : DigestBytes(signature
+                ));
+            // Encapsulated content info
+            IAsn1EncodableVector encapContentInfoV = BC_FACTORY.CreateASN1EncodableVector();
+            encapContentInfoV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(ID_CT_PDF_MAC_INTEGRITY_INFO));
+            encapContentInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateDEROctetString(messageBytes)));
+            IDerSet authAttrs = CreateAuthAttributes(messageBytes);
+            // Create mac
+            byte[] data = authAttrs.GetEncoded();
+            byte[] mac = GenerateMac(macKey, data);
+            // Auth data
+            IAsn1EncodableVector authDataV = BC_FACTORY.CreateASN1EncodableVector();
+            authDataV.Add(BC_FACTORY.CreateASN1Integer(0));
+            // version
+            authDataV.Add(BC_FACTORY.CreateDERSet(BC_FACTORY.CreateDERTaggedObject(false, 3, BC_FACTORY.CreateDERSequence
+                (recInfoV))));
+            authDataV.Add(BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier(GetMacAlgorithmOid())));
+            authDataV.Add(BC_FACTORY.CreateDERTaggedObject(false, 1, BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier
+                (GetMacDigestOid()))));
+            authDataV.Add(BC_FACTORY.CreateDERSequence(encapContentInfoV));
+            authDataV.Add(BC_FACTORY.CreateDERTaggedObject(false, 2, authAttrs));
+            authDataV.Add(BC_FACTORY.CreateDEROctetString(mac));
+            contentInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateDERSequence(authDataV)));
+            return BC_FACTORY.CreateDERSequence(contentInfoV);
         }
 
         private IMessageDigest GetMessageDigest() {
@@ -331,7 +356,9 @@ namespace iText.Kernel.Mac {
             }
         }
 
-        private byte[] GenerateDecryptedKey(byte[] encryptedMacKey, byte[] macKek) {
+        private byte[] GenerateDecryptedKey(byte[] encryptedMacKey) {
+            byte[] macKek = BC_FACTORY.GenerateHKDF(fileEncryptionKey, kdfSalt, PDF_MAC.GetBytes(System.Text.Encoding.
+                UTF8));
             switch (macProperties.GetKeyWrappingAlgorithm()) {
                 case MacProperties.KeyWrappingAlgorithm.AES_256_NO_PADD: {
                     return BC_FACTORY.GenerateDecryptedKeyWithAES256NoPad(encryptedMacKey, macKek);
@@ -367,68 +394,11 @@ namespace iText.Kernel.Mac {
             }
         }
 
-        private byte[] ParseMacKey(byte[] macContainer) {
-            IAsn1Sequence authDataSequence = GetAuthDataSequence(macContainer);
-            IAsn1Sequence recInfo = BC_FACTORY.CreateASN1Sequence(BC_FACTORY.CreateASN1TaggedObject(BC_FACTORY.CreateASN1Set
-                (authDataSequence.GetObjectAt(1)).GetObjectAt(0)).GetObject());
-            IAsn1OctetString encryptedKey = BC_FACTORY.CreateASN1OctetString(recInfo.GetObjectAt(3));
-            byte[] macKek = BC_FACTORY.GenerateHKDF(fileEncryptionKey, kdfSalt, PDF_MAC.GetBytes(System.Text.Encoding.
-                UTF8));
-            return GenerateDecryptedKey(encryptedKey.GetOctets(), macKek);
-        }
-
-        private IAsn1Sequence ParseMessageDigest(byte[] macContainer) {
-            IAsn1Set authAttributes = ParseAuthAttributes(macContainer);
-            return BC_FACTORY.CreateASN1Sequence(authAttributes.GetObjectAt(2));
-        }
-
-        private byte[] CreateMacContainer(byte[] dataDigest, byte[] macKey) {
-            IAsn1EncodableVector contentInfoV = BC_FACTORY.CreateASN1EncodableVector();
-            contentInfoV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(ID_AUTHENTICATED_DATA));
-            // Recipient info
-            IAsn1EncodableVector recInfoV = BC_FACTORY.CreateASN1EncodableVector();
-            recInfoV.Add(BC_FACTORY.CreateASN1Integer(0));
-            // version
-            recInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateASN1ObjectIdentifier(ID_KDF_PDF_MAC_WRAP_KDF
-                )));
-            recInfoV.Add(BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier(GetKeyWrappingAlgorithmOid
-                ())));
-            ////////////////////// KEK
-            byte[] macKek = BC_FACTORY.GenerateHKDF(fileEncryptionKey, kdfSalt, PDF_MAC.GetBytes(System.Text.Encoding.
-                UTF8));
-            byte[] encryptedKey = GenerateEncryptedKey(macKey, macKek);
-            recInfoV.Add(BC_FACTORY.CreateDEROctetString(encryptedKey));
-            // Digest info
-            byte[] messageBytes = CreateMessageBytes(dataDigest);
-            // Encapsulated content info
-            IAsn1EncodableVector encapContentInfoV = BC_FACTORY.CreateASN1EncodableVector();
-            encapContentInfoV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(ID_CT_PDF_MAC_INTEGRITY_INFO));
-            encapContentInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateDEROctetString(messageBytes)));
-            IDerSet authAttrs = CreateAuthAttributes(messageBytes);
-            // Create mac
-            byte[] data = authAttrs.GetEncoded();
-            byte[] mac = GenerateMac(macKey, data);
-            // Auth data
-            IAsn1EncodableVector authDataV = BC_FACTORY.CreateASN1EncodableVector();
-            authDataV.Add(BC_FACTORY.CreateASN1Integer(0));
-            // version
-            authDataV.Add(BC_FACTORY.CreateDERSet(BC_FACTORY.CreateDERTaggedObject(false, 3, BC_FACTORY.CreateDERSequence
-                (recInfoV))));
-            authDataV.Add(BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier(GetMacAlgorithmOid())));
-            authDataV.Add(BC_FACTORY.CreateDERTaggedObject(false, 1, BC_FACTORY.CreateDERSequence(BC_FACTORY.CreateASN1ObjectIdentifier
-                (GetMacDigestOid()))));
-            authDataV.Add(BC_FACTORY.CreateDERSequence(encapContentInfoV));
-            authDataV.Add(BC_FACTORY.CreateDERTaggedObject(false, 2, authAttrs));
-            authDataV.Add(BC_FACTORY.CreateDEROctetString(mac));
-            contentInfoV.Add(BC_FACTORY.CreateDERTaggedObject(0, BC_FACTORY.CreateDERSequence(authDataV)));
-            return BC_FACTORY.CreateDERSequence(contentInfoV).GetEncoded();
-        }
-
         private IDerSequence CreateMessageDigestSequence(byte[] messageBytes) {
             // Hash messageBytes to get messageDigest attribute
             IMessageDigest digest = GetMessageDigest();
             digest.Update(messageBytes);
-            byte[] messageDigest = digest.Digest();
+            byte[] messageDigest = DigestBytes(messageBytes);
             // Message digest
             IAsn1EncodableVector messageDigestV = BC_FACTORY.CreateASN1EncodableVector();
             messageDigestV.Add(BC_FACTORY.CreateASN1ObjectIdentifier(ID_MESSAGE_DIGEST));
@@ -458,42 +428,21 @@ namespace iText.Kernel.Mac {
             return BC_FACTORY.CreateDERSet(authAttrsV);
         }
 
-        private static byte[] ParseMac(byte[] macContainer) {
-            IAsn1Sequence authDataSequence = GetAuthDataSequence(macContainer);
-            return BC_FACTORY.CreateASN1OctetString(authDataSequence.GetObjectAt(6)).GetOctets();
-        }
-
-        private static IAsn1Set ParseAuthAttributes(byte[] macContainer) {
-            IAsn1Sequence authDataSequence = GetAuthDataSequence(macContainer);
-            return BC_FACTORY.CreateASN1Set(BC_FACTORY.CreateASN1TaggedObject(authDataSequence.GetObjectAt(5)), false);
-        }
-
-        private static byte[] CreateMessageBytes(byte[] dataDigest) {
+        private static byte[] CreatePdfMacIntegrityInfo(byte[] dataDigest, byte[] signatureDigest) {
             IAsn1EncodableVector digestInfoV = BC_FACTORY.CreateASN1EncodableVector();
             digestInfoV.Add(BC_FACTORY.CreateASN1Integer(0));
             digestInfoV.Add(BC_FACTORY.CreateDEROctetString(dataDigest));
+            if (signatureDigest != null) {
+                digestInfoV.Add(BC_FACTORY.CreateDERTaggedObject(false, 0, BC_FACTORY.CreateDEROctetString(signatureDigest
+                    )));
+            }
             return BC_FACTORY.CreateDERSequence(digestInfoV).GetEncoded();
         }
 
-        private static byte[] GenerateRandomBytes(int length) {
+        protected internal static byte[] GenerateRandomBytes(int length) {
             byte[] randomBytes = new byte[length];
             BC_FACTORY.GetSecureRandom().GetBytes(randomBytes);
             return randomBytes;
-        }
-
-        private static MacProperties ParseMacProperties(byte[] macContainer) {
-            IAsn1Sequence authDataSequence = GetAuthDataSequence(macContainer);
-            IAsn1Object digestAlgorithmContainer = BC_FACTORY.CreateASN1TaggedObject(authDataSequence.GetObjectAt(3)).
-                GetObject();
-            IDerObjectIdentifier digestAlgorithm;
-            if (BC_FACTORY.CreateASN1ObjectIdentifier(digestAlgorithmContainer) != null) {
-                digestAlgorithm = BC_FACTORY.CreateASN1ObjectIdentifier(digestAlgorithmContainer);
-            }
-            else {
-                digestAlgorithm = BC_FACTORY.CreateASN1ObjectIdentifier(BC_FACTORY.CreateASN1Sequence(digestAlgorithmContainer
-                    ).GetObjectAt(0));
-            }
-            return new MacProperties(GetMacDigestAlgorithm(digestAlgorithm.GetId()));
         }
 
         private static MacProperties.MacDigestAlgorithm GetMacDigestAlgorithm(String oid) {
@@ -526,50 +475,6 @@ namespace iText.Kernel.Mac {
                     throw new PdfException(KernelExceptionMessageConstant.DIGEST_NOT_SUPPORTED);
                 }
             }
-        }
-
-        private static IAsn1Sequence GetAuthDataSequence(byte[] macContainer) {
-            IAsn1Sequence contentInfoSequence;
-            try {
-                using (IAsn1InputStream din = BC_FACTORY.CreateASN1InputStream(new MemoryStream(macContainer))) {
-                    contentInfoSequence = BC_FACTORY.CreateASN1Sequence(din.ReadObject());
-                }
-            }
-            catch (System.IO.IOException e) {
-                throw new PdfException(KernelExceptionMessageConstant.CONTAINER_PARSING_EXCEPTION, e);
-            }
-            return BC_FACTORY.CreateASN1Sequence(BC_FACTORY.CreateASN1TaggedObject(contentInfoSequence.GetObjectAt(1))
-                .GetObject());
-        }
-
-        private class MacPdfObjectAdder : iText.Kernel.Events.IEventHandler {
-            public virtual void HandleEvent(Event @event) {
-                this._enclosing.macPdfObject = new MacPdfObject(this._enclosing.GetContainerSizeEstimate());
-                this._enclosing.document.GetTrailer().Put(PdfName.AuthCode, this._enclosing.macPdfObject.GetPdfObject());
-            }
-
-            internal MacPdfObjectAdder(MacIntegrityProtector _enclosing) {
-                this._enclosing = _enclosing;
-            }
-
-            private readonly MacIntegrityProtector _enclosing;
-        }
-
-        private class MacContainerEmbedder : iText.Kernel.Events.IEventHandler {
-            public virtual void HandleEvent(Event @event) {
-                try {
-                    this._enclosing.EmbedMacContainer();
-                }
-                catch (System.IO.IOException e) {
-                    throw new PdfException(KernelExceptionMessageConstant.CONTAINER_EMBEDDING_EXCEPTION, e);
-                }
-            }
-
-            internal MacContainerEmbedder(MacIntegrityProtector _enclosing) {
-                this._enclosing = _enclosing;
-            }
-
-            private readonly MacIntegrityProtector _enclosing;
         }
     }
 }
