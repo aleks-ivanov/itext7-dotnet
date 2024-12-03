@@ -58,5 +58,10 @@ namespace iText.Svg.Renderers.Impl {
             //TODO: update after DEVSIX-2378 implementation
             ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "maskWithGradient", properties);
         }
+
+        [NUnit.Framework.Test]
+        public virtual void MaskContentUnitsTest() {
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "mask-content-units", properties);
+        }
     }
 }

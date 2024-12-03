@@ -44,6 +44,11 @@ namespace iText.Svg.Renderers.Impl {
         }
 
         [NUnit.Framework.Test]
+        public virtual void RelativeCircleTest() {
+            ConvertAndCompare(sourceFolder, destinationFolder, "relativeCircle");
+        }
+
+        [NUnit.Framework.Test]
         public virtual void CircleCxCyAbsentTest() {
             ConvertAndCompare(sourceFolder, destinationFolder, "circleCxCyAbsent");
         }
@@ -117,6 +122,11 @@ namespace iText.Svg.Renderers.Impl {
         public virtual void CircleWithBigStrokeWidthTest() {
             // TODO: DEVSIX-3932 update cmp_ after fix
             ConvertAndCompare(sourceFolder, destinationFolder, "circleWithBigStrokeWidth");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void CircleShapeRenderingTest() {
+            ConvertAndCompare(sourceFolder, destinationFolder, "shape-rendering");
         }
     }
 }

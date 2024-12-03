@@ -108,7 +108,6 @@ namespace iText.Svg.Renderers.Impl {
 
         [NUnit.Framework.Test]
         public virtual void ClipPathRulesCombined() {
-            //TODO: update after DEVSIX-2377
             ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathRulesCombined");
         }
 
@@ -116,6 +115,11 @@ namespace iText.Svg.Renderers.Impl {
         public virtual void InvalidClipPathTagTest() {
             // TODO: DEVSIX-3923 update cmp_ after fix
             ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clippath_invalid_tag");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void ClipPathUnitsTest() {
+            ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathUnits");
         }
     }
 }

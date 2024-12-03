@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using iText.Test;
-using iText.Test.Attributes;
 
 namespace iText.Svg.Renderers {
     [NUnit.Framework.Category("IntegrationTest")]
@@ -72,11 +71,25 @@ namespace iText.Svg.Renderers {
         }
 
         [NUnit.Framework.Test]
-        // TODO DEVSIX-3432 relative values doesn't support correctly for stroke-width attribute
-        [LogMessage(iText.StyledXmlParser.Logs.StyledXmlParserLogMessageConstant.UNKNOWN_ABSOLUTE_METRIC_LENGTH_PARSED
-            , Count = 12)]
         public virtual void StrokeWidthMeasureUnitsTest() {
             ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "strokeWidthMeasureUnitsTest");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void PathLengthTest() {
+            ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "path-length");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void StrokeAttributesTest() {
+            //TODO DEVSIX-2258: update cmp after supporting
+            ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "stroke-attributes");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void HeightWidthZeroTest() {
+            //TODO DEVSIX-8760 : change cmp after fix
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "height-width-zero");
         }
     }
 }
