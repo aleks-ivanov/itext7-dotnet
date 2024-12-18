@@ -108,6 +108,7 @@ namespace iText.Svg.Renderers.Impl {
 
         [NUnit.Framework.Test]
         public virtual void ClipPathRulesCombined() {
+            // TODO DEVSIX-2589 Support overflow attribute for symbol
             ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathRulesCombined");
         }
 
@@ -120,6 +121,16 @@ namespace iText.Svg.Renderers.Impl {
         [NUnit.Framework.Test]
         public virtual void ClipPathUnitsTest() {
             ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathUnits");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void ClipPathUrlTopLevelTest() {
+            ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathUrlTopLevel");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void ClipPathUrl2ndLevelTest() {
+            ConvertAndCompareSinglePage(sourceFolder, destinationFolder, "clipPathUrl2ndLevel");
         }
     }
 }
