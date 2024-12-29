@@ -15,7 +15,7 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20241220141702+03'00')/ModDate(D:20241220141702+03'00')/Producer(iText® Core 9.1.0-SNAPSHOT \(AGPL version\) ©2000-2024 Apryse Group NV)>>
+<</CreationDate(D:20241226124217+03'00')/ModDate(D:20241226124217+03'00')/Producer(iText® Core 9.1.0-SNAPSHOT \(AGPL version\) ©2000-2024 Apryse Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Courier/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
@@ -38,7 +38,7 @@ Q
 endstream
 endobj
 9 0 obj
-<</BBox[0 0 450 450]/Length 672/Resources<</Font<</F1 6 0 R/F2 7 0 R>>/Pattern<</P1 10 0 R/P2 11 0 R/P3 12 0 R/P4 13 0 R/P5 14 0 R/P6 15 0 R/P7 16 0 R/P8 17 0 R/P9 18 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 450 450]/Length 655/Resources<</Font<</F1 6 0 R/F2 7 0 R>>/Pattern<</P1 10 0 R/P2 11 0 R/P3 12 0 R/P4 13 0 R/P5 14 0 R/P6 15 0 R/P7 16 0 R/P8 17 0 R/P9 18 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 450 450 re
 W
 n
@@ -58,8 +58,6 @@ BT
 (iText)Tj
 ET
 Q
-Q
-q
 q
 BT
 /F1 96 Tf
@@ -107,8 +105,6 @@ ET
 Q
 Q
 q
-0 0 0 rg
-q
 q
 BT
 /F1 48 Tf
@@ -140,51 +136,50 @@ BT
 ET
 Q
 Q
-Q
 
 endstream
 endobj
 10 0 obj
-<</Matrix[384 0 0 120.73 37.5 152.54]/PatternType 2/Shading 19 0 R/Type/Pattern>>
+<</Matrix[434 0 0 320.73 0 152.54]/PatternType 2/Shading 19 0 R/Type/Pattern>>
 endobj
 11 0 obj
-<</Matrix[384 0 0 120.73 37.5 152.54]/PatternType 2/Shading 20 0 R/Type/Pattern>>
+<</Matrix[434 0 0 320.73 0 152.54]/PatternType 2/Shading 20 0 R/Type/Pattern>>
 endobj
 12 0 obj
-<</Matrix[384 0 0 120.73 37.5 302.54]/PatternType 2/Shading 21 0 R/Type/Pattern>>
+<</Matrix[439 0 0 325.73 -1.88 150.66]/PatternType 2/Shading 21 0 R/Type/Pattern>>
 endobj
 13 0 obj
-<</Matrix[384 0 0 120.73 37.5 302.54]/PatternType 2/Shading 22 0 R/Type/Pattern>>
+<</Matrix[439 0 0 325.73 -1.88 150.66]/PatternType 2/Shading 22 0 R/Type/Pattern>>
 endobj
 14 0 obj
-<</Matrix[389 0 0 125.73 35.63 300.66]/PatternType 2/Shading 23 0 R/Type/Pattern>>
+<</Matrix[444 0 0 330.73 -3.75 148.79]/PatternType 2/Shading 23 0 R/Type/Pattern>>
 endobj
 15 0 obj
-<</Matrix[389 0 0 125.73 35.63 300.66]/PatternType 2/Shading 24 0 R/Type/Pattern>>
+<</Matrix[444 0 0 330.73 -3.75 148.79]/PatternType 2/Shading 24 0 R/Type/Pattern>>
 endobj
 16 0 obj
-<</Matrix[526.8 0 0 160.36 15 38.77]/PatternType 2/Shading 25 0 R/Type/Pattern>>
+<</Matrix[526.8 0 0 160.36 0 38.77]/PatternType 2/Shading 25 0 R/Type/Pattern>>
 endobj
 17 0 obj
-<</Matrix[526.8 0 0 160.36 15 38.77]/PatternType 2/Shading 26 0 R/Type/Pattern>>
+<</Matrix[526.8 0 0 160.36 0 38.77]/PatternType 2/Shading 26 0 R/Type/Pattern>>
 endobj
 18 0 obj
-<</Matrix[526.8 0 0 160.36 15 38.77]/PatternType 2/Shading 27 0 R/Type/Pattern>>
+<</Matrix[526.8 0 0 160.36 0 38.77]/PatternType 2/Shading 27 0 R/Type/Pattern>>
 endobj
 19 0 obj
-<</ColorSpace/DeviceRGB/Coords[-0.00488 0 0.75488 0]/Domain[-0.00651 1.01]/Function 28 0 R/ShadingType 2>>
+<</ColorSpace/DeviceRGB/Coords[-0.00432 0 0.75432 0]/Domain[-0.00576 1.01]/Function 28 0 R/ShadingType 2>>
 endobj
 20 0 obj
 <</ColorSpace/DeviceRGB/Coords[0 0 0 0.75]/Domain[0 1]/Function 29 0 R/ShadingType 2>>
 endobj
 21 0 obj
-<</ColorSpace/DeviceRGB/Coords[-0.00488 0 0.75488 0]/Domain[-0.00651 1.01]/Function 30 0 R/ShadingType 2>>
+<</ColorSpace/DeviceRGB/Coords[-0.00427 0 0.75427 0]/Domain[-0.00569 1.01]/Function 30 0 R/ShadingType 2>>
 endobj
 22 0 obj
 <</ColorSpace/DeviceRGB/Coords[0 0 0 0.75]/Domain[0 1]/Function 31 0 R/ShadingType 2>>
 endobj
 23 0 obj
-<</ColorSpace/DeviceRGB/Coords[0 -0.01491 0 0.76491]/Domain[-0.01988 1.02]/Function 32 0 R/ShadingType 2>>
+<</ColorSpace/DeviceRGB/Coords[0 -0.00567 0 0.75567]/Domain[-0.00756 1.01]/Function 32 0 R/ShadingType 2>>
 endobj
 24 0 obj
 <</ColorSpace/DeviceRGB/Coords[0 0 0.75 0]/Domain[0 1]/Function 33 0 R/ShadingType 2>>
@@ -199,19 +194,19 @@ endobj
 <</ColorSpace/DeviceRGB/Coords[0 0 0 0.75]/Domain[0 1]/Function 36 0 R/ShadingType 2>>
 endobj
 28 0 obj
-<</Bounds[0 0.5 1]/Domain[-0.00651 1.01]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[37 0 R 38 0 R 39 0 R 40 0 R]>>
+<</Bounds[0 0.5 1]/Domain[-0.00576 1.01]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[37 0 R 38 0 R 39 0 R 40 0 R]>>
 endobj
 29 0 obj
 <</Bounds[0.5]/Domain[0 1]/Encode[0 1 0 1]/FunctionType 3/Functions[41 0 R 42 0 R]>>
 endobj
 30 0 obj
-<</Bounds[0 0.5 1]/Domain[-0.00651 1.01]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[43 0 R 44 0 R 45 0 R 46 0 R]>>
+<</Bounds[0 0.5 1]/Domain[-0.00569 1.01]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[43 0 R 44 0 R 45 0 R 46 0 R]>>
 endobj
 31 0 obj
 <</Bounds[0.5]/Domain[0 1]/Encode[0 1 0 1]/FunctionType 3/Functions[47 0 R 48 0 R]>>
 endobj
 32 0 obj
-<</Bounds[0 0.5 1]/Domain[-0.01988 1.02]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[49 0 R 50 0 R 51 0 R 52 0 R]>>
+<</Bounds[0 0.5 1]/Domain[-0.00756 1.01]/Encode[0 1 0 1 0 1 0 1]/FunctionType 3/Functions[49 0 R 50 0 R 51 0 R 52 0 R]>>
 endobj
 33 0 obj
 <</Bounds[0.5]/Domain[0 1]/Encode[0 1 0 1]/FunctionType 3/Functions[53 0 R 54 0 R]>>
@@ -309,60 +304,60 @@ xref
 0000000514 00000 n 
 0000000656 00000 n 
 0000000839 00000 n 
-0000001746 00000 n 
-0000001844 00000 n 
-0000001942 00000 n 
-0000002040 00000 n 
-0000002138 00000 n 
-0000002237 00000 n 
-0000002336 00000 n 
-0000002433 00000 n 
-0000002530 00000 n 
-0000002627 00000 n 
-0000002750 00000 n 
-0000002853 00000 n 
-0000002976 00000 n 
-0000003079 00000 n 
-0000003202 00000 n 
-0000003305 00000 n 
-0000003408 00000 n 
-0000003511 00000 n 
-0000003614 00000 n 
-0000003751 00000 n 
-0000003852 00000 n 
-0000003989 00000 n 
-0000004090 00000 n 
-0000004227 00000 n 
-0000004328 00000 n 
-0000004429 00000 n 
-0000004530 00000 n 
-0000004631 00000 n 
-0000004703 00000 n 
-0000004775 00000 n 
-0000004847 00000 n 
-0000004919 00000 n 
-0000004997 00000 n 
-0000005075 00000 n 
-0000005147 00000 n 
-0000005219 00000 n 
-0000005291 00000 n 
-0000005363 00000 n 
-0000005441 00000 n 
-0000005519 00000 n 
-0000005591 00000 n 
-0000005669 00000 n 
-0000005747 00000 n 
-0000005819 00000 n 
-0000005891 00000 n 
-0000005963 00000 n 
-0000006041 00000 n 
-0000006119 00000 n 
-0000006191 00000 n 
-0000006263 00000 n 
-0000006341 00000 n 
+0000001729 00000 n 
+0000001824 00000 n 
+0000001919 00000 n 
+0000002018 00000 n 
+0000002117 00000 n 
+0000002216 00000 n 
+0000002315 00000 n 
+0000002411 00000 n 
+0000002507 00000 n 
+0000002603 00000 n 
+0000002726 00000 n 
+0000002829 00000 n 
+0000002952 00000 n 
+0000003055 00000 n 
+0000003178 00000 n 
+0000003281 00000 n 
+0000003384 00000 n 
+0000003487 00000 n 
+0000003590 00000 n 
+0000003727 00000 n 
+0000003828 00000 n 
+0000003965 00000 n 
+0000004066 00000 n 
+0000004203 00000 n 
+0000004304 00000 n 
+0000004405 00000 n 
+0000004506 00000 n 
+0000004607 00000 n 
+0000004679 00000 n 
+0000004751 00000 n 
+0000004823 00000 n 
+0000004895 00000 n 
+0000004973 00000 n 
+0000005051 00000 n 
+0000005123 00000 n 
+0000005195 00000 n 
+0000005267 00000 n 
+0000005339 00000 n 
+0000005417 00000 n 
+0000005495 00000 n 
+0000005567 00000 n 
+0000005645 00000 n 
+0000005723 00000 n 
+0000005795 00000 n 
+0000005867 00000 n 
+0000005939 00000 n 
+0000006017 00000 n 
+0000006095 00000 n 
+0000006167 00000 n 
+0000006239 00000 n 
+0000006317 00000 n 
 trailer
-<</ID [<fee7c1582923d116b6dcc7ae801dc1a12a577121a6945a39820437bd6413191f47071e74d211a97f382f8fbbc3989c334dcf5ebd50ec16a00b1ee63d0a8a7b2e><fee7c1582923d116b6dcc7ae801dc1a12a577121a6945a39820437bd6413191f47071e74d211a97f382f8fbbc3989c334dcf5ebd50ec16a00b1ee63d0a8a7b2e>]/Info 3 0 R/Root 1 0 R/Size 61>>
+<</ID [<4e79a4db5880b57c45d023b5bcaa71bf45937550e42b93e1cb1cd58542948743bb619f07efba914673e72cdf4969e80527c6173133a4e2aee98b9a7a7fe09c8a><4e79a4db5880b57c45d023b5bcaa71bf45937550e42b93e1cb1cd58542948743bb619f07efba914673e72cdf4969e80527c6173133a4e2aee98b9a7a7fe09c8a>]/Info 3 0 R/Root 1 0 R/Size 61>>
 %iText-Core-9.1.0-SNAPSHOT
 startxref
-6419
+6395
 %%EOF
