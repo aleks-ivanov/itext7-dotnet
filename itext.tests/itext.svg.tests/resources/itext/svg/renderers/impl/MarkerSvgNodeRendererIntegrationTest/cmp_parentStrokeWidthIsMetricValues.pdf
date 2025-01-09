@@ -15,7 +15,7 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20241205042622+03'00')/ModDate(D:20241205042622+03'00')/Producer(iText® Core 9.1.0-SNAPSHOT \(AGPL version\) ©2000-2024 Apryse Group NV)>>
+<</CreationDate(D:20250108145214+03'00')/ModDate(D:20250108145214+03'00')/Producer(iText® Core 9.1.0-SNAPSHOT \(AGPL version\) ©2000-2024 Apryse Group NV)>>
 endobj
 6 0 obj
 <</BaseFont/Times-Roman/Encoding/WinAnsiEncoding/Subtype/Type1/Type/Font>>
@@ -24,18 +24,17 @@ endobj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
 endobj
 7 0 obj
-<</BBox[0 0 750 450]/Length 56/Resources<</XObject<</Fm1 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 750 450]/Length 41/Resources<</XObject<</Fm1 8 0 R>>>>/Subtype/Form/Type/XObject>>stream
 1 0 0 -1 0 450 cm
 % svg root
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 
 endstream
 endobj
 8 0 obj
-<</BBox[0 0 750 450]/Length 1726/Resources<</Font<</F1 6 0 R>>/XObject<</Fm1 9 0 R/Fm2 10 0 R/Fm3 11 0 R/Fm4 12 0 R/Fm5 13 0 R/Fm6 14 0 R>>>>/Subtype/Form/Type/XObject>>stream
+<</BBox[0 0 750 450]/Length 1636/Resources<</Font<</F1 6 0 R>>/XObject<</Fm1 9 0 R/Fm2 10 0 R/Fm3 11 0 R/Fm4 12 0 R/Fm5 13 0 R/Fm6 14 0 R>>>>/Subtype/Form/Type/XObject>>stream
 0 0 750 450 re
 W
 n
@@ -49,12 +48,11 @@ q
 B
 q
 1 0 0 1 75 75 cm
-0.3 0 0 0.3 0 0 cm
 0.70711 0.70711 -0.70711 0.70711 0 0 cm
 1 0 0 1 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm1 Do
 Q
 Q
@@ -78,12 +76,11 @@ S
 q
 0 0 0 rg
 1 0 0 1 210 75 cm
-0.3 0 0 0.3 0 0 cm
 0.70711 0.70711 -0.70711 0.70711 0 0 cm
 1.33 0 0 1.33 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm2 Do
 Q
 Q
@@ -110,12 +107,11 @@ S
 q
 0 0 0 rg
 1 0 0 1 15 165 cm
-0.3 0 0 0.3 0 0 cm
 -0.96476 -0.26312 0.26312 -0.96476 0 0 cm
 3.78 0 0 3.78 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm3 Do
 Q
 Q
@@ -140,12 +136,11 @@ S
 q
 0 0 0 rg
 1 0 0 1 225 225 cm
-0.3 0 0 0.3 0 0 cm
 0.70711 0.70711 -0.70711 0.70711 0 0 cm
 37.8 0 0 37.8 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm4 Do
 Q
 Q
@@ -170,12 +165,11 @@ S
 q
 0 0 0 rg
 1 0 0 1 375 225 cm
-0.3 0 0 0.3 0 0 cm
 0.70711 0.70711 -0.70711 0.70711 0 0 cm
 16 0 0 16 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm5 Do
 Q
 Q
@@ -200,12 +194,11 @@ S
 q
 0 0 0 rg
 1 0 0 1 375 75 cm
-0.3 0 0 0.3 0 0 cm
 0.70711 0.70711 -0.70711 0.70711 0 0 cm
 28.8 0 0 28.8 0 0 cm
-1 0 0 1 0 -3.75 cm
+1 0 0 1 0 -1.12 cm
+0.3 0 0 0.3 0 0 cm
 q
-1 0 0 1 0 0 cm
 /Fm6 Do
 Q
 Q
@@ -335,16 +328,16 @@ xref
 0000000015 00000 n 
 0000000428 00000 n 
 0000000569 00000 n 
-0000000752 00000 n 
-0000002680 00000 n 
-0000002853 00000 n 
-0000003039 00000 n 
-0000003213 00000 n 
-0000003411 00000 n 
-0000003597 00000 n 
+0000000737 00000 n 
+0000002575 00000 n 
+0000002748 00000 n 
+0000002934 00000 n 
+0000003108 00000 n 
+0000003306 00000 n 
+0000003492 00000 n 
 trailer
-<</ID [<aad3256defe4de62c5459c53683987efa46dbb1695740af989dfeb9c94302690ed82a48b99cbe35e16e8cdaaa42a6334aaf05b307e35445ca5570db1c7ed9620><aad3256defe4de62c5459c53683987efa46dbb1695740af989dfeb9c94302690ed82a48b99cbe35e16e8cdaaa42a6334aaf05b307e35445ca5570db1c7ed9620>]/Info 3 0 R/Root 1 0 R/Size 15>>
+<</ID [<af7ea5098b3d1ca6097cf52bbe85b24ec9ddb71c2db439aaef2bdffd9739df56df7b9c863c9cbb01b191ae64b1acf4ce9d3ef432b2db34553b98d244a3e9ed8f><af7ea5098b3d1ca6097cf52bbe85b24ec9ddb71c2db439aaef2bdffd9739df56df7b9c863c9cbb01b191ae64b1acf4ce9d3ef432b2db34553b98d244a3e9ed8f>]/Info 3 0 R/Root 1 0 R/Size 15>>
 %iText-Core-9.1.0-SNAPSHOT
 startxref
-3771
+3666
 %%EOF
