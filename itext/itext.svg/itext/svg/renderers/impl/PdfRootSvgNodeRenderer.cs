@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2024 Apryse Group NV
+Copyright (c) 1998-2025 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -49,9 +49,8 @@ namespace iText.Svg.Renderers.Impl {
         public virtual void SetParent(ISvgNodeRenderer parent) {
         }
 
-        // TODO DEVSIX-2283
+        // Do nothing because it is root
         public virtual ISvgNodeRenderer GetParent() {
-            // TODO DEVSIX-2283
             return null;
         }
 

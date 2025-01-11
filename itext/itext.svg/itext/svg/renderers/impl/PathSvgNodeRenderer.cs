@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2024 Apryse Group NV
+Copyright (c) 1998-2025 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -172,12 +172,14 @@ namespace iText.Svg.Renderers.Impl {
                         Point lastControlPoint = ((IControlPointCurve)previousShape).GetLastControlPoint();
                         float reflectedX = (float)(2 * previousEndPoint.GetX() - lastControlPoint.GetX());
                         float reflectedY = (float)(2 * previousEndPoint.GetY() - lastControlPoint.GetY());
-                        startingControlPoint[0] = SvgCssUtils.ConvertFloatToString(reflectedX);
-                        startingControlPoint[1] = SvgCssUtils.ConvertFloatToString(reflectedY);
+                        startingControlPoint[0] = Convert.ToString(reflectedX, System.Globalization.CultureInfo.InvariantCulture);
+                        startingControlPoint[1] = Convert.ToString(reflectedY, System.Globalization.CultureInfo.InvariantCulture);
                     }
                     else {
-                        startingControlPoint[0] = SvgCssUtils.ConvertDoubleToString(previousEndPoint.GetX());
-                        startingControlPoint[1] = SvgCssUtils.ConvertDoubleToString(previousEndPoint.GetY());
+                        startingControlPoint[0] = Convert.ToString(previousEndPoint.GetX(), System.Globalization.CultureInfo.InvariantCulture
+                            );
+                        startingControlPoint[1] = Convert.ToString(previousEndPoint.GetY(), System.Globalization.CultureInfo.InvariantCulture
+                            );
                     }
                 }
                 else {
