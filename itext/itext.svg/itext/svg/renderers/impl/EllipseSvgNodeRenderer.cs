@@ -97,8 +97,16 @@ namespace iText.Svg.Renderers.Impl {
         /// <returns>boolean values to indicate whether all values exit or not</returns>
         protected internal virtual bool SetParameters(SvgDrawContext context) {
             InitCenter(context);
-            rx = ParseHorizontalLength(GetAttribute(SvgConstants.Attributes.RX), context);
-            ry = ParseVerticalLength(GetAttribute(SvgConstants.Attributes.RY), context);
+            String rxValue = GetAttribute(SvgConstants.Attributes.RX);
+            String ryValue = GetAttribute(SvgConstants.Attributes.RY);
+            rx = ParseHorizontalLength(rxValue, context);
+            ry = ParseVerticalLength(ryValue, context);
+            if (rxValue == null) {
+                rx = ry;
+            }
+            if (ryValue == null) {
+                ry = rx;
+            }
             return rx > 0.0F && ry > 0.0F;
         }
 
@@ -120,5 +128,11 @@ namespace iText.Svg.Renderers.Impl {
             DeepCopyAttributesAndStyles(copy);
             return copy;
         }
+
+//\cond DO_NOT_DOCUMENT
+        internal override void DoStrokeOrFill(String fillRuleRawValue, PdfCanvas currentCanvas) {
+            DrawUtils.DoStrokeOrFillForClosedFigure(fillRuleRawValue, currentCanvas, doStroke);
+        }
+//\endcond
     }
 }

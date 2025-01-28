@@ -73,13 +73,11 @@ namespace iText.Svg.Renderers.Impl {
 
         [NUnit.Framework.Test]
         public virtual void EllipseRxAbsentTest() {
-            //TODO: update cmp_ when DEVSIX-3119
             ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "ellipseRxAbsent");
         }
 
         [NUnit.Framework.Test]
         public virtual void EllipseRyAbsentTest() {
-            //TODO: update cmp_ when DEVSIX-3119
             ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "ellipseRyAbsent");
         }
 
@@ -155,7 +153,6 @@ namespace iText.Svg.Renderers.Impl {
 
         [NUnit.Framework.Test]
         public virtual void EllipseWithBigStrokeWidthTest() {
-            // TODO: DEVSIX-3932 update cmp_ after fix
             ConvertAndCompare(SOURCE_FOLDER, DESTINATION_FOLDER, "ellipseWithBigStrokeWidth");
         }
     }

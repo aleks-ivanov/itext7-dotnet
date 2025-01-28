@@ -309,23 +309,7 @@ namespace iText.Svg.Renderers.Impl {
                 if (GetParentClipPath() == null) {
                     if (doFill && CanElementFill()) {
                         String fillRuleRawValue = GetAttribute(SvgConstants.Attributes.FILL_RULE);
-                        if (SvgConstants.Values.FILL_RULE_EVEN_ODD.EqualsIgnoreCase(fillRuleRawValue)) {
-                            if (doStroke) {
-                                currentCanvas.EoFillStroke();
-                            }
-                            else {
-                                currentCanvas.EoFill();
-                            }
-                        }
-                        else {
-                            if (doStroke) {
-                                // TODO DEVSIX-8854 Draw SVG elements with transparent stroke in 2 steps
-                                currentCanvas.FillStroke();
-                            }
-                            else {
-                                currentCanvas.Fill();
-                            }
-                        }
+                        DoStrokeOrFill(fillRuleRawValue, currentCanvas);
                     }
                     else {
                         if (doStroke) {
@@ -353,6 +337,35 @@ namespace iText.Svg.Renderers.Impl {
                             ((IMarkerCapable)this).DrawMarker(context, markerVertexType);
                         }
                     }
+                }
+            }
+        }
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        /// <summary>
+        /// Do stroke or fill based on
+        /// <c>doFill/doStroke</c>
+        /// fields.
+        /// </summary>
+        /// <param name="fillRuleRawValue">fill rule attribute value.</param>
+        /// <param name="currentCanvas">current canvas to draw on.</param>
+        internal virtual void DoStrokeOrFill(String fillRuleRawValue, PdfCanvas currentCanvas) {
+            if (SvgConstants.Values.FILL_RULE_EVEN_ODD.EqualsIgnoreCase(fillRuleRawValue)) {
+                if (doStroke) {
+                    currentCanvas.EoFillStroke();
+                }
+                else {
+                    currentCanvas.EoFill();
+                }
+            }
+            else {
+                if (doStroke) {
+                    // TODO DEVSIX-8854 Draw SVG elements with transparent stroke in 2 steps
+                    currentCanvas.FillStroke();
+                }
+                else {
+                    currentCanvas.Fill();
                 }
             }
         }
@@ -511,22 +524,42 @@ namespace iText.Svg.Renderers.Impl {
                 return null;
             }
             String tokenValue = token.GetValue();
-            if (tokenValue.StartsWith("url(#") && tokenValue.EndsWith(")")) {
-                Color resolvedColor = null;
-                float resolvedOpacity = 1;
-                String normalizedName = tokenValue.JSubstring(5, tokenValue.Length - 1).Trim();
-                ISvgNodeRenderer colorRenderer = context.GetNamedObject(normalizedName);
-                if (colorRenderer is ISvgPaintServer) {
-                    if (colorRenderer.GetParent() == null) {
-                        colorRenderer.SetParent(this);
+            bool isUrlInvalid = false;
+            if (tokenValue.StartsWith("url(") && tokenValue.EndsWith(")")) {
+                String normalizedName = tokenValue.JSubstring(4, tokenValue.Length - 1).Trim();
+                normalizedName = CssUtils.ExtractUnquotedString(normalizedName);
+                if (normalizedName.StartsWith("#")) {
+                    Color resolvedColor = null;
+                    float resolvedOpacity = 1;
+                    normalizedName = normalizedName.Substring(1);
+                    ISvgNodeRenderer colorRenderer = context.GetNamedObject(normalizedName);
+                    if (colorRenderer is ISvgPaintServer) {
+                        if (colorRenderer.GetParent() == null) {
+                            colorRenderer.SetParent(this);
+                        }
+                        resolvedColor = ((ISvgPaintServer)colorRenderer).CreateColor(context, GetObjectBoundingBox(context), objectBoundingBoxMargin
+                            , parentOpacity);
                     }
-                    resolvedColor = ((ISvgPaintServer)colorRenderer).CreateColor(context, GetObjectBoundingBox(context), objectBoundingBoxMargin
-                        , parentOpacity);
+                    if (resolvedColor != null) {
+                        return new TransparentColor(resolvedColor, resolvedOpacity);
+                    }
+                    if (colorRenderer == null) {
+                        isUrlInvalid = true;
+                    }
                 }
-                if (resolvedColor != null) {
-                    return new TransparentColor(resolvedColor, resolvedOpacity);
+                else {
+                    //we don't support those, but we need to make fill transparent anyway in such a case
+                    isUrlInvalid = true;
                 }
+                //try to get next token to work the same as for the local url values
                 token = tokenizer.GetNextValidToken();
+            }
+            else {
+                if (tokenValue.StartsWith("url(") && !tokenValue.Contains(" ")) {
+                    //for cases like url\([\w\d]+ browser treats them as urls, but url\([\w\d]+\s[\w\d]+ are not
+                    isUrlInvalid = true;
+                    token = tokenizer.GetNextValidToken();
+                }
             }
             // may become null after function parsing and reading the 2nd token
             if (token != null) {
@@ -538,6 +571,9 @@ namespace iText.Svg.Renderers.Impl {
                     TransparentColor result = CssDimensionParsingUtils.ParseColor(value);
                     return new TransparentColor(result.GetColor(), result.GetOpacity() * parentOpacity);
                 }
+            }
+            if (isUrlInvalid) {
+                return new TransparentColor(ColorConstants.BLACK, 0.0F);
             }
             return null;
         }
