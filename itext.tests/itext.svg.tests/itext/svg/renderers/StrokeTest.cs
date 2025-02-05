@@ -101,9 +101,23 @@ namespace iText.Svg.Renderers {
         }
 
         [NUnit.Framework.Test]
+        public virtual void ZeroStrokeWidthTest() {
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "zeroStrokeWidth");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void NegativeStrokeWidthTest() {
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "negativeStrokeWidth");
+        }
+
+        [NUnit.Framework.Test]
         public virtual void HeightWidthZeroTest() {
-            //TODO DEVSIX-8760 : change cmp after fix
-            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "height-width-zero");
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "heightWidthZero");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void HeightWidthNegativeTest() {
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "heightWidthNegative");
         }
 
         [NUnit.Framework.Test]

@@ -126,6 +126,9 @@ namespace iText.Svg.Renderers.Impl {
         public void Draw(SvgDrawContext context) {
             PdfCanvas currentCanvas = context.GetCurrentCanvas();
             if (this.attributesAndStyles != null) {
+                if (IsHidden()) {
+                    return;
+                }
                 String transformString = this.attributesAndStyles.Get(SvgConstants.Attributes.TRANSFORM);
                 if (transformString != null && !String.IsNullOrEmpty(transformString)) {
                     AffineTransform transformation = TransformUtils.ParseTransform(transformString);
@@ -250,6 +253,42 @@ namespace iText.Svg.Renderers.Impl {
         /// <summary>Draws this element to a canvas-like object maintained in the context.</summary>
         /// <param name="context">the object that knows the place to draw this element and maintains its state</param>
         protected internal abstract void DoDraw(SvgDrawContext context);
+
+//\cond DO_NOT_DOCUMENT
+        internal virtual String[] RetrieveAlignAndMeet() {
+            String meetOrSlice = SvgConstants.Values.MEET;
+            String align = SvgConstants.Values.DEFAULT_ASPECT_RATIO;
+            String preserveAspectRatioValue = this.attributesAndStyles.Get(SvgConstants.Attributes.PRESERVE_ASPECT_RATIO
+                );
+            // TODO: DEVSIX-3923 remove normalization (.toLowerCase)
+            if (preserveAspectRatioValue == null) {
+                preserveAspectRatioValue = this.attributesAndStyles.Get(SvgConstants.Attributes.PRESERVE_ASPECT_RATIO.ToLowerInvariant
+                    ());
+            }
+            if (this.attributesAndStyles.ContainsKey(SvgConstants.Attributes.PRESERVE_ASPECT_RATIO) || this.attributesAndStyles
+                .ContainsKey(SvgConstants.Attributes.PRESERVE_ASPECT_RATIO.ToLowerInvariant())) {
+                IList<String> aspectRatioValuesSplitValues = SvgCssUtils.SplitValueList(preserveAspectRatioValue);
+                align = aspectRatioValuesSplitValues[0].ToLowerInvariant();
+                if (aspectRatioValuesSplitValues.Count > 1) {
+                    meetOrSlice = aspectRatioValuesSplitValues[1].ToLowerInvariant();
+                }
+            }
+            if (this is MarkerSvgNodeRenderer && !SvgConstants.Values.NONE.Equals(align) && SvgConstants.Values.MEET.Equals
+                (meetOrSlice)) {
+                // Browsers do not correctly display markers with 'meet' option in the preserveAspectRatio attribute.
+                // The Chrome, IE, and Firefox browsers set the align value to 'xMinYMin' regardless of the actual align.
+                align = SvgConstants.Values.XMIN_YMIN;
+            }
+            return new String[] { align, meetOrSlice };
+        }
+//\endcond
+
+        /// <summary>Check if this renderer should draw the element based on its attributes (e.g. visibility/display)</summary>
+        /// <returns>true if element won't be drawn, false otherwise</returns>
+        protected internal virtual bool IsHidden() {
+            return CommonCssConstants.NONE.Equals(this.attributesAndStyles.Get(CommonCssConstants.DISPLAY)) || CommonCssConstants
+                .HIDDEN.Equals(this.attributesAndStyles.Get(CommonCssConstants.VISIBILITY));
+        }
 
 //\cond DO_NOT_DOCUMENT
         /// <summary>
@@ -548,7 +587,7 @@ namespace iText.Svg.Renderers.Impl {
             if (rawColorValue == null) {
                 return null;
             }
-            if (CommonCssConstants.CURRENTCOLOR.Equals(rawColorValue)) {
+            if (CommonCssConstants.CURRENTCOLOR.Equals(rawColorValue.ToLowerInvariant())) {
                 rawColorValue = GetAttributeOrDefault(CommonCssConstants.COLOR, "black");
             }
             CssDeclarationValueTokenizer tokenizer = new CssDeclarationValueTokenizer(rawColorValue);
@@ -566,6 +605,9 @@ namespace iText.Svg.Renderers.Impl {
                     float resolvedOpacity = 1;
                     normalizedName = normalizedName.Substring(1);
                     ISvgNodeRenderer colorRenderer = context.GetNamedObject(normalizedName);
+                    if (colorRenderer is AbstractSvgNodeRenderer && ((AbstractSvgNodeRenderer)colorRenderer).IsHidden()) {
+                        colorRenderer = null;
+                    }
                     if (colorRenderer is ISvgPaintServer) {
                         if (colorRenderer.GetParent() == null) {
                             colorRenderer.SetParent(this);
@@ -639,6 +681,9 @@ namespace iText.Svg.Renderers.Impl {
                 if (template is ClipPathSvgNodeRenderer) {
                     // Clone template to avoid muddying the state
                     ClipPathSvgNodeRenderer clipPath = (ClipPathSvgNodeRenderer)template.CreateDeepCopy();
+                    if (clipPath.IsHidden()) {
+                        return false;
+                    }
                     // Resolve parent inheritance
                     SvgNodeRendererInheritanceResolver.ApplyInheritanceToSubTree(this, clipPath, context.GetCssContext());
                     clipPath.SetClippedRenderer(this);
@@ -690,10 +735,13 @@ namespace iText.Svg.Renderers.Impl {
             String strokeRawValue = GetAttributeOrDefault(SvgConstants.Attributes.STROKE, SvgConstants.Values.NONE);
             if (!SvgConstants.Values.NONE.EqualsIgnoreCase(strokeRawValue)) {
                 String strokeWidthRawValue = GetAttribute(SvgConstants.Attributes.STROKE_WIDTH);
-                // 1 px = 0,75 pt
-                float strokeWidth = 0.75f;
+                float strokeWidth = -1;
                 if (strokeWidthRawValue != null) {
                     strokeWidth = ParseHorizontalLength(strokeWidthRawValue, context);
+                }
+                if (strokeWidth < 0) {
+                    // Default: 1 px = 0,75 pt
+                    strokeWidth = 0.75f;
                 }
                 float generalOpacity = GetOpacity();
                 float strokeOpacity = GetOpacityByAttributeName(SvgConstants.Attributes.STROKE_OPACITY, generalOpacity);
@@ -708,9 +756,11 @@ namespace iText.Svg.Renderers.Impl {
                 String strokeDashOffsetRawValue = GetAttribute(SvgConstants.Attributes.STROKE_DASHOFFSET);
                 SvgStrokeParameterConverter.PdfLineDashParameters lineDashParameters = SvgStrokeParameterConverter.ConvertStrokeDashParameters
                     (strokeDashArrayRawValue, strokeDashOffsetRawValue, GetCurrentFontSize(context), context);
-                doStroke = true;
-                return new AbstractSvgNodeRenderer.StrokeProperties(strokeColor, strokeWidth, strokeOpacity, lineDashParameters
-                    );
+                if (strokeWidth > 0) {
+                    doStroke = true;
+                    return new AbstractSvgNodeRenderer.StrokeProperties(strokeColor, strokeWidth, strokeOpacity, lineDashParameters
+                        );
+                }
             }
             return null;
         }
