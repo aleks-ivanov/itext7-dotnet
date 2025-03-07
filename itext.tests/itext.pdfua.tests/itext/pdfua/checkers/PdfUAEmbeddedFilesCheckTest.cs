@@ -75,7 +75,7 @@ namespace iText.Pdfua.Checkers {
             }
             else {
                 if (pdfUAConformance == PdfUAConformance.PDF_UA_2) {
-                    framework.AssertVeraPdfFail("pdfuaWithEmbeddedFilesWithoutF", pdfUAConformance);
+                    framework.AssertVeraPdfValid("pdfuaWithEmbeddedFilesWithoutF", pdfUAConformance);
                 }
             }
         }
@@ -97,7 +97,7 @@ namespace iText.Pdfua.Checkers {
             }
             else {
                 if (pdfUAConformance == PdfUAConformance.PDF_UA_2) {
-                    framework.AssertVeraPdfFail("pdfuaWithEmbeddedFilesWithoutUF", pdfUAConformance);
+                    framework.AssertVeraPdfValid("pdfuaWithEmbeddedFilesWithoutUF", pdfUAConformance);
                 }
             }
         }
