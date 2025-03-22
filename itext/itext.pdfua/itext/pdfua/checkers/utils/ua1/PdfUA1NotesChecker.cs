@@ -20,24 +20,27 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-using System;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Tagging;
+using iText.Pdfua.Checkers.Utils;
 using iText.Pdfua.Exceptions;
 
-namespace iText.Pdfua.Checkers.Utils {
+namespace iText.Pdfua.Checkers.Utils.Ua1 {
     /// <summary>Utility class for delegating notes checks to the correct checking logic.</summary>
-    [System.ObsoleteAttribute(@"in favor of iText.Pdfua.Checkers.Utils.Ua1.PdfUA1NotesChecker")]
-    public class NoteCheckUtil {
+    public sealed class PdfUA1NotesChecker {
+        private PdfUA1NotesChecker() {
+        }
+
+        // Empty constructor.
         /// <summary>Handler for checking Note elements in the TagTree.</summary>
-        public class NoteTagHandler : ContextAwareTagTreeIteratorHandler {
+        public class PdfUA1NotesTagHandler : ContextAwareTagTreeIteratorHandler {
             /// <summary>
             /// Creates a new
-            /// <see cref="NoteTagHandler"/>
+            /// <see cref="PdfUA1NotesTagHandler"/>
             /// instance.
             /// </summary>
             /// <param name="context">The validation context.</param>
-            public NoteTagHandler(PdfUAValidationContext context)
+            public PdfUA1NotesTagHandler(PdfUAValidationContext context)
                 : base(context) {
             }
 
