@@ -35,8 +35,7 @@ namespace iText.Kernel.Pdf.Xobject {
         private static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/kernel/pdf/xobject/PdfImageXObjectTest/";
 
-        private static readonly String DESTINATION_FOLDER = NUnit.Framework.TestContext.CurrentContext.TestDirectory
-             + "/test/itext/kernel/pdf/xobject/PdfImageXObjectTest/";
+        private static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/kernel/pdf/xobject/PdfImageXObjectTest/";
 
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
@@ -168,6 +167,7 @@ namespace iText.Kernel.Pdf.Xobject {
 
         [NUnit.Framework.Test]
         public virtual void DecodingIndexedCsWithRgbTest() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6445 fix different DeflaterOutputStream behavior)
             using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + "img_indexed_rgb.pdf"))) {
                 PdfImageXObject imageXObject = pdfDocument.GetPage(1).GetResources().GetImage(new PdfName("Im0"));
                 byte[] imageBytes = imageXObject.GetImageBytes();
@@ -179,6 +179,7 @@ namespace iText.Kernel.Pdf.Xobject {
 
         [NUnit.Framework.Test]
         public virtual void DecodingIndexedCsWithRgbStringTableTest() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6445 fix different DeflaterOutputStream behavior)
             using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + "img_indexed_rgb_string_table.pdf"
                 ))) {
                 PdfImageXObject imageXObject = pdfDocument.GetPage(1).GetResources().GetImage(new PdfName("Im0"));
@@ -191,6 +192,7 @@ namespace iText.Kernel.Pdf.Xobject {
 
         [NUnit.Framework.Test]
         public virtual void DecodingIndexedCsWithRgbWrongLookupTest() {
+            // Android-Conversion-Ignore-Test (TODO DEVSIX-6445 fix different DeflaterOutputStream behavior)
             using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + "img_indexed_rgb_wrong_lookup.pdf"
                 ))) {
                 PdfImageXObject imageXObject = pdfDocument.GetPage(1).GetResources().GetImage(new PdfName("Im0"));
