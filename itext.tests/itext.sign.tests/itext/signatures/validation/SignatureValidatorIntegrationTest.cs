@@ -36,6 +36,7 @@ using iText.Signatures.Testutils;
 using iText.Signatures.Testutils.Builder;
 using iText.Signatures.Testutils.Client;
 using iText.Signatures.Validation.Context;
+using iText.Signatures.Validation.Lotl;
 using iText.Signatures.Validation.Mocks;
 using iText.Signatures.Validation.Report;
 using iText.Test;
@@ -49,6 +50,9 @@ namespace iText.Signatures.Validation {
 
         private static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/signatures/validation/SignatureValidatorIntegrationTest/";
+
+        private static readonly String SOURCE_FOLDER_LOTL_FILES = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+            .CurrentContext.TestDirectory) + "/resources/itext/signatures/validation" + "/lotl/LotlState2025_08_08/";
 
         private static readonly IBouncyCastleFactory FACTORY = BouncyCastleFactoryCreator.GetFactory();
 
@@ -250,7 +254,7 @@ namespace iText.Signatures.Validation {
             }
             // Signature1 set access permissions to level 3, Signature2 - to level 1, after that annotation was added.
             AssertValidationReport.AssertThat(report1, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfLogs
-                (4).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(DocumentRevisionsValidator.DOC_MDP_CHECK
+                (5).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(DocumentRevisionsValidator.DOC_MDP_CHECK
                 ).WithMessage(DocumentRevisionsValidator.UNEXPECTED_ENTRY_IN_XREF, (i) => 17).WithStatus(ReportItem.ReportItemStatus
                 .INFO)).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION).WithMessage(SignatureValidator
                 .VALIDATING_SIGNATURE_NAME, (p) => "Signature1")).HasLogItem((al) => al.WithCertificate(rootCert).WithCheckName
@@ -258,7 +262,7 @@ namespace iText.Signatures.Validation {
                 , (i) => rootCert.GetSubjectDN())).HasLogItem((al) => al.WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage
                 (OCSPValidator.OCSP_RESPONDER_IS_CA)));
             AssertValidationReport.AssertThat(report2, (a) => a.HasStatus(ValidationReport.ValidationResult.INVALID).HasNumberOfLogs
-                (4).HasNumberOfFailures(1).HasLogItem((al) => al.WithCheckName(DocumentRevisionsValidator.DOC_MDP_CHECK
+                (5).HasNumberOfFailures(1).HasLogItem((al) => al.WithCheckName(DocumentRevisionsValidator.DOC_MDP_CHECK
                 ).WithMessage(DocumentRevisionsValidator.PAGE_ANNOTATIONS_MODIFIED).WithStatus(ReportItem.ReportItemStatus
                 .INVALID)).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION).WithMessage(
                 SignatureValidator.VALIDATING_SIGNATURE_NAME, (p) => "Signature2")).HasLogItem((al) => al.WithCertificate
@@ -314,7 +318,7 @@ namespace iText.Signatures.Validation {
                 report = signatureValidator.ValidateSignatures();
             }
             AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfLogs
-                (4).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
+                (6).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
                 ).WithMessage(SignatureValidator.VALIDATING_SIGNATURE_NAME, (i) => "Signature1")).HasLogItem((al) => al
                 .WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage(OCSPValidator.CERT_STATUS_IS_UNKNOWN).WithStatus(
                 ReportItem.ReportItemStatus.INFO)).HasLogItems(2, (al) => al.WithCertificate(rootCert).WithCheckName(CertificateChainValidator
@@ -341,7 +345,7 @@ namespace iText.Signatures.Validation {
                 report = signatureValidator.ValidateSignatures();
             }
             AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfLogs
-                (6).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
+                (10).HasNumberOfFailures(0).HasLogItem((al) => al.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
                 ).WithMessage(SignatureValidator.VALIDATING_SIGNATURE_NAME, (i) => "Signature1")).HasLogItem((al) => al
                 .WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage(OCSPValidator.CERT_STATUS_IS_UNKNOWN).WithStatus(
                 ReportItem.ReportItemStatus.INFO)).HasLogItems(4, (al) => al.WithCertificate(rootCert).WithCheckName(CertificateChainValidator
@@ -374,7 +378,7 @@ namespace iText.Signatures.Validation {
                 SignatureValidator signatureValidator = builder.BuildSignatureValidator(document);
                 report = signatureValidator.ValidateLatestSignature(document);
             }
-            AssertValidationReport.AssertThat(report, (a) => a.HasNumberOfFailures(0).HasNumberOfLogs(3).HasLogItem((la
+            AssertValidationReport.AssertThat(report, (a) => a.HasNumberOfFailures(0).HasNumberOfLogs(4).HasLogItem((la
                 ) => la.WithCheckName(CertificateChainValidator.CERTIFICATE_CHECK).WithMessage(CertificateChainValidator
                 .CERTIFICATE_TRUSTED, (l) => rootCert.GetSubjectDN()).WithCertificate(rootCert)));
         }
@@ -456,7 +460,7 @@ namespace iText.Signatures.Validation {
                     (document);
                 ValidationReport report = signatureValidator.ValidateSignatures();
                 AssertValidationReport.AssertThat(report, (r) => r.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfLogs
-                    (5).HasNumberOfFailures(0).HasLogItem((l) => l.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
+                    (7).HasNumberOfFailures(0).HasLogItem((l) => l.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
                     ).WithMessage(SignatureValidator.VALIDATING_SIGNATURE_NAME, (p) => "timestampSig1")).HasLogItem((l) =>
                      l.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION).WithMessage(SignatureValidator.VALIDATING_SIGNATURE_NAME
                     , (p) => "Signature1"))
@@ -478,6 +482,30 @@ namespace iText.Signatures.Validation {
                     ).HasNumberOfLogs(3).HasNumberOfFailures(2).HasLogItem((l) => l.WithCheckName(SignatureValidator.SIGNATURE_VERIFICATION
                     ).WithMessage(SignatureValidator.VALIDATING_SIGNATURE_NAME, (p) => "Signature1")).HasLogItems(2, (l) =>
                      l.WithCheckName(CertificateChainValidator.CERTIFICATE_CHECK).WithStatus(ReportItem.ReportItemStatus.INDETERMINATE
+                    )));
+            }
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void InfiniteRecursionForOCSPFromDSSTest() {
+            LotlService service = new LotlService(new LotlFetchingProperties(new RemoveOnFailingCountryData()));
+            service.WithCustomResourceRetriever(new FromDiskResourceRetriever(SOURCE_FOLDER_LOTL_FILES));
+            service.WithLotlValidator(() => new LotlValidator(service));
+            service.InitializeCache();
+            SignatureValidationProperties param = new SignatureValidationProperties().SetRevocationOnlineFetching(ValidatorContexts
+                .All(), CertificateSources.All(), TimeBasedContexts.All(), SignatureValidationProperties.OnlineFetching
+                .NEVER_FETCH).SetFreshness(ValidatorContexts.All(), CertificateSources.All(), TimeBasedContexts.All(), 
+                TimeSpan.FromDays(1000000));
+            ValidatorChainBuilder chainBuilder = new ValidatorChainBuilder().WithSignatureValidationProperties(param).
+                WithLotlService(() => service).TrustEuropeanLotl(true);
+            chainBuilder.WithCertificateChainValidatorFactory(() => new CustomDateChainValidator(chainBuilder, DateTimeUtil
+                .CreateUtcDateTime(2025, 10, 0x5, 0, 0, 0)));
+            using (PdfDocument document = new PdfDocument(new PdfReader(SOURCE_FOLDER + "ocspResponseSignedByCertToCheck.pdf"
+                ))) {
+                SignatureValidator signatureValidator = chainBuilder.BuildSignatureValidator(document);
+                ValidationReport report = signatureValidator.ValidateSignatures();
+                AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfFailures
+                    (0).HasLogItem((l) => l.WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage(OCSPValidator.OCSP_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED
                     )));
             }
         }

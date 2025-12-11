@@ -129,6 +129,7 @@ namespace iText.Kernel.Pdf {
 
         protected internal TagStructureContext tagStructureContext;
 
+        [Obsolete]
         protected internal DocumentInfoHelper documentInfoHelper = new DocumentInfoHelper();
 
         protected internal DefaultFontStrategy defaultFontStrategy;
@@ -923,11 +924,18 @@ namespace iText.Kernel.Pdf {
                     }
                     PdfObject crypto = null;
                     ICollection<PdfIndirectReference> forbiddenToFlush = new HashSet<PdfIndirectReference>();
-                    documentInfoHelper.AdjustDocumentInfo(GetDocumentInfo());
                     // The following 2 operators prevent the possible inconsistency between root and info
                     // entries existing in the trailer object and corresponding fields. This inconsistency
                     // may appear when user gets trailer and explicitly sets new root or info dictionaries.
-                    if (documentInfoHelper.ShouldAddDocumentInfoToTrailer()) {
+                    PdfAConformance pdfAConformance = this.GetConformance().GetAConformance();
+                    if (pdfAConformance != null && "4".Equals(pdfAConformance.GetPart())) {
+                        if (this.GetCatalog().GetPdfObject().Get(PdfName.PieceInfo) != null) {
+                            // Leave only ModDate as required by 6.1.3 File trailer of pdf/a-4 spec
+                            GetDocumentInfo().RemoveCreationDate();
+                            trailer.Put(PdfName.Info, GetDocumentInfo().GetPdfObject());
+                        }
+                    }
+                    else {
                         trailer.Put(PdfName.Info, GetDocumentInfo().GetPdfObject());
                     }
                     trailer.Put(PdfName.Root, catalog.GetPdfObject());
@@ -935,8 +943,13 @@ namespace iText.Kernel.Pdf {
                         if (structTreeRoot != null) {
                             TryFlushTagStructure(true);
                         }
-                        if (catalog.IsOCPropertiesMayHaveChanged() && catalog.GetOCProperties(false).GetPdfObject().IsModified()) {
-                            catalog.GetOCProperties(false).Flush();
+                        if (catalog.IsOCPropertiesMayHaveChanged()) {
+                            PdfObject ocPropsDict = catalog.GetOCProperties(false).GetPdfObject();
+                            // Ensure OCProperties is referenced from the catalog, even if it didn't exist originally.
+                            catalog.Put(PdfName.OCProperties, ocPropsDict);
+                            if (ocPropsDict.IsModified()) {
+                                catalog.GetOCProperties(false).Flush();
+                            }
                         }
                         if (catalog.pageLabels != null) {
                             catalog.Put(PdfName.PageLabels, catalog.pageLabels.BuildTree());

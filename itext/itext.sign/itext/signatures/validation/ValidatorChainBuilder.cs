@@ -22,9 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Actions;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Kernel.Pdf;
 using iText.Signatures;
+using iText.Signatures.Validation.Dataorigin;
+using iText.Signatures.Validation.Lotl;
+using iText.Signatures.Validation.Report.Pades;
 using iText.Signatures.Validation.Report.Xml;
 using iText.StyledXmlParser.Resolver.Resource;
 
@@ -55,14 +59,27 @@ namespace iText.Signatures.Validation {
 
         private Func<ICrlClient> crlClientFactory;
 
+        private Func<LotlTrustedStore> lotlTrustedStoreFactory;
+
+        private Func<LotlService> lotlServiceFactory;
+
+        private QualifiedValidator qualifiedValidator;
+
         private ICollection<IX509Certificate> trustedCertificates;
 
         private ICollection<IX509Certificate> knownCertificates;
 
+        private bool trustEuropeanLotl = false;
+
+        private readonly EventManager eventManager;
+
         private AdESReportAggregator adESReportAggregator = new NullAdESReportAggregator();
+
+        private bool padesValidationRequested = false;
 
         /// <summary>Creates a ValidatorChainBuilder using default implementations</summary>
         public ValidatorChainBuilder() {
+            lotlTrustedStoreFactory = () => BuildLotlTrustedStore();
             certificateRetrieverFactory = () => BuildIssuingCertificateRetriever();
             certificateChainValidatorFactory = () => BuildCertificateChainValidator();
             revocationDataValidatorFactory = () => BuildRevocationDataValidator();
@@ -72,6 +89,61 @@ namespace iText.Signatures.Validation {
             documentRevisionsValidatorFactory = () => BuildDocumentRevisionsValidator();
             ocspClientFactory = () => new OcspClientBouncyCastle();
             crlClientFactory = () => new CrlClientOnline();
+            lotlServiceFactory = () => BuildLotlService();
+            qualifiedValidator = new NullQualifiedValidator();
+            eventManager = EventManager.CreateNewInstance();
+        }
+
+        /// <summary>Establishes trust in European Union List of Trusted Lists.</summary>
+        /// <remarks>
+        /// Establishes trust in European Union List of Trusted Lists.
+        /// <para />
+        /// This feature by default relies on remote resource fetching and third-party EU trusted lists posted online.
+        /// iText has no influence over these resources maintained by third-party authorities.
+        /// <para />
+        /// If this feature is enabled,
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService"/>
+        /// is created and used to retrieve,
+        /// validate and establish trust in EU List of Trusted Lists.
+        /// <para />
+        /// In order to properly work, apart from enabling it, user needs to call
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService.InitializeGlobalCache(iText.Signatures.Validation.Lotl.LotlFetchingProperties)
+        ///     "/>
+        /// method, which performs initial initialization.
+        /// <para />
+        /// Additionally, in order to successfully use this feature, a user needs to provide a source for trusted
+        /// certificates which will be used for LOTL files validation.
+        /// One can either add an explicit dependency to "eu-trusted-lists-resources" iText module or configure own source of
+        /// trusted certificates. When iText dependency is used it is required to make sure that the newest version of the
+        /// dependency is selected, otherwise LOTL validation will fail.
+        /// <para />
+        /// The required certificates for LOTL files validations are published in the Official Journal of the European Union.
+        /// Your own source of trusted certificates can be configured by using
+        /// <see cref="EuropeanTrustedListConfigurationFactory.SetFactory(System.Func{T})"/>.
+        /// </remarks>
+        /// <param name="trustEuropeanLotl">
+        /// 
+        /// <see langword="true"/>
+        /// if European Union LOTLs are expected to be trusted,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </param>
+        /// <returns>current ValidatorChainBuilder.</returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder TrustEuropeanLotl(bool trustEuropeanLotl) {
+            this.trustEuropeanLotl = trustEuropeanLotl;
+            return this;
+        }
+
+        /// <summary>Checks if European Union List of Trusted Lists is supposed to be trusted.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if European Union LOTLs are expected to be trusted,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
+        public virtual bool IsEuropeanLotlTrusted() {
+            return this.trustEuropeanLotl;
         }
 
         /// <summary>
@@ -336,9 +408,89 @@ namespace iText.Signatures.Validation {
         /// </remarks>
         /// <param name="adESReportAggregator">the report aggregator to use</param>
         /// <returns>the current ValidatorChainBuilder</returns>
+        [System.ObsoleteAttribute(@"This method will be removed in a later version, use WithAdESLevelReportGenerator(iText.Signatures.Validation.Report.Xml.XmlReportAggregator) instead."
+            )]
         public virtual iText.Signatures.Validation.ValidatorChainBuilder WithAdESReportAggregator(AdESReportAggregator
              adESReportAggregator) {
             this.adESReportAggregator = adESReportAggregator;
+            eventManager.Register(new EventsToAdESReportAggratorConvertor(adESReportAggregator));
+            return this;
+        }
+
+        /// <summary>Use this reportEventListener to generate an AdES xml report.</summary>
+        /// <remarks>
+        /// Use this reportEventListener to generate an AdES xml report.
+        /// <para />
+        /// Generated
+        /// <see cref="iText.Signatures.Validation.Report.Xml.PadesValidationReport"/>
+        /// report could be provided to
+        /// <see cref="iText.Signatures.Validation.Report.Xml.XmlReportGenerator.Generate(iText.Signatures.Validation.Report.Xml.PadesValidationReport, System.IO.TextWriter)
+        ///     "/>.
+        /// </remarks>
+        /// <param name="reportEventListener">the AdESReportEventListener to use</param>
+        /// <returns>the current ValidatorChainBuilder</returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder WithAdESLevelReportGenerator(XmlReportAggregator
+             reportEventListener) {
+            eventManager.Register(reportEventListener);
+            return this;
+        }
+
+        /// <summary>Use this PAdES level report generator to generate PAdES report.</summary>
+        /// <remarks>
+        /// Use this PAdES level report generator to generate PAdES report.
+        /// <para />
+        /// If called multiple times, multiple
+        /// <see cref="iText.Signatures.Validation.Report.Pades.PAdESLevelReportGenerator"/>
+        /// objects will be registered.
+        /// </remarks>
+        /// <param name="reportGenerator">the PAdESLevelReportGenerator to use</param>
+        /// <returns>current ValidatorChainBuilder</returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder WithPAdESLevelReportGenerator(PAdESLevelReportGenerator
+             reportGenerator) {
+            padesValidationRequested = true;
+            eventManager.Register(reportGenerator);
+            return this;
+        }
+
+        /// <summary>Checks whether PAdES compliance validation was requested.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if PAdES compliance validation was requested,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
+        public virtual bool PadesValidationRequested() {
+            return padesValidationRequested;
+        }
+
+        /// <summary>
+        /// Sets
+        /// <see cref="iText.Signatures.Validation.Lotl.QualifiedValidator"/>
+        /// instance to be used during signature qualification validation.
+        /// </summary>
+        /// <remarks>
+        /// Sets
+        /// <see cref="iText.Signatures.Validation.Lotl.QualifiedValidator"/>
+        /// instance to be used during signature qualification validation.
+        /// The results of this validation can be obtained from this same instance.
+        /// The feature is only executed if European LOTL is used. See
+        /// <see cref="TrustEuropeanLotl(bool)"/>.
+        /// <para />
+        /// This validator needs to be updated per each document validation, or the results need to be obtained.
+        /// Otherwise, the exception will be thrown.
+        /// <para />
+        /// If no instance is provided, the qualification validation is not executed.
+        /// </remarks>
+        /// <param name="qualifiedValidator">
+        /// 
+        /// <see cref="iText.Signatures.Validation.Lotl.QualifiedValidator"/>
+        /// instance which performs the validation.
+        /// </param>
+        /// <returns>current ValidatorChainBuilder</returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder WithQualifiedValidator(QualifiedValidator
+             qualifiedValidator) {
+            this.qualifiedValidator = qualifiedValidator;
             return this;
         }
 
@@ -370,6 +522,12 @@ namespace iText.Signatures.Validation {
             return properties;
         }
 
+        /// <summary>Returns the EventManager to be used for all events fired during validation.</summary>
+        /// <returns>the EventManager to be used for all events fired during validation</returns>
+        public virtual EventManager GetEventManager() {
+            return eventManager;
+        }
+
         /// <summary>
         /// Retrieves the explicitly added or automatically created
         /// <see cref="iText.Signatures.Validation.Report.Xml.AdESReportAggregator"/>
@@ -387,8 +545,38 @@ namespace iText.Signatures.Validation {
         /// <see cref="iText.Signatures.Validation.Report.Xml.AdESReportAggregator"/>
         /// instance.
         /// </returns>
+        [System.ObsoleteAttribute(@"The AdESReportAggregator system is replaced by the iText.Signatures.Validation.Report.Xml.XmlReportAggregator system."
+            )]
         public virtual AdESReportAggregator GetAdESReportAggregator() {
             return adESReportAggregator;
+        }
+
+        /// <summary>
+        /// Retrieves the explicitly added or automatically created
+        /// <see cref="iText.StyledXmlParser.Resolver.Resource.IResourceRetriever"/>
+        /// instance.
+        /// </summary>
+        /// <returns>
+        /// the explicitly added or automatically created
+        /// <see cref="iText.StyledXmlParser.Resolver.Resource.IResourceRetriever"/>
+        /// instance.
+        /// </returns>
+        public virtual IResourceRetriever GetResourceRetriever() {
+            return resourceRetrieverFactory();
+        }
+
+        /// <summary>
+        /// Gets
+        /// <see cref="iText.Signatures.Validation.Lotl.QualifiedValidator"/>
+        /// instance.
+        /// </summary>
+        /// <returns>
+        /// 
+        /// <see cref="iText.Signatures.Validation.Lotl.QualifiedValidator"/>
+        /// instance
+        /// </returns>
+        public virtual QualifiedValidator GetQualifiedValidator() {
+            return qualifiedValidator;
         }
 
 //\cond DO_NOT_DOCUMENT
@@ -471,20 +659,6 @@ namespace iText.Signatures.Validation {
         }
 //\endcond
 
-        /// <summary>
-        /// Retrieves the explicitly added or automatically created
-        /// <see cref="iText.StyledXmlParser.Resolver.Resource.IResourceRetriever"/>
-        /// instance.
-        /// </summary>
-        /// <returns>
-        /// the explicitly added or automatically created
-        /// <see cref="iText.StyledXmlParser.Resolver.Resource.IResourceRetriever"/>
-        /// instance.
-        /// </returns>
-        public virtual IResourceRetriever GetResourceRetriever() {
-            return resourceRetrieverFactory();
-        }
-
 //\cond DO_NOT_DOCUMENT
         /// <summary>
         /// Retrieves the explicitly added or automatically created
@@ -517,15 +691,92 @@ namespace iText.Signatures.Validation {
         }
 //\endcond
 
+        /// <summary>
+        /// Sets up factory which is responsible for
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlTrustedStore"/>
+        /// creation.
+        /// </summary>
+        /// <param name="lotlTrustedStoreFactory">
+        /// factory responsible for
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlTrustedStore"/>
+        /// creation
+        /// </param>
+        /// <returns>
+        /// this same instance of
+        /// <see cref="ValidatorChainBuilder"/>
+        /// </returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder WithLotlTrustedStoreFactory(Func<LotlTrustedStore
+            > lotlTrustedStoreFactory) {
+            this.lotlTrustedStoreFactory = lotlTrustedStoreFactory;
+            return this;
+        }
+
+        /// <summary>
+        /// Retrieves explicitly added or automatically created
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlTrustedStore"/>
+        /// instance.
+        /// </summary>
+        /// <returns>
+        /// explicitly added or automatically created
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlTrustedStore"/>
+        /// instance
+        /// </returns>
+        public virtual LotlTrustedStore GetLotlTrustedStore() {
+            return this.lotlTrustedStoreFactory();
+        }
+
+        /// <summary>
+        /// Sets up factory which is responsible for
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService"/>
+        /// creation.
+        /// </summary>
+        /// <param name="lotlServiceFactory">
+        /// factory responsible for
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService"/>
+        /// creation
+        /// </param>
+        /// <returns>
+        /// this same instance of
+        /// <see cref="ValidatorChainBuilder"/>
+        /// </returns>
+        public virtual iText.Signatures.Validation.ValidatorChainBuilder WithLotlService(Func<LotlService> lotlServiceFactory
+            ) {
+            this.lotlServiceFactory = lotlServiceFactory;
+            return this;
+        }
+
+        /// <summary>
+        /// Retrieves explicitly added or automatically created
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService"/>
+        /// instance.
+        /// </summary>
+        /// <returns>
+        /// explicitly added or automatically created
+        /// <see cref="iText.Signatures.Validation.Lotl.LotlService"/>
+        /// instance
+        /// </returns>
+        public virtual LotlService GetLotlService() {
+            return this.lotlServiceFactory();
+        }
+
+        private static LotlService BuildLotlService() {
+            return LotlService.GetGlobalService();
+        }
+
         private IssuingCertificateRetriever BuildIssuingCertificateRetriever() {
             IssuingCertificateRetriever result = new IssuingCertificateRetriever(this.resourceRetrieverFactory());
             if (trustedCertificates != null) {
                 result.SetTrustedCertificates(trustedCertificates);
             }
             if (knownCertificates != null) {
-                result.AddKnownCertificates(knownCertificates);
+                result.AddKnownCertificates(knownCertificates, CertificateOrigin.OTHER);
             }
+            result.AddKnownCertificates(lotlTrustedStoreFactory().GetCertificates(), CertificateOrigin.OTHER);
             return result;
+        }
+
+        private LotlTrustedStore BuildLotlTrustedStore() {
+            return new LotlTrustedStore(this);
         }
     }
 }

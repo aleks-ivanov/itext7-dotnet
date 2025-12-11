@@ -43,6 +43,7 @@ using iText.Bouncycastlefips.Asn1.Tsp;
 using iText.Bouncycastlefips.Asn1.Util;
 using iText.Bouncycastlefips.Asn1.X500;
 using iText.Bouncycastlefips.Asn1.X509;
+using iText.Bouncycastlefips.Asn1.X509.Qualified;
 using iText.Bouncycastlefips.Cert;
 using iText.Bouncycastlefips.Cert.Ocsp;
 using iText.Bouncycastlefips.Cms;
@@ -66,6 +67,7 @@ using iText.Commons.Bouncycastle.Asn1.Tsp;
 using iText.Commons.Bouncycastle.Asn1.Util;
 using iText.Commons.Bouncycastle.Asn1.X500;
 using iText.Commons.Bouncycastle.Asn1.X509;
+using iText.Commons.Bouncycastle.Asn1.X509.Qualified;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Bouncycastle.Cert.Ocsp;
 using iText.Commons.Bouncycastle.Cms;
@@ -82,6 +84,7 @@ using iText.Commons.Utils;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.Tsp;
 using Org.BouncyCastle.Asn1.X500;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 using Org.BouncyCastle.Cert;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Asymmetric;
@@ -303,16 +306,16 @@ namespace iText.Bouncycastlefips {
         }
 
         /// <summary><inheritDoc/></summary>
-        public virtual IDerOutputStream CreateASN1OutputStream(Stream stream) {
-            return new DerOutputStreamBCFips(stream);
+        public virtual IAsn1OutputStream CreateASN1OutputStream(Stream stream) {
+            return new Asn1OutputStreamBCFips(stream);
         }
 
         /// <summary><inheritDoc/></summary>
-        public virtual IDerOutputStream CreateASN1OutputStream(Stream outputStream, String asn1Encoding) {
+        public virtual IAsn1OutputStream CreateASN1OutputStream(Stream outputStream, String asn1Encoding) {
             if (Asn1Encodable.Ber.Equals(asn1Encoding)) {
-                return new DerOutputStreamBCFips(new BerOutputStream(outputStream));
+                return new Asn1OutputStreamBCFips(new BerOutputStream(outputStream));
             }
-            return new DerOutputStreamBCFips(new DerOutputStream(outputStream));
+            return new Asn1OutputStreamBCFips(new DerOutputStream(outputStream));
         }
 
         /// <summary><inheritDoc/></summary>
@@ -858,6 +861,23 @@ namespace iText.Bouncycastlefips {
 
         /// <summary><inheritDoc/></summary>
         public ITimeStampTokenGenerator CreateTimeStampTokenGenerator(IPrivateKey pk, IX509Certificate certificate, 
+            string signatureAlgorithm, string allowedDigest, string policyOid) {
+            ContentSignerBCFips signer = (ContentSignerBCFips)CreateContentSigner(signatureAlgorithm, pk);
+            ISignatureFactory<AlgorithmIdentifier> contentSigner = signer.GetContentSigner();
+
+            SignerInfoGenerator siGen = new SignerInfoGeneratorBuilder(new PkixDigestFactoryProvider())
+                .Build(contentSigner, ((X509CertificateBCFips)certificate).GetCertificate());
+
+            String digestForTsSigningCert = GetDigestAlgorithmOid(allowedDigest.ToUpperInvariant());
+            IDigestFactory<AlgorithmIdentifier> digestCalculator = new PkixDigestFactory(
+                new AlgorithmIdentifier(new DerObjectIdentifier(digestForTsSigningCert)));
+            DerObjectIdentifier tsaPolicy = new DerObjectIdentifier(policyOid);
+
+            return new TimeStampTokenGeneratorBCFips(contentSigner, siGen, digestCalculator, tsaPolicy);
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public ITimeStampTokenGenerator CreateTimeStampTokenGenerator(IPrivateKey pk, IX509Certificate certificate, 
             string allowedDigest, string policyOid) {
             return new TimeStampTokenGeneratorBCFips(pk, certificate, allowedDigest, policyOid);
         }
@@ -1273,8 +1293,78 @@ namespace iText.Bouncycastlefips {
             return keyWrapper.Unwrap(key, 0, key.Length).Collect();
         }
 
+        /// <summary><inheritDoc/></summary>
         public IGCMBlockCipher CreateGCMBlockCipher() {
             return new GCMBlockCipherBCFips();
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public RSAParameters? GetRsaParametersFromCertificate(IX509Certificate certificate)
+        {
+            IAsymmetricPublicKey asymmetricKeyParameter;
+            try {
+                asymmetricKeyParameter = ((PublicKeyBCFips)certificate.GetPublicKey()).GetPublicKey();
+            }
+            catch (Exception e) {
+                asymmetricKeyParameter = new AsymmetricRsaPublicKey(FipsRsa.Alg,
+                    ((X509CertificateBCFips)certificate).GetCertificate().CertificateStructure.SubjectPublicKeyInfo);
+            }
+            if (asymmetricKeyParameter is AsymmetricRsaPublicKey) {
+                RSAParameters rsaParams = ToRsaParameters((AsymmetricRsaPublicKey)asymmetricKeyParameter);
+                return rsaParams;
+            }
+            return null;
+        }
+        
+        /// <summary><inheritDoc/></summary>
+        public List<String> GetPoliciesIds(byte[] policyExtension) {
+            using (Asn1InputStream inputStream = new Asn1InputStream(policyExtension)) {
+                Asn1OctetString octetString = (Asn1OctetString) inputStream.ReadObject();
+                using (Asn1InputStream innerInputStream = new Asn1InputStream(octetString.GetOctets())) {
+                    CertificatePolicies certificatePolicies =
+                        CertificatePolicies.GetInstance(innerInputStream.ReadObject());
+
+                    PolicyInformation[] policies = certificatePolicies.GetPolicyInformation();
+                    List<String> policyIds = new List<String>(policies.Length);
+
+                    foreach (PolicyInformation policy in policies) {
+                        policyIds.Add(policy.PolicyIdentifier.Id);
+                    }
+
+                    return policyIds;
+                }
+            }
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public List<IQCStatement> ParseQcStatement(byte[] qcStatementsExtensionValue) {
+            List<IQCStatement> qcStatements = new List<IQCStatement>();
+            if (qcStatementsExtensionValue != null) {
+                Asn1OctetString octs;
+                using (Asn1InputStream aIn = new Asn1InputStream(qcStatementsExtensionValue)) {
+                    octs = (Asn1OctetString) aIn.ReadObject();
+                }
+
+                Asn1Object primitive;
+                using (Asn1InputStream aIn = new Asn1InputStream(octs.GetOctets())) {
+                    primitive = aIn.ReadObject();
+                }
+
+                Asn1Sequence qcStatementsSequence = Asn1Sequence.GetInstance(primitive);
+                foreach (Asn1Encodable qcStatementEncodable in qcStatementsSequence) {
+                    QCStatement qcStatement = QCStatement.GetInstance(qcStatementEncodable);
+                    qcStatements.Add(new QCStatementBCFips(qcStatement));
+                }
+            }
+
+            return qcStatements;
+        }
+        
+        private static RSAParameters ToRsaParameters(AsymmetricRsaPublicKey rsaKey) {
+            RSAParameters rp = new RSAParameters();
+            rp.Modulus = rsaKey.Modulus.ToByteArrayUnsigned();
+            rp.Exponent = rsaKey.PublicExponent.ToByteArrayUnsigned();
+            return rp;
         }
 
         private IX509Certificate ReadPemCertificate(PushbackStream pushbackStream) {

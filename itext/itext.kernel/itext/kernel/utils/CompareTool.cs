@@ -1506,6 +1506,15 @@ namespace iText.Kernel.Utils {
             }
         }
 
+        private static bool IsSignatureDictionary(PdfDictionary dict) {
+            PdfName type = dict.GetAsName(PdfName.Type);
+            if (PdfName.Sig.Equals(type)) {
+                return true;
+            }
+            // Some signature dictionaries might miss explicit /Type but still have typical signature fields.
+            return dict.ContainsKey(PdfName.ByteRange) && dict.ContainsKey(PdfName.SubFilter);
+        }
+
         private String CompareVisuallyAndCombineReports(String compareByFailContentReason, String outPath, String 
             differenceImagePrefix, IDictionary<int, IList<Rectangle>> ignoredAreas, IList<int> equalPages) {
             System.Console.Out.WriteLine("Fail");
@@ -1647,22 +1656,29 @@ namespace iText.Kernel.Utils {
                     PdfObject cmpObj = cmpDict.Get(key);
                     if (cmpObj != null && cmpObj.IsName() && cmpObj.ToString().IndexOf('+') > 0) {
                         PdfObject outObj = outDict.Get(key);
-                        if (!outObj.IsName() || outObj.ToString().IndexOf('+') == -1) {
-                            if (compareResult != null && currentPath != null) {
-                                compareResult.AddError(currentPath, MessageFormatUtil.Format("PdfDictionary {0} entry: Expected: {1}. Found: {2}"
-                                    , key.ToString(), cmpObj.ToString(), outObj.ToString()));
-                            }
+                        if (outObj == null) {
+                            compareResult.AddError(currentPath, MessageFormatUtil.Format("PdfDictionary {0} entry: Expected: {1}. Found: {2}"
+                                , key.ToString(), cmpObj.ToString(), "null"));
                             dictsAreSame = false;
                         }
                         else {
-                            String cmpName = cmpObj.ToString().Substring(cmpObj.ToString().IndexOf('+'));
-                            String outName = outObj.ToString().Substring(outObj.ToString().IndexOf('+'));
-                            if (!cmpName.Equals(outName)) {
+                            if (!outObj.IsName() || outObj.ToString().IndexOf('+') == -1) {
                                 if (compareResult != null && currentPath != null) {
                                     compareResult.AddError(currentPath, MessageFormatUtil.Format("PdfDictionary {0} entry: Expected: {1}. Found: {2}"
                                         , key.ToString(), cmpObj.ToString(), outObj.ToString()));
                                 }
                                 dictsAreSame = false;
+                            }
+                            else {
+                                String cmpName = cmpObj.ToString().Substring(cmpObj.ToString().IndexOf('+'));
+                                String outName = outObj.ToString().Substring(outObj.ToString().IndexOf('+'));
+                                if (!cmpName.Equals(outName)) {
+                                    if (compareResult != null && currentPath != null) {
+                                        compareResult.AddError(currentPath, MessageFormatUtil.Format("PdfDictionary {0} entry: Expected: {1}. Found: {2}"
+                                            , key.ToString(), cmpObj.ToString(), outObj.ToString()));
+                                    }
+                                    dictsAreSame = false;
+                                }
                             }
                         }
                         continue;
@@ -1720,6 +1736,14 @@ namespace iText.Kernel.Utils {
                         currentPath.Pop();
                     }
                     continue;
+                }
+                // Mark signature /Contents as unencrypted before comparing strings to avoid decryption attempts.
+                // Per PDF spec, the signature dictionary's /Contents entry must not be encrypted.
+                if (PdfName.Contents.Equals(key) && IsSignatureDictionary(cmpDict) && IsSignatureDictionary(outDict)) {
+                    PdfString outContents = outDict.GetAsString(PdfName.Contents);
+                    outContents.MarkAsUnencryptedObject();
+                    PdfString cmpContents = cmpDict.GetAsString(PdfName.Contents);
+                    cmpContents.MarkAsUnencryptedObject();
                 }
                 if (currentPath != null) {
                     currentPath.PushDictItemToPath(key);

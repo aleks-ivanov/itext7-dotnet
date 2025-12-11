@@ -45,6 +45,7 @@ using iText.Bouncycastle.Asn1.Pcks;
 using iText.Bouncycastle.Asn1.Tsp;
 using iText.Bouncycastle.Asn1.Util;
 using iText.Bouncycastle.Asn1.X509;
+using iText.Bouncycastle.Asn1.X509.Qualified;
 using iText.Bouncycastle.Cert;
 using iText.Bouncycastle.Cert.Ocsp;
 using iText.Bouncycastle.Cms;
@@ -68,6 +69,7 @@ using iText.Commons.Bouncycastle.Asn1.Tsp;
 using iText.Commons.Bouncycastle.Asn1.Util;
 using iText.Commons.Bouncycastle.Asn1.X500;
 using iText.Commons.Bouncycastle.Asn1.X509;
+using iText.Commons.Bouncycastle.Asn1.X509.Qualified;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Bouncycastle.Cert.Ocsp;
 using iText.Commons.Bouncycastle.Cms;
@@ -82,10 +84,10 @@ using iText.Commons.Bouncycastle.Tsp;
 using iText.Commons.Bouncycastle.X509;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.Tsp;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -304,13 +306,13 @@ namespace iText.Bouncycastle {
         }
 
         /// <summary><inheritDoc/></summary>
-        public virtual IDerOutputStream CreateASN1OutputStream(Stream stream) {
-            return new DerOutputStreamBC(stream);
+        public virtual IAsn1OutputStream CreateASN1OutputStream(Stream stream) {
+            return new Asn1OutputStreamBC(stream);
         }
 
         /// <summary><inheritDoc/></summary>
-        public virtual IDerOutputStream CreateASN1OutputStream(Stream outputStream, String asn1Encoding) {
-            return new DerOutputStreamBC(Asn1OutputStream.Create(outputStream));
+        public virtual IAsn1OutputStream CreateASN1OutputStream(Stream outputStream, String asn1Encoding) {
+            return new Asn1OutputStreamBC(Asn1OutputStream.Create(outputStream));
         }
 
         /// <summary><inheritDoc/></summary>
@@ -855,6 +857,21 @@ namespace iText.Bouncycastle {
 
         /// <summary><inheritDoc/></summary>
         public ITimeStampTokenGenerator CreateTimeStampTokenGenerator(IPrivateKey pk, IX509Certificate certificate, 
+            string signatureAlgorithm, string allowedDigest, string policyOid) {
+            ContentSignerBC signer = (ContentSignerBC)CreateContentSigner(signatureAlgorithm, pk);
+
+            SignerInfoGenerator siGen = new SignerInfoGeneratorBuilder()
+                .Build(signer.GetContentSigner(), ((X509CertificateBC)certificate).GetCertificate());
+
+            String digestForTsSigningCert = GetDigestAlgorithmOid(allowedDigest.ToUpperInvariant());
+            IDigestFactory digestCalculator = Asn1DigestFactory.Get(new DerObjectIdentifier(digestForTsSigningCert));
+            DerObjectIdentifier tsaPolicy = new DerObjectIdentifier(policyOid);
+
+            return new TimeStampTokenGeneratorBC(siGen, digestCalculator, tsaPolicy);
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public ITimeStampTokenGenerator CreateTimeStampTokenGenerator(IPrivateKey pk, IX509Certificate certificate, 
             string allowedDigest, string policyOid) {
             String digestOid = GetDigestAlgorithmOid(allowedDigest.ToUpperInvariant());
             return new TimeStampTokenGeneratorBC(pk, certificate, digestOid, policyOid);
@@ -1226,9 +1243,64 @@ namespace iText.Bouncycastle {
             return wrapper.Unwrap(key, 0, key.Length);
         }
 
+        /// <summary><inheritDoc/></summary>
         public IGCMBlockCipher CreateGCMBlockCipher() {
             GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
             return new GCMBlockCipherBC(cipher);
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public RSAParameters? GetRsaParametersFromCertificate(IX509Certificate certificate) {
+            AsymmetricKeyParameter asymmetricKeyParameter = ((PublicKeyBC)certificate.GetPublicKey()).GetPublicKey();
+            if (asymmetricKeyParameter is RsaKeyParameters) {
+                RSAParameters rsaParams = DotNetUtilities.ToRSAParameters((RsaKeyParameters)asymmetricKeyParameter);
+                return rsaParams;
+            }
+            return null;
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public List<String> GetPoliciesIds(byte[] policyExtension) {
+            using (Asn1InputStream inputStream = new Asn1InputStream(policyExtension)) {
+                Asn1OctetString octetString = (Asn1OctetString) inputStream.ReadObject();
+                using (Asn1InputStream innerInputStream = new Asn1InputStream(octetString.GetOctets())) {
+                    CertificatePolicies certificatePolicies =
+                        CertificatePolicies.GetInstance(innerInputStream.ReadObject());
+
+                    PolicyInformation[] policies = certificatePolicies.GetPolicyInformation();
+                    List<String> policyIds = new List<String>(policies.Length);
+
+                    foreach (PolicyInformation policy in policies) {
+                        policyIds.Add(policy.PolicyIdentifier.Id);
+                    }
+
+                    return policyIds;
+                }
+            }
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public List<IQCStatement> ParseQcStatement(byte[] qcStatementsExtensionValue) {
+            List<IQCStatement> qcStatements = new List<IQCStatement>();
+            if (qcStatementsExtensionValue != null) {
+                Asn1OctetString octs;
+                using (Asn1InputStream aIn = new Asn1InputStream(qcStatementsExtensionValue)) {
+                    octs = (Asn1OctetString) aIn.ReadObject();
+                }
+
+                Asn1Object primitive;
+                using (Asn1InputStream aIn = new Asn1InputStream(octs.GetOctets())) {
+                    primitive = aIn.ReadObject();
+                }
+
+                Asn1Sequence qcStatementsSequence = Asn1Sequence.GetInstance(primitive);
+                foreach (Asn1Encodable qcStatementEncodable in qcStatementsSequence) {
+                    QCStatement qcStatement = QCStatement.GetInstance(qcStatementEncodable);
+                    qcStatements.Add(new QCStatementBC(qcStatement));
+                }
+            }
+
+            return qcStatements;
         }
 
         //\cond DO_NOT_DOCUMENT

@@ -29,6 +29,7 @@ using iText.Commons.Bouncycastle.Asn1;
 using iText.Commons.Bouncycastle.Asn1.X509;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Utils;
+using iText.Commons.Utils.Collections;
 using iText.Signatures;
 using iText.Signatures.Logs;
 using iText.Signatures.Validation.Context;
@@ -103,6 +104,11 @@ namespace iText.Signatures.Validation {
 //\cond DO_NOT_DOCUMENT
         internal const String CERTIFICATE_IN_ISSUER_CHAIN = "Unable to validate CRL response: validated certificate is"
              + " part of issuer certificate chain.";
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        internal const String CRL_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED = "Unable to validate CRL response: "
+             + "CRL response is signed by the same certificate as being validated.";
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
@@ -299,7 +305,7 @@ namespace iText.Signatures.Validation {
 
         private void VerifyCrlIntegrity(ValidationReport report, ValidationContext context, IX509Certificate certificate
             , IX509Crl crl, DateTime responseGenerationDate) {
-            IX509Certificate[][] certificateSets = null;
+            IX509Certificate[][] certificateSets;
             try {
                 certificateSets = certificateRetriever.GetCrlIssuerCertificatesByName(crl);
             }
@@ -313,11 +319,15 @@ namespace iText.Signatures.Validation {
                     .INDETERMINATE));
                 return;
             }
-            ValidationReport[] candidateReports = new ValidationReport[certificateSets.Length];
-            for (int i = 0; i < certificateSets.Length; i++) {
+            // We need to sort certificates to process them starting from those, better suited for PAdES validation.
+            IList<IX509Certificate[]> certificatesList = JavaUtil.ArraysToEnumerable(certificateSets).Sorted((array1, 
+                array2) => JavaUtil.IntegerCompare((int)(certificateRetriever.GetCertificateOrigin(array1[0])), (int)(
+                certificateRetriever.GetCertificateOrigin(array2[0])))).ToList();
+            ValidationReport[] candidateReports = new ValidationReport[certificatesList.Count];
+            for (int i = 0; i < certificatesList.Count; i++) {
                 ValidationReport candidateReport = new ValidationReport();
                 candidateReports[i] = candidateReport;
-                IX509Certificate[] certs = certificateSets[i];
+                IX509Certificate[] certs = certificatesList[i];
                 if (JavaUtil.ArraysAsList(certs).Contains(certificate)) {
                     candidateReport.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, CERTIFICATE_IN_ISSUER_CHAIN
                         , ReportItem.ReportItemStatus.INDETERMINATE));
@@ -333,6 +343,12 @@ namespace iText.Signatures.Validation {
                 }
                 SafeCalling.OnExceptionLog(() => crl.Verify(crlIssuer.GetPublicKey()), candidateReport, (e) => new CertificateReportItem
                     (certificate, CRL_CHECK, CRL_INVALID, e, ReportItem.ReportItemStatus.INDETERMINATE));
+                if (certificate.Equals(crlIssuer)) {
+                    // OCSP response is signed by this same certificate
+                    report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, CRL_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED
+                        , ReportItem.ReportItemStatus.INDETERMINATE));
+                    continue;
+                }
                 ValidationReport responderReport = new ValidationReport();
                 SafeCalling.OnExceptionLog(() => builder.GetCertificateChainValidator().Validate(responderReport, context.
                     SetCertificateSource(CertificateSource.CRL_ISSUER), (IX509Certificate)crlIssuer, responseGenerationDate

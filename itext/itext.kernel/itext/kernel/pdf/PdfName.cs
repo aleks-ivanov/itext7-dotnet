@@ -287,6 +287,8 @@ namespace iText.Kernel.Pdf {
 
         public static readonly iText.Kernel.Pdf.PdfName Btn = CreateDirectName("Btn");
 
+        public static readonly iText.Kernel.Pdf.PdfName BrotliDecode = CreateDirectName("BrotliDecode");
+
         public static readonly iText.Kernel.Pdf.PdfName Butt = CreateDirectName("Butt");
 
         public static readonly iText.Kernel.Pdf.PdfName ByteRange = CreateDirectName("ByteRange");
@@ -336,6 +338,8 @@ namespace iText.Kernel.Pdf {
         public static readonly iText.Kernel.Pdf.PdfName CFM = CreateDirectName("CFM");
 
         public static readonly iText.Kernel.Pdf.PdfName Ch = CreateDirectName("Ch");
+
+        public static readonly iText.Kernel.Pdf.PdfName CharSet = new iText.Kernel.Pdf.PdfName("CharSet");
 
         public static readonly iText.Kernel.Pdf.PdfName CI = CreateDirectName("CI");
 

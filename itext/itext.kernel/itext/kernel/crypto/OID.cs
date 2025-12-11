@@ -29,6 +29,8 @@ namespace iText.Kernel.Crypto {
     public sealed class OID {
         public const String PKCS7_DATA = "1.2.840.113549.1.7.1";
 
+        public const String ID_DATA = "1.2.840.113549.1.7.1";
+
         public const String PKCS7_SIGNED_DATA = "1.2.840.113549.1.7.2";
 
         public const String RSA = "1.2.840.113549.1.1.1";
@@ -40,6 +42,8 @@ namespace iText.Kernel.Crypto {
         public const String AA_SIGNING_CERTIFICATE_V1 = "1.2.840.113549.1.9.16.2.12";
 
         public const String AA_SIGNING_CERTIFICATE_V2 = "1.2.840.113549.1.9.16.2.47";
+
+        public const String AA_ETS_COMMITMENTTYPE = "1.2.840.113549.1.9.16.2.16";
 
         public const String MGF1 = "1.2.840.113549.1.1.8";
 
@@ -96,6 +100,36 @@ namespace iText.Kernel.Crypto {
         public const String KDF_PDF_MAC_WRAP_KDF = "1.0.32004.1.1";
 
         public const String CT_PDF_MAC_INTEGRITY_INFO = "1.0.32004.1.0";
+
+        public const String ML_DSA_44 = "2.16.840.1.101.3.4.3.17";
+
+        public const String ML_DSA_65 = "2.16.840.1.101.3.4.3.18";
+
+        public const String ML_DSA_87 = "2.16.840.1.101.3.4.3.19";
+
+        public const String SLH_DSA_SHA2_128S = "2.16.840.1.101.3.4.3.20";
+
+        public const String SLH_DSA_SHA2_128F = "2.16.840.1.101.3.4.3.21";
+
+        public const String SLH_DSA_SHA2_192S = "2.16.840.1.101.3.4.3.22";
+
+        public const String SLH_DSA_SHA2_192F = "2.16.840.1.101.3.4.3.23";
+
+        public const String SLH_DSA_SHA2_256S = "2.16.840.1.101.3.4.3.24";
+
+        public const String SLH_DSA_SHA2_256F = "2.16.840.1.101.3.4.3.25";
+
+        public const String SLH_DSA_SHAKE_128S = "2.16.840.1.101.3.4.3.26";
+
+        public const String SLH_DSA_SHAKE_128F = "2.16.840.1.101.3.4.3.27";
+
+        public const String SLH_DSA_SHAKE_192S = "2.16.840.1.101.3.4.3.28";
+
+        public const String SLH_DSA_SHAKE_192F = "2.16.840.1.101.3.4.3.29";
+
+        public const String SLH_DSA_SHAKE_256S = "2.16.840.1.101.3.4.3.30";
+
+        public const String SLH_DSA_SHAKE_256F = "2.16.840.1.101.3.4.3.31";
 
         private OID() {
         }
