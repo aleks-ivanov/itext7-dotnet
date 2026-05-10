@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -64,14 +64,18 @@ namespace iText.Signatures.Testutils
             throw new NotImplementedException();
         }
 
+        public string GetSigAlgName()
+        {
+            return "SHA256withRSA";
+        }
         public string GetSigAlgOID()
         {
-            throw new NotImplementedException();
+            return "1.2.840.113549.1.1.11";
         }
 
         public byte[] GetSigAlgParams()
         {
-            throw new NotImplementedException();
+            return null;    
         }
 
         public byte[] GetEncoded()

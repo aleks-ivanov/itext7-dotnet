@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -25,6 +25,7 @@ using System.Linq;
 using iText.Commons.Actions;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Utils;
+using iText.Kernel.Crypto;
 using iText.Kernel.Pdf;
 using iText.Signatures;
 using iText.Signatures.Cms;
@@ -107,7 +108,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
             signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
             PdfSignature sig = new PdfSignature(signatureDict);
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -133,7 +134,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -158,7 +159,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             IX509Certificate[] chain = PemFileHelper.ReadFirstChain(certsSrc + "signCertRsa01.pem");
-            @event = new RevocationNotFromDssEvent((IX509Certificate)chain[0]);
+            @event = new CertificateIssuerExternalRetrievalEvent((IX509Certificate)chain[0]);
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
             eventManager.OnEvent(@event);
@@ -167,8 +168,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetSignatureReport("test").GetLevel());
             NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetDocumentLevel());
             NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetNonConformaties().Get(PAdESLevel.B_LT).
-                Any((nc) => nc.Contains(AbstractPadesLevelRequirements.REVOCATION_DATA_FOR_THESE_CERTIFICATES_IS_MISSING
-                )));
+                Any((nc) => nc.Contains(AbstractPadesLevelRequirements.ISSUER_FOR_THESE_CERTIFICATES_IS_MISSING)));
         }
 
         [NUnit.Framework.Test]
@@ -320,7 +320,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -346,7 +346,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -371,7 +371,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -398,7 +398,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -425,7 +425,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -454,7 +454,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -478,7 +478,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
             PdfSignature sig = new PdfSignature(signatureDict);
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -503,7 +503,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
             PdfSignature sig = new PdfSignature(signatureDict);
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -528,6 +528,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -573,20 +574,20 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             IX509Certificate[] chain = PemFileHelper.ReadFirstChain(certsSrc + "signCertRsa01.pem");
-            @event = new CertificateIssuerExternalRetrievalEvent((IX509Certificate)chain[0]);
+            @event = new CertificateIssuerRetrievedOutsideDSSEvent((IX509Certificate)chain[0]);
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
             eventManager.OnEvent(@event);
             DocumentPAdESLevelReport report = sut.GetReport();
             System.Console.Out.WriteLine(report);
-            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetSignatureReport("test").GetLevel());
-            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetDocumentLevel());
-            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetNonConformaties().Get(PAdESLevel.B_LT).
-                Any((nc) => nc.Contains(AbstractPadesLevelRequirements.ISSUER_FOR_THESE_CERTIFICATES_IS_MISSING)));
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetWarnings().Get(PAdESLevel.B_LT).Any((w) =>
+                 w.Contains(AbstractPadesLevelRequirements.ISSUER_FOR_THESE_CERTIFICATES_IS_NOT_IN_DSS)));
         }
 
         [NUnit.Framework.Test]
@@ -604,7 +605,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             IX509Certificate[] chain = PemFileHelper.ReadFirstChain(certsSrc + "signCertRsa01.pem");
@@ -616,12 +617,12 @@ namespace iText.Signatures.Validation.Report.Pades {
             System.Console.Out.WriteLine(report);
             NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
             NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
-            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetWarnings().Get(PAdESLevel.B_LT).Any((nc
-                ) => nc.Contains(AbstractPadesLevelRequirements.ISSUER_FOR_THESE_CERTIFICATES_IS_NOT_IN_DSS)));
+            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetWarnings().Get(PAdESLevel.B_LT).Any((w) =>
+                 w.Contains(AbstractPadesLevelRequirements.ISSUER_FOR_THESE_CERTIFICATES_IS_NOT_IN_DSS)));
         }
 
         [NUnit.Framework.Test]
-        public virtual void TestB_DSSMissingRevData() {
+        public virtual void TestB_DSSMissingCrlResponse() {
             PdfDictionary signatureDict = new PdfDictionary();
             PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
             contents.SetHexWriting(true);
@@ -635,7 +636,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             IX509Certificate[] chain = PemFileHelper.ReadFirstChain(certsSrc + "signCertRsa01.pem");
@@ -667,7 +668,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             IX509Certificate[] chain = PemFileHelper.ReadFirstChain(certsSrc + "signCertRsa01.pem");
@@ -705,8 +706,8 @@ namespace iText.Signatures.Validation.Report.Pades {
             NUnit.Framework.Assert.AreEqual(PAdESLevel.NONE, report.GetSignatureReport("test").GetLevel());
             NUnit.Framework.Assert.AreEqual(PAdESLevel.NONE, report.GetDocumentLevel());
             NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetNonConformaties().Get(PAdESLevel.B_B).Any
-                ((nc) => nc.Contains(AbstractPadesLevelRequirements.AN_UNSUPPORTED_HASH_OR_SIGNING_ALGORITHM_WAS_USED)
-                 && nc.Contains("1.2.840.113549.2.5")));
+                ((nc) => nc.Contains(AbstractPadesLevelRequirements.A_FORBIDDEN_HASH_OR_SIGNING_ALGORITHM_WAS_USED) &&
+                 nc.Contains("1.2.840.113549.2.5")));
         }
 
         [NUnit.Framework.Test]
@@ -725,7 +726,7 @@ namespace iText.Signatures.Validation.Report.Pades {
             timestampDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
             eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
             eventManager.OnEvent(new SignatureValidationSuccessEvent());
-            eventManager.OnEvent(new DSSProcessedEvent(new PdfDictionary()));
+            eventManager.OnEvent(new DSSProcessedEvent());
             IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
             eventManager.OnEvent(@event);
             @event = new SignatureValidationSuccessEvent();
@@ -736,6 +737,330 @@ namespace iText.Signatures.Validation.Report.Pades {
             NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LT, report.GetDocumentLevel());
             NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetNonConformaties().Get(PAdESLevel.B_LTA)
                 .Any((nc) => nc.Contains(DocumentTimestampRequirements.SUBFILTER_NOT_ETSI_RFC3161)));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TestB_LTAOlderTimestampNotCoveredInDSS() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new RevocationNotFromDssEvent(new X509MockCertificate()));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_T, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TestB_LTAMultipleTimestampsBeforeDSS() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig4"));
+            eventManager.OnEvent(new RevocationNotFromDssEvent(new X509MockCertificate()));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig3"));
+            eventManager.OnEvent(new RevocationNotFromDssEvent(new X509MockCertificate()));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig2"));
+            eventManager.OnEvent(new RevocationNotFromDssEvent(new X509MockCertificate()));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TestAlgorithmReportingPositive() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            eventManager.OnEvent(new AlgorithmUsageEvent("SHA-512", OID.SHA_512, SignatureValidator.VALIDATING_SIGNATURE_NAME
+                ));
+            eventManager.OnEvent(new AlgorithmUsageEvent("SHA-256", OID.SHA_256, SignatureValidator.VALIDATING_SIGNATURE_NAME
+                ));
+            eventManager.OnEvent(new AlgorithmUsageEvent("RSA", OID.RSA, SignatureValidator.VALIDATING_SIGNATURE_NAME)
+                );
+            eventManager.OnEvent(new AlgorithmUsageEvent("ECDSA", OID.ECDSA, SignatureValidator.VALIDATING_SIGNATURE_NAME
+                ));
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+            NUnit.Framework.Assert.IsFalse(report.GetSignatureReport("test").GetWarnings().Get(PAdESLevel.B_B).Any((m) =>
+                 m.Contains(AbstractPadesLevelRequirements.A_DISCOURAGED_HASH_OR_SIGNING_ALGORITHM_WAS_USED)));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TestAlgorithmReportingDiscouraged() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            eventManager.OnEvent(new AlgorithmUsageEvent("SHA-1", "1.3.14.3.2.26", SignatureValidator.VALIDATING_SIGNATURE_NAME
+                ));
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetWarnings().Get(PAdESLevel.B_B).Any((m) =>
+                 m.Contains(AbstractPadesLevelRequirements.A_DISCOURAGED_HASH_OR_SIGNING_ALGORITHM_WAS_USED) && m.Contains
+                ("SHA-1")));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void TestAlgorithmReportingForbidden() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            eventManager.OnEvent(new AlgorithmUsageEvent("MD5", OID.MD5, SignatureValidator.VALIDATING_SIGNATURE_NAME)
+                );
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.NONE, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.NONE, report.GetDocumentLevel());
+            NUnit.Framework.Assert.IsTrue(report.GetSignatureReport("test").GetNonConformaties().Get(PAdESLevel.B_B).Any
+                ((m) => m.Contains(AbstractPadesLevelRequirements.A_FORBIDDEN_HASH_OR_SIGNING_ALGORITHM_WAS_USED) && m
+                .Contains(OID.MD5)));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void SignatureValidationSuccessEventMisfiresTest() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void SignatureValidationFailureEventMisfiresTest() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            eventManager.OnEvent(new SignatureValidationFailureEvent(true, "test"));
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void CertificateIssuerRetrievedOutsideDSSEventMisfiresTest() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            eventManager.OnEvent(new CertificateIssuerRetrievedOutsideDSSEvent(new X509MockCertificate()));
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void CertificateIssuerExternalRetrievalEventMisfiresTest() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            eventManager.OnEvent(new CertificateIssuerExternalRetrievalEvent(new X509MockCertificate()));
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void RevocationNotFromDssEventMisfiresTest() {
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_LTA_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.LTA_1_TS_B64));
+            PdfSignature timestampDict = GetTimestampPdfDictionary(contents);
+            eventManager.OnEvent(new ProofOfExistenceFoundEvent(timestampDict, "timestampSig1"));
+            eventManager.OnEvent(new SignatureValidationSuccessEvent());
+            eventManager.OnEvent(new DSSProcessedEvent());
+            eventManager.OnEvent(new RevocationNotFromDssEvent(new X509MockCertificate()));
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_LTA, report.GetDocumentLevel());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void AlgorithmUsageEventMisfiresTest() {
+            eventManager.OnEvent(new AlgorithmUsageEvent("MD5", OID.MD5, "Test"));
+            PdfDictionary signatureDict = new PdfDictionary();
+            PdfString contents = new PdfString(Convert.FromBase64String(PAdESLevelHelper.B_B_1_B64));
+            contents.SetHexWriting(true);
+            signatureDict.Put(PdfName.Contents, contents);
+            signatureDict.Put(PdfName.Filter, PdfName.Sig);
+            signatureDict.Put(PdfName.SubFilter, PdfName.ETSI_CAdES_DETACHED);
+            signatureDict.Put(PdfName.ByteRange, new PdfString("1 2 3 4"));
+            signatureDict.Put(PdfName.M, new PdfString("D:20231204144752+01'00'"));
+            PdfSignature sig = new PdfSignature(signatureDict);
+            IValidationEvent @event = new StartSignatureValidationEvent(sig, "test", new DateTime());
+            eventManager.OnEvent(@event);
+            @event = new SignatureValidationSuccessEvent();
+            eventManager.OnEvent(@event);
+            DocumentPAdESLevelReport report = sut.GetReport();
+            System.Console.Out.WriteLine(report);
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_B, report.GetSignatureReport("test").GetLevel());
+            NUnit.Framework.Assert.AreEqual(PAdESLevel.B_B, report.GetDocumentLevel());
         }
 
         private static PdfSignature GetTimestampPdfDictionary(PdfString contents) {

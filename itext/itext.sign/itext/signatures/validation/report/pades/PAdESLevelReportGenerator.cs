@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -26,6 +26,7 @@ using System.Linq;
 using iText.Bouncycastleconnector;
 using iText.Commons.Actions;
 using iText.Commons.Bouncycastle;
+using iText.Commons.Utils;
 using iText.Kernel.Crypto;
 using iText.Kernel.Pdf;
 using iText.Signatures;
@@ -40,14 +41,18 @@ namespace iText.Signatures.Validation.Report.Pades {
     public class PAdESLevelReportGenerator : IEventHandler {
         private static readonly IBouncyCastleFactory BC_FACTORY = BouncyCastleFactoryCreator.GetFactory();
 
-        private readonly IDictionary<String, AbstractPadesLevelRequirements> signatureInfos = new Dictionary<String
-            , AbstractPadesLevelRequirements>();
+        private readonly IList<AbstractPadesLevelRequirements> signatureInfos = new List<AbstractPadesLevelRequirements
+            >();
 
         private int timestampCount = 0;
 
         private bool poeFound;
 
-        private String currentSignature;
+        private bool dssFound;
+
+        private bool dssHasPoe;
+
+        private AbstractPadesLevelRequirements currentSignature;
 
         private readonly IList<PAdESLevelReport> timestampReports = new List<PAdESLevelReport>();
 
@@ -60,13 +65,13 @@ namespace iText.Signatures.Validation.Report.Pades {
         /// <returns>the DocumentPAdESLevelReport</returns>
         public virtual DocumentPAdESLevelReport GetReport() {
             DocumentPAdESLevelReport result = new DocumentPAdESLevelReport();
-            foreach (KeyValuePair<String, AbstractPadesLevelRequirements> entry in signatureInfos) {
-                if (entry.Value is SignatureRequirements) {
-                    PAdESLevelReport report = new PAdESLevelReport(entry.Key, entry.Value, timestampReports);
+            foreach (AbstractPadesLevelRequirements entry in signatureInfos) {
+                if (entry is SignatureRequirements) {
+                    PAdESLevelReport report = new PAdESLevelReport(entry, timestampReports);
                     result.AddPAdESReport(report);
                 }
                 else {
-                    timestampReports.Add(new PAdESLevelReport(entry.Key, entry.Value, timestampReports));
+                    timestampReports.Add(new PAdESLevelReport(entry, JavaCollectionsUtil.EmptyList<PAdESLevelReport>()));
                 }
             }
             return result;
@@ -90,7 +95,7 @@ namespace iText.Signatures.Validation.Report.Pades {
 
                         case EventType.SIGNATURE_VALIDATION_FAILURE: {
                             if (currentSignature != null) {
-                                signatureInfos.Get(currentSignature).SetValidationSucceeded(false);
+                                currentSignature.SetValidationSucceeded(false);
                             }
                             break;
                         }
@@ -100,12 +105,12 @@ namespace iText.Signatures.Validation.Report.Pades {
                             break;
                         }
 
-                        case EventType.CERTIFICATE_ISSUER_EXTERNAL_RETRIEVAL: {
-                            ProcessIssuerMissing((AbstractCertificateChainEvent)@event);
+                        case EventType.CERTIFICATE_ISSUER_NOT_FROM_DOCUMENT: {
+                            ProcessIssuerCertMissing((AbstractCertificateChainEvent)@event);
                             break;
                         }
 
-                        case EventType.CERTIFICATE_ISSUER_OTHER_INTERNAL_SOURCE_USED: {
+                        case EventType.CERTIFICATE_ISSUER_NOT_FROM_DSS: {
                             ProcessIssuerNotInDss((AbstractCertificateChainEvent)@event);
                             break;
                         }
@@ -115,15 +120,28 @@ namespace iText.Signatures.Validation.Report.Pades {
                             break;
                         }
 
+                        case EventType.DSS_ENTRY_PROCESSED: {
+                            dssFound = true;
+                            dssHasPoe = poeFound;
+                            break;
+                        }
+
                         case EventType.DSS_NOT_TIMESTAMPED: {
                             ProcessNotTimestampedRevocation((AbstractCertificateChainEvent)@event);
                             break;
                         }
 
                         case EventType.ALGORITHM_USAGE: {
-                            AlgorithmUsageEvent ae = (AlgorithmUsageEvent)@event;
-                            if (!ae.IsAllowedAccordingToEtsiTs119_312()) {
-                                this.signatureInfos.Get(currentSignature).AddAlgorithmUsage(ae.ToString());
+                            AlgorithmUsageEvent ae = (AlgorithmUsageEvent)rawEvent;
+                            if (currentSignature != null && !ae.IsAllowedAccordingToEtsiTs119_312()) {
+                                if (!ae.IsAllowedAccordingToAdES()) {
+                                    currentSignature.AddForbiddenAlgorithmUsage(ae.ToString());
+                                }
+                                else {
+                                    if (!ae.IsAllowedAccordingToEtsiTs119_312()) {
+                                        currentSignature.AddDiscouragedAlgorithmUsage(ae.ToString());
+                                    }
+                                }
                             }
                             break;
                         }
@@ -134,54 +152,55 @@ namespace iText.Signatures.Validation.Report.Pades {
 
         private void ProcessRevocationNotInDss(AbstractCertificateChainEvent @event) {
             if (currentSignature != null) {
-                signatureInfos.Get(currentSignature).AddRevocationDataNotInDSS(@event.GetCertificate());
+                currentSignature.AddRevocationDataNotInDSS(@event.GetCertificate());
             }
         }
 
         private void ProcessNotTimestampedRevocation(AbstractCertificateChainEvent @event) {
             if (currentSignature != null) {
-                signatureInfos.Get(currentSignature).AddRevocationDataNotTimestamped(@event.GetCertificate());
+                currentSignature.AddRevocationDataNotTimestamped(@event.GetCertificate());
             }
         }
 
         private void ProcessIssuerNotInDss(AbstractCertificateChainEvent @event) {
             if (currentSignature != null) {
-                signatureInfos.Get(currentSignature).AddCertificateIssuerNotInDSS(@event.GetCertificate());
+                currentSignature.AddCertificateIssuerNotInDSS(@event.GetCertificate());
             }
         }
 
-        private void ProcessIssuerMissing(AbstractCertificateChainEvent @event) {
+        private void ProcessIssuerCertMissing(AbstractCertificateChainEvent @event) {
             if (currentSignature != null) {
-                signatureInfos.Get(currentSignature).AddCertificateIssuerMissing(@event.GetCertificate());
+                currentSignature.AddCertificateIssuerMissing(@event.GetCertificate());
             }
         }
 
         private void ProcessSignatureSuccess() {
             if (currentSignature != null) {
-                if (this.signatureInfos.Get(currentSignature) is DocumentTimestampRequirements) {
+                if (currentSignature is DocumentTimestampRequirements) {
                     poeFound = true;
                 }
-                signatureInfos.Get(currentSignature).SetValidationSucceeded(true);
+                currentSignature.SetValidationSucceeded(true);
             }
             currentSignature = null;
         }
 
         private void ProcessSignature(StartSignatureValidationEvent @event) {
-            SignatureRequirements sReqs = new SignatureRequirements();
+            SignatureRequirements sReqs = new SignatureRequirements(@event.GetSignatureName());
             GetDictionaryInfo(@event.GetPdfSignature(), sReqs);
             GetCmsInfo(@event.GetPdfSignature(), sReqs);
-            signatureInfos.Put(@event.GetSignatureName(), sReqs);
-            currentSignature = @event.GetSignatureName();
+            signatureInfos.Add(sReqs);
+            currentSignature = sReqs;
         }
 
-        private void ProcessPoE(ProofOfExistenceFoundEvent @event) {
+        private void ProcessPoE(ProofOfExistenceFoundEvent poe) {
             timestampCount++;
-            if (@event.IsDocumentTimestamp()) {
-                DocumentTimestampRequirements tsReqs = new DocumentTimestampRequirements(timestampCount == 0);
-                GetDictionaryInfo(@event.GetPdfSignature(), tsReqs);
-                GetCmsInfo(@event.GetPdfSignature(), tsReqs);
-                currentSignature = "timestamp" + timestampCount;
-                signatureInfos.Put(currentSignature, tsReqs);
+            if (poe.IsDocumentTimestamp()) {
+                DocumentTimestampRequirements tsReqs = new DocumentTimestampRequirements("timestamp" + timestampCount, this
+                    .dssFound);
+                GetDictionaryInfo(poe.GetPdfSignature(), tsReqs);
+                GetCmsInfo(poe.GetPdfSignature(), tsReqs);
+                currentSignature = tsReqs;
+                signatureInfos.Add(tsReqs);
             }
         }
 
@@ -247,6 +266,8 @@ namespace iText.Signatures.Validation.Report.Pades {
                 //Table 1 row 24
                 reqs.SetPoeSignaturePresent(poeFound || cms.GetSignerInfo().GetUnSignedAttributes().Any((a) => OID.AA_TIME_STAMP_TOKEN
                     .Equals(a.GetType())));
+                reqs.SetDSSPresent(dssFound);
+                reqs.SetPoeDssPresent(dssHasPoe);
             }
             catch (Exception) {
             }

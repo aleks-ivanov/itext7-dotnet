@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -184,8 +184,8 @@ namespace iText.Signatures.Validation {
             RevocationDataValidator validator = validatorChainBuilder.BuildRevocationDataValidator();
             validatorChainBuilder.WithRevocationDataValidatorFactory(() => validator);
             validator.Validate(report, baseContext, intermediateCert, checkDate);
-            AssertValidationReport.AssertThat(report, (a) => a.HasNumberOfFailures(1).HasLogItem((l) => l.WithMessage(
-                CRLValidator.CERTIFICATE_IN_ISSUER_CHAIN)));
+            AssertValidationReport.AssertThat(report, (a) => a.HasNumberOfFailures(1).HasLogItems(2, (l) => l.WithMessage
+                (CRLValidator.CERTIFICATE_IN_ISSUER_CHAIN)));
         }
     }
 }

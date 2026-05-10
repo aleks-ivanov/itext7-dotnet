@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -116,22 +116,43 @@ namespace iText.Kernel.Utils.Checkers {
                 }
                 XMPMeta metadata = XMPMetaFactory.Parse(new MemoryStream(xmpMetadata.GetBytes()));
                 String NS_ID = conformance.IsPdfA() ? XMPConst.NS_PDFA_ID : XMPConst.NS_PDFUA_ID;
-                XMPProperty actualPart = metadata.GetProperty(NS_ID, XMPConst.PART);
-                String expectedPart = conformance.IsPdfA() ? conformance.GetAConformance().GetPart() : conformance.GetUAConformance
-                    ().GetPart();
-                if (actualPart == null || !expectedPart.Equals(actualPart.GetValue())) {
-                    throw exceptionSupplier.Invoke(MessageFormatUtil.Format(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_VERSION_IDENTIFIER_PART
-                        , expectedPart, (actualPart != null && String.IsNullOrEmpty(actualPart.GetValue())) ? null : actualPart
-                        ));
+                if (conformance.IsPdfA() || conformance.IsPdfUA()) {
+                    XMPProperty actualPart = metadata.GetProperty(NS_ID, XMPConst.PART);
+                    String expectedPart = conformance.IsPdfA() ? conformance.GetAConformance().GetPart() : conformance.GetUAConformance
+                        ().GetPart();
+                    if (actualPart == null || !expectedPart.Equals(actualPart.GetValue())) {
+                        throw exceptionSupplier.Invoke(MessageFormatUtil.Format(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_VERSION_IDENTIFIER_PART
+                            , expectedPart, (actualPart != null && String.IsNullOrEmpty(actualPart.GetValue())) ? null : actualPart
+                            ));
+                    }
+                    XMPProperty rev = metadata.GetProperty(NS_ID, XMPConst.REV);
+                    if (rev == null || !IsValidXmpRevision(rev.GetValue())) {
+                        throw exceptionSupplier.Invoke(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_VERSION_IDENTIFIER_REV
+                            );
+                    }
                 }
-                XMPProperty rev = metadata.GetProperty(NS_ID, XMPConst.REV);
-                if (rev == null || !IsValidXmpRevision(rev.GetValue())) {
-                    throw exceptionSupplier.Invoke(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_VERSION_IDENTIFIER_REV
-                        );
-                }
+                CheckWellTaggedMetadata(metadata, conformance, exceptionSupplier);
             }
             catch (XMPException) {
                 throw exceptionSupplier.Invoke(KernelExceptionMessageConstant.INVALID_METADATA_VALUE);
+            }
+        }
+
+        private static void CheckWellTaggedMetadata(XMPMeta metadata, PdfConformance conformance, Func<String, PdfException
+            > exceptionSupplier) {
+            PdfConformance xmpConformance = PdfConformance.GetConformance(metadata);
+            if (xmpConformance.GetWtpdfConformances() == null || !xmpConformance.IsWellTaggedConformanceIncluded(conformance
+                )) {
+                if (conformance.ConformsTo(WellTaggedPdfConformance.FOR_ACCESSIBILITY)) {
+                    throw exceptionSupplier.Invoke(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_WTPDF_ACCESSIBILITY_METADATA
+                        );
+                }
+                else {
+                    if (conformance.ConformsTo(WellTaggedPdfConformance.FOR_REUSE)) {
+                        throw exceptionSupplier.Invoke(KernelExceptionMessageConstant.XMP_METADATA_HEADER_SHALL_CONTAIN_WTPDF_REUSE_METADATA
+                            );
+                    }
+                }
             }
         }
 

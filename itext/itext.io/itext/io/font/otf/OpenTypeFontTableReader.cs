@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -261,7 +261,11 @@ namespace iText.IO.Font.Otf {
             int lookupFlag = rf.ReadUnsignedShort();
             int subTableCount = rf.ReadUnsignedShort();
             int[] subTableLocations = ReadUShortArray(subTableCount, lookupTableLocation);
-            lookupList.Add(ReadLookupTable(lookupType, lookupFlag, subTableLocations));
+            OpenTableLookup lookup = ReadLookupTable(lookupType, lookupFlag, subTableLocations);
+            if (lookup != null) {
+                lookup.SetIndexInLookupList(lookupList.Count);
+            }
+            lookupList.Add(lookup);
         }
     }
 }

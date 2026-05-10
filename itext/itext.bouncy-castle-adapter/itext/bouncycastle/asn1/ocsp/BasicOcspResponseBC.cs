@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -35,6 +35,7 @@ using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
+using iText.Commons.Bouncycastle.Asn1.X509;
 
 namespace iText.Bouncycastle.Asn1.Ocsp {
     /// <summary>
@@ -129,9 +130,14 @@ namespace iText.Bouncycastle.Asn1.Ocsp {
                 .GetExtensionParsedValue(((DerObjectIdentifierBC)objectIdentifier).GetDerObjectIdentifier()));
         }
 
-        public IRespID GetResponderId()
+        public IRespID GetResponderId() {
+            return new RespIDBC(GetBasicOcspResponse().TbsResponseData.ResponderID);
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public IAlgorithmIdentifier GetSignatureAlgorithmID()
         {
-            return new RespIDBC(new X509NameBC(GetBasicOcspResponse().TbsResponseData.ResponderID.Name));
+            return new AlgorithmIdentifierBC(GetBasicOcspResponse().SignatureAlgorithm);
         }
     }
 }

@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using iText.Bouncycastleconnector;
+using iText.Commons.Actions;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Asn1;
 using iText.Commons.Bouncycastle.Asn1.Ocsp;
@@ -34,6 +35,7 @@ using iText.Commons.Utils.Collections;
 using iText.Signatures;
 using iText.Signatures.Logs;
 using iText.Signatures.Validation.Context;
+using iText.Signatures.Validation.Events;
 using iText.Signatures.Validation.Report;
 
 namespace iText.Signatures.Validation {
@@ -116,8 +118,8 @@ namespace iText.Signatures.Validation {
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
-        internal const String OCSP_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED = "OCSP response could not be validated: "
-             + "OCSP response is signed by the same certificate as being validated.";
+        internal const String CERTIFICATE_IN_ISSUER_CHAIN = "Unable to validate OCSP response: validated certificate is"
+             + " part of issuer certificate chain.";
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
@@ -133,6 +135,8 @@ namespace iText.Signatures.Validation {
 
         private readonly ValidatorChainBuilder builder;
 
+        private readonly EventManager eventManager;
+
         /// <summary>
         /// Creates new
         /// <see cref="OCSPValidator"/>
@@ -145,6 +149,7 @@ namespace iText.Signatures.Validation {
         protected internal OCSPValidator(ValidatorChainBuilder builder) {
             this.certificateRetriever = builder.GetCertificateRetriever();
             this.properties = builder.GetProperties();
+            this.eventManager = builder.GetEventManager();
             this.builder = builder;
         }
 
@@ -159,6 +164,7 @@ namespace iText.Signatures.Validation {
         public virtual void Validate(ValidationReport report, ValidationContext context, IX509Certificate certificate
             , ISingleResponse singleResp, IBasicOcspResponse ocspResp, DateTime validationDate, DateTime responseGenerationDate
             ) {
+            ReportAlgorithmUsage(ocspResp);
             ValidationContext localContext = context.SetValidatorContext(ValidatorContext.OCSP_VALIDATOR);
             if (CertificateUtil.IsSelfSigned(certificate)) {
                 report.AddReportItem(new CertificateReportItem(certificate, OCSP_CHECK, RevocationDataValidator.SELF_SIGNED_CERTIFICATE
@@ -269,6 +275,11 @@ namespace iText.Signatures.Validation {
             }
         }
 
+        private void ReportAlgorithmUsage(IBasicOcspResponse ocspResp) {
+            eventManager.OnEvent(new AlgorithmUsageEvent(null, ocspResp.GetSignatureAlgorithmID().GetAlgorithm().GetId
+                (), OCSP_CHECK));
+        }
+
         /// <summary>Verifies if an OCSP response is genuine.</summary>
         /// <remarks>
         /// Verifies if an OCSP response is genuine.
@@ -351,28 +362,34 @@ namespace iText.Signatures.Validation {
                         .INVALID));
                     continue;
                 }
-                if (certificate.Equals(responderCert)) {
-                    // OCSP response is signed by this same certificate
-                    report.AddReportItem(new CertificateReportItem(responderCert, OCSP_CHECK, OCSP_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED
-                        , ReportItem.ReportItemStatus.INDETERMINATE));
+                if (builder.IsCertificateBeingValidated(responderCert)) {
+                    // OCSP response is signed by the certificate from the issue chain
+                    report.AddReportItem(new CertificateReportItem(responderCert, OCSP_CHECK, CERTIFICATE_IN_ISSUER_CHAIN, ReportItem.ReportItemStatus
+                        .INDETERMINATE));
                     continue;
                 }
-                // Validating of the ocsp signer's certificate (responderCert) described in the
-                // RFC6960 4.2.2.2.1. Revocation Checking of an Authorized Responder.
-                ValidationReport responderReport = new ValidationReport();
-                try {
-                    builder.GetCertificateChainValidator().Validate(responderReport, localContext, responderCert, responseGenerationDate
-                        );
-                }
-                catch (Exception e) {
-                    candidateReport.AddReportItem(new CertificateReportItem(responderCert, OCSP_CHECK, OCSP_RESPONDER_NOT_VERIFIED
-                        , e, ReportItem.ReportItemStatus.INDETERMINATE));
-                    continue;
-                }
-                AddResponderValidationReport(candidateReport, responderReport);
-                if (candidateReport.GetValidationResult() == ValidationReport.ValidationResult.VALID) {
-                    AddResponderValidationReport(report, candidateReport);
-                    return;
+                else {
+                    builder.AddCertificateBeingValidated(responderCert);
+                    // Validating of the ocsp signer's certificate (responderCert) described in the
+                    // RFC6960 4.2.2.2.1. Revocation Checking of an Authorized Responder.
+                    ValidationReport responderReport = new ValidationReport();
+                    try {
+                        builder.GetCertificateChainValidator().Validate(responderReport, localContext, responderCert, responseGenerationDate
+                            );
+                    }
+                    catch (Exception e) {
+                        candidateReport.AddReportItem(new CertificateReportItem(responderCert, OCSP_CHECK, OCSP_RESPONDER_NOT_VERIFIED
+                            , e, ReportItem.ReportItemStatus.INDETERMINATE));
+                        continue;
+                    }
+                    finally {
+                        builder.RemoveCertificateBeingValidated(responderCert);
+                    }
+                    AddResponderValidationReport(candidateReport, responderReport);
+                    if (candidateReport.GetValidationResult() == ValidationReport.ValidationResult.VALID) {
+                        AddResponderValidationReport(report, candidateReport);
+                        return;
+                    }
                 }
             }
             //if we get here, none of the candidates were successful

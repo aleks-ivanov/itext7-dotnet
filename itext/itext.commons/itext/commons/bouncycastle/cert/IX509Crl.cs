@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -97,5 +97,24 @@ namespace iText.Commons.Bouncycastle.Cert {
         /// </summary>
         /// <returns></returns>
         IX509CrlEntry GetRevokedCertificate(IBigInteger certificate);
+
+        /// <summary>
+        /// Get the Signature Algorithms Object ID.
+        /// </summary>
+        /// <returns>A string containg a '.' separated object id.</returns>
+        string GetSigAlgOID();
+
+        /// <summary>
+        /// Get the signature algorithms parameters. (EG DSA Parameters)
+        /// </summary>
+        /// <returns>A byte array containing the Der encoded version of the parameters or null if there are none.</returns>
+        byte[] GetSigAlgParams();
+
+        /// <summary>
+        /// Get the Signature Algorithms name.
+        /// </summary>
+        /// <returns>The Signature Algortihm name.</returns>
+
+        string GetSigAlgName();
     }
 }

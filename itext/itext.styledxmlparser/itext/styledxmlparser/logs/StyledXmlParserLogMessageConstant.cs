@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -115,6 +115,11 @@ namespace iText.StyledXmlParser.Logs {
              + "Rule will be ignored. ";
 
         public const String IMPORT_RULE_URL_CAN_NOT_BE_RESOLVED = "Import rule URL can't be resolved because of base URI absence.";
+
+        public const String RELATIVE_VALUE_NOT_PARSED = "Relative value \"{0}\" was not parsed. It has invalid " +
+             "value. Defaulting to 0";
+
+        public const String RESOLUTION_NOT_PARSED = "Resolution \"{0}\" was not parsed. It has invalid " + "value. Defaulting to 0";
 
         /// <summary>Instantiates a new log message constant.</summary>
         private StyledXmlParserLogMessageConstant() {

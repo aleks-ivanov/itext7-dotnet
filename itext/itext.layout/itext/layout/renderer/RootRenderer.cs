@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -150,7 +150,7 @@ namespace iText.Layout.Renderer {
                                 }
                             }
                             else {
-                                if (currentArea.IsEmptyArea() && result.GetAreaBreak() == null) {
+                                if (currentArea.IsEmptyArea() && result.GetAreaBreak() == null && result.GetSectionBreak() == null) {
                                     bool keepTogetherChanged = TryDisableKeepTogether(result, rendererIsFloat, rootRendererStateHandler);
                                     bool areKeepTogetherAndForcedPlacementBothNotChanged = !keepTogetherChanged;
                                     if (areKeepTogetherAndForcedPlacementBothNotChanged) {
@@ -537,6 +537,9 @@ namespace iText.Layout.Renderer {
         }
 
         private static bool IsItemInSubtree(IRenderer ancestor, IRenderer item) {
+            if (ancestor == null) {
+                return false;
+            }
             if (ancestor == item) {
                 return true;
             }

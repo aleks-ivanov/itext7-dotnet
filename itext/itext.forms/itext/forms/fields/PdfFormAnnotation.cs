@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -757,12 +757,19 @@ namespace iText.Forms.Fields {
                 return;
             }
             // Rotation
-            PdfPage page = GetWidget().GetPage();
-            int pageRotation = page == null ? 0 : page.GetRotation();
-            int additionalFieldRotation = ((PdfSignatureFormField)parent).IsPageRotationIgnored() ? 0 : -pageRotation;
-            int fieldRotation = GetRotation() + additionalFieldRotation;
-            PdfArray matrix = GetRotationMatrix(fieldRotation, rectangle.GetHeight(), rectangle.GetWidth());
-            rectangle = ApplyRotation(fieldRotation + pageRotation, rectangle);
+            PdfArray matrix;
+            if (((PdfSignatureFormField)parent).IsPageRotationIgnored()) {
+                PdfPage page = GetWidget().GetPage();
+                int pageRotation = page == null ? 0 : page.GetRotation();
+                int additionalFieldRotation = 0;
+                int fieldRotation = GetRotation() + additionalFieldRotation;
+                matrix = GetRotationMatrix(fieldRotation, rectangle.GetHeight(), rectangle.GetWidth());
+                rectangle = ApplyRotation(fieldRotation + pageRotation, rectangle);
+            }
+            else {
+                matrix = GetRotationMatrix(GetRotation(), rectangle.GetHeight(), rectangle.GetWidth());
+                rectangle = ApplyRotation(GetRotation(), rectangle);
+            }
             CreateSigField();
             SetModelElementProperties(rectangle);
             PdfFormXObject normalAppearance_1 = new PdfFormXObject(new Rectangle(0, 0, rectangle.GetWidth(), rectangle
@@ -941,9 +948,12 @@ namespace iText.Forms.Fields {
                 }
                 formFieldElement.SetProperty(Property.FONT_SIZE, UnitValue.CreatePointValue(fontSize));
                 value = iText.Commons.Utils.StringUtil.ReplaceAll(value, LINE_ENDINGS_REGEXP, " ");
-                ((InputField)formFieldElement).SetComb(this.IsCombTextFormField());
-                ((InputField)formFieldElement).SetMaxLen((parent is PdfTextFormField ? (PdfTextFormField)parent : PdfFormCreator
-                    .CreateTextFormField(parent.GetPdfObject())).GetMaxLen());
+                bool isComb = this.IsCombTextFormField();
+                ((InputField)formFieldElement).SetComb(isComb);
+                if (isComb) {
+                    ((InputField)formFieldElement).SetMaxLen((parent is PdfTextFormField ? (PdfTextFormField)parent : PdfFormCreator
+                        .CreateTextFormField(parent.GetPdfObject())).GetMaxLen());
+                }
                 ((InputField)formFieldElement).UseAsPassword(parent.IsPassword());
             }
             formFieldElement.SetValue(value);
@@ -1064,7 +1074,7 @@ namespace iText.Forms.Fields {
             iText.Layout.Canvas canvasOff = new iText.Layout.Canvas(xObjectOff, GetDocument());
             SetMetaInfoToCanvas(canvasOff);
             canvasOff.Add(formFieldElement);
-            if (GetPdfConformance() == null || !GetPdfConformance().IsPdfAOrUa()) {
+            if (GetPdfConformance() == null || !GetPdfConformance().ConformsToAny()) {
                 xObjectOff.GetResources().AddFont(GetDocument(), GetFont());
             }
             normalAppearance.Put(new PdfName(OFF_STATE_VALUE), xObjectOff.GetPdfObject());
@@ -1502,21 +1512,23 @@ namespace iText.Forms.Fields {
             }
             PdfFormXObject n2LayerXObject = new PdfFormXObject(new Rectangle(0, 0, width, height));
             iText.Layout.Canvas n2LayerCanvas = new iText.Layout.Canvas(n2LayerXObject, this.GetDocument());
-            PdfPage page = GetWidget().GetPage();
-            int rotation = page == null ? 0 : page.GetRotation();
-            float squeezeTransformation = height / width;
-            if (rotation == 90) {
-                n2LayerCanvas.GetPdfCanvas().ConcatMatrix(0, squeezeTransformation, -1 / squeezeTransformation, 0, width, 
-                    0);
-            }
-            else {
-                if (rotation == 180) {
-                    n2LayerCanvas.GetPdfCanvas().ConcatMatrix(-1, 0, 0, -1, width, height);
+            if (((PdfSignatureFormField)parent).IsPageRotationIgnored()) {
+                PdfPage page = GetWidget().GetPage();
+                int rotation = page == null ? 0 : page.GetRotation();
+                float squeezeTransformation = height / width;
+                if (rotation == 90) {
+                    n2LayerCanvas.GetPdfCanvas().ConcatMatrix(0, squeezeTransformation, -1 / squeezeTransformation, 0, width, 
+                        0);
                 }
                 else {
-                    if (rotation == 270) {
-                        n2LayerCanvas.GetPdfCanvas().ConcatMatrix(0, -squeezeTransformation, 1 / squeezeTransformation, 0, 0, height
-                            );
+                    if (rotation == 180) {
+                        n2LayerCanvas.GetPdfCanvas().ConcatMatrix(-1, 0, 0, -1, width, height);
+                    }
+                    else {
+                        if (rotation == 270) {
+                            n2LayerCanvas.GetPdfCanvas().ConcatMatrix(0, -squeezeTransformation, 1 / squeezeTransformation, 0, 0, height
+                                );
+                        }
                     }
                 }
             }

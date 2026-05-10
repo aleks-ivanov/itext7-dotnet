@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -84,6 +84,23 @@ namespace iText.Layout.Element {
         /// <returns>this Element</returns>
         public virtual iText.Layout.Element.Div Add(AreaBreak areaBreak) {
             childElements.Add(areaBreak);
+            return this;
+        }
+
+        /// <summary>Adds the section break to the div contents.</summary>
+        /// <param name="sectionBreak">
+        /// 
+        /// <see cref="SectionBreak"/>
+        /// that terminates the current page content
+        /// and creates a new page, optionally with a specified page size and/or page margins
+        /// </param>
+        /// <returns>
+        /// this same
+        /// <see cref="Div"/>
+        /// instance
+        /// </returns>
+        public virtual iText.Layout.Element.Div Add(SectionBreak sectionBreak) {
+            childElements.Add(sectionBreak);
             return this;
         }
 

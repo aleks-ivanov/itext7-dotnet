@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -29,8 +29,12 @@ namespace iText.Layout.Logs {
 
         public const String ELEMENT_DOES_NOT_FIT_AREA = "Element does not fit current area. {0}";
 
+        public const String PAGE_MARGIN_BOX_CONTENT_CANNOT_BE_DRAWN = "Page margin box {0} content cannot be drawn for page {1}.";
+
+        public const String SECTION_BREAK_UNEXPECTED = "Unexpected use of SectionBreakRenderer detected, " + "which may indicate an issue with layout processing.";
+
         private LayoutLogMessageConstant() {
         }
-        //Private constructor will prevent the instantiation of this class directly
+        // Private constructor will prevent the instantiation of this class directly.
     }
 }

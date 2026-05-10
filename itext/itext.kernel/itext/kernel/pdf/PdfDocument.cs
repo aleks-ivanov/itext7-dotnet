@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -62,27 +62,6 @@ namespace iText.Kernel.Pdf {
 
         protected internal readonly StampingProperties properties;
 
-//\cond DO_NOT_DOCUMENT
-        /// <summary>List of indirect objects used in the document.</summary>
-        internal readonly PdfXrefTable xref = new PdfXrefTable();
-//\endcond
-
-        private readonly IDictionary<PdfIndirectReference, PdfFont> documentFonts = new Dictionary<PdfIndirectReference
-            , PdfFont>();
-
-        private readonly ICollection<IEventHandler> documentHandlers = new LinkedHashSet<IEventHandler>();
-
-        private readonly SequenceId documentId;
-
-        /// <summary>To be adjusted destinations.</summary>
-        /// <remarks>
-        /// To be adjusted destinations.
-        /// Key - originating page on the source document
-        /// Value - a hashmap of Parent pdf objects and destinations to be updated
-        /// </remarks>
-        private readonly IList<PdfDocument.DestinationMutationInfo> pendingDestinationMutations = new List<PdfDocument.DestinationMutationInfo
-            >();
-
         /// <summary>PdfWriter associated with the document.</summary>
         /// <remarks>
         /// PdfWriter associated with the document.
@@ -137,6 +116,11 @@ namespace iText.Kernel.Pdf {
         protected internal IPdfPageFactory pdfPageFactory = new PdfPageFactory();
 
 //\cond DO_NOT_DOCUMENT
+        /// <summary>List of indirect objects used in the document.</summary>
+        internal readonly PdfXrefTable xref = new PdfXrefTable();
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
         /// <summary>Cache of already serialized objects from this document for smart mode.</summary>
         internal IDictionary<PdfIndirectReference, byte[]> serializedObjectsCache = new Dictionary<PdfIndirectReference
             , byte[]>();
@@ -146,6 +130,24 @@ namespace iText.Kernel.Pdf {
         /// <summary>Handler which will be used for decompression of pdf streams.</summary>
         internal MemoryLimitsAwareHandler memoryLimitsAwareHandler = null;
 //\endcond
+
+        private readonly IDictionary<PdfIndirectReference, PdfFont> documentFonts = new Dictionary<PdfIndirectReference
+            , PdfFont>();
+
+        private readonly ICollection<IEventHandler> documentHandlers = new LinkedHashSet<IEventHandler>();
+
+        private readonly SequenceId documentId;
+
+        /// <summary>To be adjusted destinations.</summary>
+        /// <remarks>
+        /// To be adjusted destinations.
+        /// Key - originating page on the source document
+        /// Value - a hashmap of Parent pdf objects and destinations to be updated
+        /// </remarks>
+        private readonly IList<PdfDocument.DestinationMutationInfo> pendingDestinationMutations = new List<PdfDocument.DestinationMutationInfo
+            >();
+
+        private readonly DIContainer diContainer = new DIContainer();
 
         /// <summary>Default page size.</summary>
         /// <remarks>
@@ -171,8 +173,6 @@ namespace iText.Kernel.Pdf {
         /// <summary>XMP Metadata which is used to prevent bytes deserialization for a few times on the same bytes.</summary>
         private XMPMeta xmpMetadata = null;
 
-        private readonly DIContainer diContainer = new DIContainer();
-
         /// <summary>Open PDF document in reading mode.</summary>
         /// <param name="reader">PDF reader.</param>
         public PdfDocument(PdfReader reader)
@@ -181,7 +181,7 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Open PDF document in reading mode.</summary>
-        /// <param name="reader">PDF reader.</param>
+        /// <param name="reader">PDF reader</param>
         /// <param name="properties">document properties</param>
         public PdfDocument(PdfReader reader, DocumentProperties properties) {
             defaultFontStrategy = new DefaultFontStrategy(this);
@@ -228,16 +228,16 @@ namespace iText.Kernel.Pdf {
         /// Opens PDF document in the stamping mode.
         /// <br />
         /// </remarks>
-        /// <param name="reader">PDF reader.</param>
-        /// <param name="writer">PDF writer.</param>
+        /// <param name="reader">PDF reader</param>
+        /// <param name="writer">PDF writer</param>
         public PdfDocument(PdfReader reader, PdfWriter writer)
             : this(reader, writer, new StampingProperties()) {
             defaultFontStrategy = new DefaultFontStrategy(this);
         }
 
         /// <summary>Open PDF document in stamping mode.</summary>
-        /// <param name="reader">PDF reader.</param>
-        /// <param name="writer">PDF writer.</param>
+        /// <param name="reader">PDF reader</param>
+        /// <param name="writer">PDF writer</param>
         /// <param name="properties">properties of the stamping process</param>
         public PdfDocument(PdfReader reader, PdfWriter writer, StampingProperties properties) {
             defaultFontStrategy = new DefaultFontStrategy(this);
@@ -469,7 +469,7 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Gets the last page of the document.</summary>
-        /// <returns>last page.</returns>
+        /// <returns>last page</returns>
         public virtual PdfPage GetLastPage() {
             return GetPage(GetNumberOfPages());
         }
@@ -544,8 +544,8 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Adds page to the end of document.</summary>
-        /// <param name="page">page to add.</param>
-        /// <returns>added page.</returns>
+        /// <param name="page">page to add</param>
+        /// <returns>added page</returns>
         public virtual PdfPage AddPage(PdfPage page) {
             CheckClosingStatus();
             CheckAndAddPage(page);
@@ -565,15 +565,15 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Gets number of pages of the document.</summary>
-        /// <returns>number of pages.</returns>
+        /// <returns>number of pages</returns>
         public virtual int GetNumberOfPages() {
             CheckClosingStatus();
             return catalog.GetPageTree().GetNumberOfPages();
         }
 
         /// <summary>Gets page number by page.</summary>
-        /// <param name="page">the page.</param>
-        /// <returns>page number.</returns>
+        /// <param name="page">the page</param>
+        /// <returns>page number</returns>
         public virtual int GetPageNumber(PdfPage page) {
             CheckClosingStatus();
             return catalog.GetPageTree().GetPageNumber(page);
@@ -586,11 +586,11 @@ namespace iText.Kernel.Pdf {
         /// <param name="pageDictionary">
         /// 
         /// <see cref="PdfDictionary"/>
-        /// that present page.
+        /// that present page
         /// </param>
         /// <returns>
         /// page number by
-        /// <see cref="PdfDictionary"/>.
+        /// <see cref="PdfDictionary"/>
         /// </returns>
         public virtual int GetPageNumber(PdfDictionary pageDictionary) {
             return catalog.GetPageTree().GetPageNumber(pageDictionary);
@@ -768,7 +768,7 @@ namespace iText.Kernel.Pdf {
         /// </param>
         public virtual void DispatchEvent(AbstractPdfDocumentEvent @event) {
             @event.SetDocument(this);
-            foreach (IEventHandler handler in documentHandlers) {
+            foreach (IEventHandler handler in new LinkedHashSet<IEventHandler>(documentHandlers)) {
                 handler.OnEvent(@event);
             }
         }
@@ -927,8 +927,7 @@ namespace iText.Kernel.Pdf {
                     // The following 2 operators prevent the possible inconsistency between root and info
                     // entries existing in the trailer object and corresponding fields. This inconsistency
                     // may appear when user gets trailer and explicitly sets new root or info dictionaries.
-                    PdfAConformance pdfAConformance = this.GetConformance().GetAConformance();
-                    if (pdfAConformance != null && "4".Equals(pdfAConformance.GetPart())) {
+                    if (pdfConformance.IsPdfA() && "4".Equals(pdfConformance.GetAConformance().GetPart())) {
                         if (this.GetCatalog().GetPdfObject().Get(PdfName.PieceInfo) != null) {
                             // Leave only ModDate as required by 6.1.3 File trailer of pdf/a-4 spec
                             GetDocumentInfo().RemoveCreationDate();
@@ -1088,13 +1087,13 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Gets close status of the document.</summary>
-        /// <returns>true, if the document has already been closed, otherwise false.</returns>
+        /// <returns>true, if the document has already been closed, otherwise false</returns>
         public virtual bool IsClosed() {
             return closed;
         }
 
         /// <summary>Gets tagged status of the document.</summary>
-        /// <returns>true, if the document has tag structure, otherwise false.</returns>
+        /// <returns>true, if the document has tag structure, otherwise false</returns>
         public virtual bool IsTagged() {
             return structTreeRoot != null;
         }
@@ -1128,7 +1127,7 @@ namespace iText.Kernel.Pdf {
         /// <returns>
         /// 
         /// <see cref="iText.Kernel.Pdf.Tagging.PdfStructTreeRoot"/>
-        /// in case document is tagged, otherwise it returns null.
+        /// in case document is tagged, otherwise it returns null
         /// </returns>
         /// <seealso cref="IsTagged()"/>
         /// <seealso cref="GetNextStructParentIndex()"/>
@@ -1137,7 +1136,7 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Gets next parent index of tagged document.</summary>
-        /// <returns>-1 if document is not tagged, or &gt;= 0 if tagged.</returns>
+        /// <returns>-1 if document is not tagged, or &gt;= 0 if tagged</returns>
         /// <seealso cref="IsTagged()"/>
         /// <seealso cref="GetNextStructParentIndex()"/>
         public virtual int GetNextStructParentIndex() {
@@ -1155,7 +1154,7 @@ namespace iText.Kernel.Pdf {
         /// </remarks>
         /// <returns>
         /// document
-        /// <c>TagStructureContext</c>.
+        /// <c>TagStructureContext</c>
         /// </returns>
         public virtual TagStructureContext GetTagStructureContext() {
             CheckClosingStatus();
@@ -1183,10 +1182,10 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pageFrom">start of the range of pages to be copied.</param>
-        /// <param name="pageTo">end of the range of pages to be copied.</param>
-        /// <param name="toDocument">a document to copy pages to.</param>
-        /// <param name="insertBeforePage">a position where to insert copied pages.</param>
+        /// <param name="pageFrom">start of the range of pages to be copied</param>
+        /// <param name="pageTo">end of the range of pages to be copied</param>
+        /// <param name="toDocument">a document to copy pages to</param>
+        /// <param name="insertBeforePage">a position where to insert copied pages</param>
         /// <returns>list of copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(int pageFrom, int pageTo, iText.Kernel.Pdf.PdfDocument toDocument
             , int insertBeforePage) {
@@ -1222,18 +1221,18 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pageFrom">1-based start of the range of pages to be copied.</param>
+        /// <param name="pageFrom">1-based start of the range of pages to be copied</param>
         /// <param name="pageTo">
         /// 1-based end (inclusive) of the range of pages to be copied. This page is included in list
-        /// of copied pages.
+        /// of copied pages
         /// </param>
-        /// <param name="toDocument">a document to copy pages to.</param>
-        /// <param name="insertBeforePage">a position where to insert copied pages.</param>
+        /// <param name="toDocument">a document to copy pages to</param>
+        /// <param name="insertBeforePage">a position where to insert copied pages</param>
         /// <param name="copier">
         /// a copier which bears a special copy logic. May be null.
         /// It is recommended to use the same instance of
         /// <see cref="IPdfPageExtraCopier"/>
-        /// for the same output document.
+        /// for the same output document
         /// </param>
         /// <returns>list of new copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(int pageFrom, int pageTo, iText.Kernel.Pdf.PdfDocument toDocument
@@ -1267,12 +1266,12 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pageFrom">1-based start of the range of pages to be copied.</param>
+        /// <param name="pageFrom">1-based start of the range of pages to be copied</param>
         /// <param name="pageTo">
         /// 1-based end (inclusive) of the range of pages to be copied. This page is included in list of
-        /// copied pages.
+        /// copied pages
         /// </param>
-        /// <param name="toDocument">a document to copy pages to.</param>
+        /// <param name="toDocument">a document to copy pages to</param>
         /// <returns>list of new copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(int pageFrom, int pageTo, iText.Kernel.Pdf.PdfDocument toDocument
             ) {
@@ -1301,19 +1300,19 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pageFrom">1-based start of the range of pages to be copied.</param>
+        /// <param name="pageFrom">1-based start of the range of pages to be copied</param>
         /// <param name="pageTo">
         /// 1-based end (inclusive) of the range of pages to be copied. This page is included in list of
-        /// copied pages.
+        /// copied pages
         /// </param>
-        /// <param name="toDocument">a document to copy pages to.</param>
+        /// <param name="toDocument">a document to copy pages to</param>
         /// <param name="copier">
         /// a copier which bears a special copy logic. May be null.
         /// It is recommended to use the same instance of
         /// <see cref="IPdfPageExtraCopier"/>
-        /// for the same output document.
+        /// for the same output document
         /// </param>
-        /// <returns>list of new copied pages.</returns>
+        /// <returns>list of new copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(int pageFrom, int pageTo, iText.Kernel.Pdf.PdfDocument toDocument
             , IPdfPageExtraCopier copier) {
             return CopyPagesTo(pageFrom, pageTo, toDocument, toDocument.GetNumberOfPages() + 1, copier);
@@ -1334,9 +1333,9 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pagesToCopy">list of pages to be copied.</param>
-        /// <param name="toDocument">a document to copy pages to.</param>
-        /// <param name="insertBeforePage">a position where to insert copied pages.</param>
+        /// <param name="pagesToCopy">list of pages to be copied</param>
+        /// <param name="toDocument">a document to copy pages to</param>
+        /// <param name="insertBeforePage">a position where to insert copied pages</param>
         /// <returns>list of new copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(IList<int> pagesToCopy, iText.Kernel.Pdf.PdfDocument toDocument, 
             int insertBeforePage) {
@@ -1358,14 +1357,14 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pagesToCopy">list of pages to be copied.</param>
-        /// <param name="toDocument">a document to copy pages to.</param>
-        /// <param name="insertBeforePage">a position where to insert copied pages.</param>
+        /// <param name="pagesToCopy">list of pages to be copied</param>
+        /// <param name="toDocument">a document to copy pages to</param>
+        /// <param name="insertBeforePage">a position where to insert copied pages</param>
         /// <param name="copier">
         /// a copier which bears a special copy logic. May be null.
         /// It is recommended to use the same instance of
         /// <see cref="IPdfPageExtraCopier"/>
-        /// for the same output document.
+        /// for the same output document
         /// </param>
         /// <returns>list of new copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(IList<int> pagesToCopy, iText.Kernel.Pdf.PdfDocument toDocument, 
@@ -1411,7 +1410,7 @@ namespace iText.Kernel.Pdf {
                 }
             }
             // It's important to copy tag structure after link annotations were copied, because object content items in tag
-            // structure are not copied in case if their's OBJ key is annotation and doesn't contain /P entry.
+            // structure are not copied in case if theirs OBJ key is annotation and doesn't contain /P entry.
             if (toDocument.IsTagged()) {
                 if (IsTagged()) {
                     try {
@@ -1461,8 +1460,8 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pagesToCopy">list of pages to be copied.</param>
-        /// <param name="toDocument">a document to copy pages to.</param>
+        /// <param name="pagesToCopy">list of pages to be copied</param>
+        /// <param name="toDocument">a document to copy pages to</param>
         /// <returns>list of copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(IList<int> pagesToCopy, iText.Kernel.Pdf.PdfDocument toDocument) {
             return CopyPagesTo(pagesToCopy, toDocument, null);
@@ -1485,13 +1484,13 @@ namespace iText.Kernel.Pdf {
         /// In this case iText will log a warning. This can be avoided by renaming
         /// destinations names in the source document.
         /// </remarks>
-        /// <param name="pagesToCopy">list of pages to be copied.</param>
-        /// <param name="toDocument">a document to copy pages to.</param>
+        /// <param name="pagesToCopy">list of pages to be copied</param>
+        /// <param name="toDocument">a document to copy pages to</param>
         /// <param name="copier">
         /// a copier which bears a special copy logic. May be null.
         /// It is recommended to use the same instance of
         /// <see cref="IPdfPageExtraCopier"/>
-        /// for the same output document.
+        /// for the same output document
         /// </param>
         /// <returns>list of copied pages</returns>
         public virtual IList<PdfPage> CopyPagesTo(IList<int> pagesToCopy, iText.Kernel.Pdf.PdfDocument toDocument, 
@@ -1522,7 +1521,7 @@ namespace iText.Kernel.Pdf {
         /// <returns>
         /// true,
         /// <see cref="Close()"/>
-        /// method is going to close associated PdfReader, otherwise false.
+        /// method is going to close associated PdfReader, otherwise false
         /// </returns>
         public virtual bool IsCloseReader() {
             return closeReader;
@@ -1536,7 +1535,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="closeReader">
         /// true,
         /// <see cref="Close()"/>
-        /// method shall close associated PdfReader, otherwise false.
+        /// method shall close associated PdfReader, otherwise false
         /// </param>
         public virtual void SetCloseReader(bool closeReader) {
             CheckClosingStatus();
@@ -1551,7 +1550,7 @@ namespace iText.Kernel.Pdf {
         /// <returns>
         /// true,
         /// <see cref="Close()"/>
-        /// method is going to close associated PdfWriter, otherwise false.
+        /// method is going to close associated PdfWriter, otherwise false
         /// </returns>
         public virtual bool IsCloseWriter() {
             return closeWriter;
@@ -1565,7 +1564,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="closeWriter">
         /// true,
         /// <see cref="Close()"/>
-        /// method shall close associated PdfWriter, otherwise false.
+        /// method shall close associated PdfWriter, otherwise false
         /// </param>
         public virtual void SetCloseWriter(bool closeWriter) {
             CheckClosingStatus();
@@ -1587,7 +1586,7 @@ namespace iText.Kernel.Pdf {
         /// <returns>
         /// false, if
         /// <see cref="Close()"/>
-        /// shall not flush unused objects, otherwise true.
+        /// shall not flush unused objects, otherwise true
         /// </returns>
         public virtual bool IsFlushUnusedObjects() {
             return flushUnusedObjects;
@@ -1602,7 +1601,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="flushUnusedObjects">
         /// false, if
         /// <see cref="Close()"/>
-        /// shall not flush unused objects, otherwise true.
+        /// shall not flush unused objects, otherwise true
         /// </param>
         public virtual void SetFlushUnusedObjects(bool flushUnusedObjects) {
             CheckClosingStatus();
@@ -1617,12 +1616,12 @@ namespace iText.Kernel.Pdf {
         /// If the flag is
         /// <see langword="false"/>
         /// , the method gets cached outline tree
-        /// (if it was cached via calling getOutlines method before).
+        /// (if it was cached via calling getOutlines method before)
         /// </param>
         /// <returns>
         /// fully initialize
         /// <see cref="PdfOutline"/>
-        /// object.
+        /// object
         /// </returns>
         public virtual PdfOutline GetOutlines(bool updateOutlines) {
             CheckClosingStatus();
@@ -1635,25 +1634,25 @@ namespace iText.Kernel.Pdf {
             GetOutlines(false);
         }
 
-        /// <summary>This methods adds new name in the Dests NameTree.</summary>
-        /// <remarks>This methods adds new name in the Dests NameTree. It throws an exception, if the name already exists.
+        /// <summary>The method adds new name in the Dests NameTree.</summary>
+        /// <remarks>The method adds new name in the Dests NameTree. It throws an exception, if the name already exists.
         ///     </remarks>
-        /// <param name="key">Name of the destination.</param>
+        /// <param name="key">Name of the destination</param>
         /// <param name="value">
-        /// An object destination refers to. Must be an array or a dictionary with key /D and array.
-        /// See ISO 32000-1 12.3.2.3 for more info.
+        /// An object destination refers to. Must be an array or a dictionary with key /D and array
+        /// See ISO 32000-1 12.3.2.3 for more info
         /// </param>
         public virtual void AddNamedDestination(String key, PdfObject value) {
             AddNamedDestination(new PdfString(key), value);
         }
 
-        /// <summary>This methods adds new name in the Dests NameTree.</summary>
-        /// <remarks>This methods adds new name in the Dests NameTree. It throws an exception, if the name already exists.
+        /// <summary>The method adds new name in the Dests NameTree.</summary>
+        /// <remarks>The method adds new name in the Dests NameTree. It throws an exception, if the name already exists.
         ///     </remarks>
-        /// <param name="key">Name of the destination.</param>
+        /// <param name="key">Name of the destination</param>
         /// <param name="value">
         /// An object destination refers to. Must be an array or a dictionary with key /D and array.
-        /// See ISO 32000-1 12.3.2.3 for more info.
+        /// See ISO 32000-1 12.3.2.3 for more info
         /// </param>
         public virtual void AddNamedDestination(PdfString key, PdfObject value) {
             CheckClosingStatus();
@@ -1663,8 +1662,8 @@ namespace iText.Kernel.Pdf {
             catalog.AddNamedDestination(key, value);
         }
 
-        /// <summary>Gets static copy of cross reference table.</summary>
-        /// <returns>a static copy of cross reference table</returns>
+        /// <summary>Gets static copy of cross-reference table.</summary>
+        /// <returns>a static copy of cross-reference table</returns>
         public virtual IList<PdfIndirectReference> ListIndirectReferences() {
             CheckClosingStatus();
             IList<PdfIndirectReference> indRefs = new List<PdfIndirectReference>(xref.Size());
@@ -1678,7 +1677,7 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Gets document trailer.</summary>
-        /// <returns>document trailer.</returns>
+        /// <returns>document trailer</returns>
         public virtual PdfDictionary GetTrailer() {
             CheckClosingStatus();
             return trailer;
@@ -1693,7 +1692,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="outputIntent">
         /// 
         /// <see cref="PdfOutputIntent"/>
-        /// to add.
+        /// to add
         /// </param>
         /// <seealso cref="PdfOutputIntent"/>
         public virtual void AddOutputIntent(PdfOutputIntent outputIntent) {
@@ -1729,11 +1728,11 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Adds file attachment at document level.</summary>
-        /// <param name="key">name of the destination.</param>
+        /// <param name="key">name of the destination</param>
         /// <param name="fs">
         /// 
         /// <see cref="iText.Kernel.Pdf.Filespec.PdfFileSpec"/>
-        /// object.
+        /// object
         /// </param>
         public virtual void AddFileAttachment(String key, PdfFileSpec fs) {
             CheckClosingStatus();
@@ -1769,7 +1768,7 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Returns files associated with PDF document.</summary>
-        /// <returns>associated files array.</returns>
+        /// <returns>associated files array</returns>
         public virtual PdfArray GetAssociatedFiles() {
             CheckClosingStatus();
             return catalog.GetPdfObject().GetAsArray(PdfName.AF);
@@ -1781,7 +1780,7 @@ namespace iText.Kernel.Pdf {
         /// <see langword="null"/>
         /// if this document isn't an unencrypted wrapper document.
         /// </summary>
-        /// <returns>encrypted payload of this document.</returns>
+        /// <returns>encrypted payload of this document</returns>
         public virtual PdfEncryptedPayloadDocument GetEncryptedPayloadDocument() {
             if (GetReader() != null && GetReader().IsEncrypted()) {
                 return null;
@@ -1823,7 +1822,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="fs">
         /// encrypted payload file spec.
         /// <see cref="iText.Kernel.Pdf.Filespec.PdfEncryptedPayloadFileSpecFactory"/>
-        /// can produce one.
+        /// can produce one
         /// </param>
         public virtual void SetEncryptedPayload(PdfFileSpec fs) {
             if (GetWriter() == null) {
@@ -1870,7 +1869,7 @@ namespace iText.Kernel.Pdf {
                 return null;
             }
             IDictionary<int?, PdfObject> pageLabels = catalog.GetPageLabelsTree(false).GetNumbers();
-            if (pageLabels.Count == 0) {
+            if (pageLabels.IsEmpty()) {
                 return null;
             }
             String[] labelStrings = new String[GetNumberOfPages()];
@@ -1944,7 +1943,7 @@ namespace iText.Kernel.Pdf {
         /// <see langword="true"/>
         /// , if there are outlines and
         /// <see langword="false"/>
-        /// otherwise.
+        /// otherwise
         /// </returns>
         public virtual bool HasOutlines() {
             return catalog.HasOutlines();
@@ -1967,7 +1966,7 @@ namespace iText.Kernel.Pdf {
         /// 
         /// <see cref="PdfDictionary"/>
         /// that presents
-        /// <see cref="iText.Kernel.Font.PdfFont"/>.
+        /// <see cref="iText.Kernel.Font.PdfFont"/>
         /// </param>
         /// <returns>
         /// instance of
@@ -1979,7 +1978,7 @@ namespace iText.Kernel.Pdf {
         /// until it will be added to
         /// <see cref="iText.Kernel.Pdf.Canvas.PdfCanvas"/>
         /// or
-        /// <see cref="PdfResources"/>.
+        /// <see cref="PdfResources"/>
         /// </returns>
         public virtual PdfFont GetFont(PdfDictionary dictionary) {
             PdfIndirectReference indirectReference = dictionary.GetIndirectReference();
@@ -2001,7 +2000,7 @@ namespace iText.Kernel.Pdf {
         /// <see cref="iText.Kernel.Font.PdfFont"/>
         /// or
         /// <see langword="null"/>
-        /// on error.
+        /// on error
         /// </returns>
         public virtual PdfFont GetDefaultFont() {
             return defaultFontStrategy.GetFont();
@@ -2024,7 +2023,7 @@ namespace iText.Kernel.Pdf {
         /// <see cref="iText.Kernel.Font.PdfFont"/>
         /// instance to add
         /// </param>
-        /// <returns>the same PdfFont instance.</returns>
+        /// <returns>the same PdfFont instance</returns>
         public virtual PdfFont AddFont(PdfFont font) {
             font.MakeIndirect(this);
             // forbid release for font dictionaries that are stored in #documentFonts collection
@@ -2034,8 +2033,8 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Registers a product for debugging purposes.</summary>
-        /// <param name="productData">product to be registered.</param>
-        /// <returns>true if the product hadn't been registered before.</returns>
+        /// <param name="productData">product to be registered</param>
+        /// <returns>true if the product hadn't been registered before</returns>
         public virtual bool RegisterProduct(ProductData productData) {
             return this.fingerPrint.RegisterProduct(productData);
         }
@@ -2120,8 +2119,8 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Flush an object.</summary>
-        /// <param name="pdfObject">object to flush.</param>
-        /// <param name="canBeInObjStm">indicates whether object can be placed into object stream.</param>
+        /// <param name="pdfObject">object to flush</param>
+        /// <param name="canBeInObjStm">indicates whether object can be placed into object stream</param>
         protected internal virtual void FlushObject(PdfObject pdfObject, bool canBeInObjStm) {
             bool flushAllowed = true;
             if (!isClosing && this.GetDiContainer().IsRegistered(typeof(ValidationContainer))) {
@@ -2143,15 +2142,14 @@ namespace iText.Kernel.Pdf {
         /// <summary>Initializes document.</summary>
         /// <param name="newPdfVersion">
         /// new pdf version of the resultant file if stamper is used and the version needs to be
-        /// changed,
-        /// or
+        /// changed, or
         /// <see langword="null"/>
         /// otherwise
         /// </param>
         protected internal virtual void Open(PdfVersion newPdfVersion) {
             if (properties != null) {
-                foreach (Type aClass in properties.dependencies.Keys) {
-                    diContainer.Register(aClass, properties.dependencies.Get(aClass));
+                foreach (Type aClass in properties.GetRegisteredDependenciesClasses()) {
+                    diContainer.Register(aClass, properties.GetDependencySupplier(aClass)());
                 }
             }
             this.fingerPrint = new FingerPrint();
@@ -2197,9 +2195,10 @@ namespace iText.Kernel.Pdf {
                 }
                 xref.InitFreeReferencesList(this);
                 if (writer != null) {
-                    if (writer.properties.addPdfAXmpMetadata != null || writer.properties.addPdfUaXmpMetadata != null) {
-                        pdfConformance = new PdfConformance(writer.properties.addPdfAXmpMetadata, writer.properties.addPdfUaXmpMetadata
-                            );
+                    //if the writer requested a specific pdf flavour then we need to overwrite the pdfconformance
+                    //so that we append the correct xmp metadata on the closing of the document of the requested flavor
+                    if (writer.properties.GetPdfConformance().ConformsToAny()) {
+                        pdfConformance = writer.properties.GetPdfConformance();
                     }
                     EnableByteArrayWritingMode();
                     if (reader != null && reader.HasXrefStm() && writer.properties.isFullCompression == null) {
@@ -2285,7 +2284,7 @@ namespace iText.Kernel.Pdf {
                             // If the header specifies a later version, or if this entry is absent, the document conforms
                             // to the
                             // version specified in the header.
-                            // So only update the version if it is older than the one in the header
+                            // So only update the version if it is newer than the one in the header
                             if (newPdfVersion.CompareTo(reader.headerPdfVersion) > 0) {
                                 catalog.Put(PdfName.Version, newPdfVersion.ToPdfName());
                                 catalog.SetModified();
@@ -2352,14 +2351,14 @@ namespace iText.Kernel.Pdf {
         protected internal virtual XMPMeta UpdateDefaultXmpMetadata() {
             XMPMeta xmpMeta = GetXmpMetadata(true);
             XmpMetaInfoConverter.AppendDocumentInfoToMetadata(GetDocumentInfo(), xmpMeta);
-            PdfConformance.SetConformanceToXmp(xmpMeta, pdfConformance);
+            pdfConformance.SetConformanceToXmp(xmpMeta);
             return xmpMeta;
         }
 
-        /// <summary>List all newly added or loaded fonts</summary>
+        /// <summary>List all newly added or loaded fonts.</summary>
         /// <returns>
         /// List of
-        /// <see cref="iText.Kernel.Font.PdfFont"/>.
+        /// <see cref="iText.Kernel.Font.PdfFont"/>
         /// </returns>
         protected internal virtual ICollection<PdfFont> GetDocumentFonts() {
             return documentFonts.Values;
@@ -2383,11 +2382,11 @@ namespace iText.Kernel.Pdf {
         }
 
         /// <summary>Checks page before adding and add.</summary>
-        /// <param name="index">one-base index of the page.</param>
+        /// <param name="index">one-base index of the page</param>
         /// <param name="page">
         /// 
         /// <see cref="PdfPage"/>
-        /// to add.
+        /// to add
         /// </param>
         protected internal virtual void CheckAndAddPage(int index, PdfPage page) {
             if (page.IsFlushed()) {
@@ -2405,7 +2404,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="page">
         /// 
         /// <see cref="PdfPage"/>
-        /// to add.
+        /// to add
         /// </param>
         protected internal virtual void CheckAndAddPage(PdfPage page) {
             if (page.IsFlushed()) {
@@ -2418,7 +2417,7 @@ namespace iText.Kernel.Pdf {
             catalog.GetPageTree().AddPage(page);
         }
 
-        /// <summary>checks whether a method is invoked at the closed document</summary>
+        /// <summary>Checks whether a method is invoked at the closed document.</summary>
         protected internal virtual void CheckClosingStatus() {
             if (closed) {
                 throw new PdfException(KernelExceptionMessageConstant.DOCUMENT_CLOSED_IT_IS_IMPOSSIBLE_TO_EXECUTE_ACTION);
@@ -2462,7 +2461,7 @@ namespace iText.Kernel.Pdf {
 
 //\cond DO_NOT_DOCUMENT
         /// <summary>Gets list of indirect references.</summary>
-        /// <returns>list of indirect references.</returns>
+        /// <returns>list of indirect references</returns>
         internal virtual PdfXrefTable GetXref() {
             return xref;
         }
@@ -2531,7 +2530,7 @@ namespace iText.Kernel.Pdf {
         /// <summary>Removes all widgets associated with a given page from AcroForm structure.</summary>
         /// <remarks>Removes all widgets associated with a given page from AcroForm structure. Widgets can be either pure or merged.
         ///     </remarks>
-        /// <param name="page">to remove from.</param>
+        /// <param name="page">to remove from</param>
         private void RemoveUnusedWidgetsFromFields(PdfPage page) {
             if (page.IsFlushed()) {
                 return;
@@ -2544,13 +2543,16 @@ namespace iText.Kernel.Pdf {
                     ((PdfWidgetAnnotation)annot).ReleaseFormFieldFromWidgetAnnotation();
                     if (fields != null) {
                         fields.Remove(annot.GetPdfObject());
+                        fields.SetModified();
                     }
+                    acroForm.SetModified();
                 }
             }
         }
 
         private void ResolveDestinations(iText.Kernel.Pdf.PdfDocument toDocument, IDictionary<PdfPage, PdfPage> page2page
             ) {
+            // Classical for loop is used to allow pendingDestinationMutations modification during iteration
             for (int i = 0; i < pendingDestinationMutations.Count; ++i) {
                 PdfDocument.DestinationMutationInfo mutation = pendingDestinationMutations[i];
                 PdfDestination copiedDest = null;
@@ -2570,8 +2572,7 @@ namespace iText.Kernel.Pdf {
         /// <param name="toDocument">document where outlines should be copied</param>
         private void CopyOutlines(ICollection<PdfOutline> outlines, iText.Kernel.Pdf.PdfDocument toDocument, IDictionary
             <PdfPage, PdfPage> page2page) {
-            ICollection<PdfOutline> outlinesToCopy = new HashSet<PdfOutline>();
-            outlinesToCopy.AddAll(outlines);
+            ICollection<PdfOutline> outlinesToCopy = new HashSet<PdfOutline>(outlines);
             foreach (PdfOutline outline in outlines) {
                 GetAllOutlinesToCopy(outline, outlinesToCopy);
             }

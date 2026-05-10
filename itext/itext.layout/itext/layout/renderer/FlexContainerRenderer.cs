@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -343,11 +343,11 @@ namespace iText.Layout.Renderer {
             ApplyMargins(occupiedArea.GetBBox(), true);
             if (splitRenderer_1 == null || splitRenderer_1.GetChildRenderers().IsEmpty()) {
                 return new LayoutResult(LayoutResult.NOTHING, null, null, overflowRenderer, result.GetCauseOfNothing()).SetAreaBreak
-                    (result.GetAreaBreak());
+                    (result.GetAreaBreak()).SetSectionBreak(result.GetSectionBreak());
             }
             else {
                 return new LayoutResult(LayoutResult.PARTIAL, layoutContext.GetArea(), splitRenderer_1, overflowRenderer, 
-                    null).SetAreaBreak(result.GetAreaBreak());
+                    null).SetAreaBreak(result.GetAreaBreak()).SetSectionBreak(result.GetSectionBreak());
             }
         }
 //\endcond

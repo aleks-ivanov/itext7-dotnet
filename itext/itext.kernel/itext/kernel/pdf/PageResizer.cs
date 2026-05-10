@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -623,6 +623,10 @@ namespace iText.Kernel.Pdf {
             double[] newMatrixArray = new double[6];
             newMatrix.GetMatrix(newMatrixArray);
             appearanceStream.Put(PdfName.Matrix, new PdfArray(newMatrixArray));
+            // TODO: DEVSIX-9778 - Kernel: Incremental update truncates the page content stream,
+            //  dropping the final drawing commands in Append mode
+            // See if this can be eliminated
+            appearanceStream.SetModified();
         }
 
         private static String GetDaFromParent(PdfDictionary dict) {

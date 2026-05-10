@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -32,6 +32,7 @@ using iText.Commons.Bouncycastle.Crypto;
 using iText.Commons.Bouncycastle.Math;
 using iText.Commons.Utils;
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.X509;
 
 namespace iText.Bouncycastle.X509 {
@@ -52,6 +53,18 @@ namespace iText.Bouncycastle.X509 {
         public X509CrlBC(X509Crl x509Crl) {
             this.x509Crl = x509Crl;
         }
+
+        /// <summary><inheritDoc/></summary>
+        public string GetSigAlgName()
+        {
+            return x509Crl.SigAlgName;
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public string GetSigAlgOID() => x509Crl.SigAlgOid;
+
+        /// <summary><inheritDoc/></summary>
+        public byte[] GetSigAlgParams() => x509Crl.GetSigAlgParams();
 
         /// <summary>Gets actual org.bouncycastle object being wrapped.</summary>
         /// <returns>

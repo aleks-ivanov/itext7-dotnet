@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -41,13 +41,15 @@ using iText.Test;
 using iText.Test.Pdfa;
 
 namespace iText.Layout {
-    // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf/ua validation on Android)
     [NUnit.Framework.Category("IntegrationTest")]
     public class PdfUA2AnnotationsTest : ExtendedITextTest {
-        public static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+        private static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/layout/PdfUA2AnnotationsTest/";
 
-        public static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/layout/PdfUA2AnnotationsTest/";
+        private static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/layout/PdfUA2AnnotationsTest/";
+
+        private static readonly String FONTS_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+            .CurrentContext.TestDirectory) + "/resources/itext/layout/fonts/";
 
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
@@ -61,7 +63,7 @@ namespace iText.Layout {
             using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFile, new WriterProperties().SetPdfVersion
                 (PdfVersion.PDF_2_0)))) {
                 CreateSimplePdfUA2Document(pdfDocument);
-                PdfFont font = PdfFontFactory.CreateFont(SOURCE_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
+                PdfFont font = PdfFontFactory.CreateFont(FONTS_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
                     .FORCE_EMBEDDED);
                 Link link = CreateLinkAnnotation();
                 Paragraph paragraph = new Paragraph();
@@ -79,7 +81,7 @@ namespace iText.Layout {
             using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFile, new WriterProperties().SetPdfVersion
                 (PdfVersion.PDF_2_0)))) {
                 CreateSimplePdfUA2Document(pdfDocument);
-                PdfFont font = PdfFontFactory.CreateFont(SOURCE_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
+                PdfFont font = PdfFontFactory.CreateFont(FONTS_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
                     .FORCE_EMBEDDED);
                 Link link = CreateLinkAnnotation();
                 link.GetLinkAnnotation().GetPdfObject().Remove(PdfName.Contents);
@@ -105,7 +107,6 @@ namespace iText.Layout {
                 PdfFileAttachmentAnnotation annot = new PdfFileAttachmentAnnotation(rect, fs);
                 annot.SetContents("Hello world");
                 annot.GetPdfObject().Put(PdfName.Type, PdfName.Annot);
-                pdfPage.AddAnnotation(annot);
                 PdfFormXObject xObject = new PdfFormXObject(rect);
                 annot.SetNormalAppearance(xObject.GetPdfObject());
                 pdfPage.AddAnnotation(annot);
@@ -131,7 +132,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2RubberStampAnnotationsTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaRubberstampAnnotationTest.pdf";
@@ -197,7 +197,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2InkAnnotationsTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaInkAnnotationTest.pdf";
@@ -228,7 +227,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2RedactionAnnotationsTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaRedactionAnnotationTest.pdf";
@@ -290,7 +288,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2RichMediaAnnotationsTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaRichMediaAnnotationTest.pdf";
@@ -321,7 +318,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2ContentsRCTheSameTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaRcContentAnnotationTest.pdf";
@@ -356,7 +352,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2NotAllowedSoundAnnotationTest() {
             String outFile = DESTINATION_FOLDER + "pdfua2SoundAnnotationTest.pdf";
@@ -370,14 +365,13 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2AltContentDiffAnnotationTest() {
             String outFile = DESTINATION_FOLDER + "pdfua2ArtifactsAnnotationTest.pdf";
             using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFile, new WriterProperties().SetPdfVersion
                 (PdfVersion.PDF_2_0)))) {
                 CreateSimplePdfUA2Document(pdfDocument);
-                PdfFont font = PdfFontFactory.CreateFont(SOURCE_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
+                PdfFont font = PdfFontFactory.CreateFont(FONTS_FOLDER + "FreeSans.ttf", "WinAnsi", PdfFontFactory.EmbeddingStrategy
                     .FORCE_EMBEDDED);
                 Link link = CreateLinkAnnotation();
                 link.GetAccessibilityProperties().SetAlternateDescription("some description");
@@ -389,7 +383,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void PdfUA2TabAnnotationsTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaMultipleAnnotsTabAnnotationTest.pdf";
@@ -430,7 +423,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         [NUnit.Framework.Test]
         public virtual void AnnotationNoViewButNoArtifactTest() {
             String outFile = DESTINATION_FOLDER + "pdfuaNoViewAnnotationTest.pdf";
@@ -449,7 +441,6 @@ namespace iText.Layout {
             new VeraPdfValidator().ValidateFailure(outFile);
         }
 
-        // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
         private void CreateSimplePdfUA2Document(PdfDocument pdfDocument) {
             byte[] bytes = File.ReadAllBytes(System.IO.Path.Combine(SOURCE_FOLDER + "simplePdfUA2.xmp"));
             XMPMeta xmpMeta = XMPMetaFactory.Parse(new MemoryStream(bytes));
@@ -463,7 +454,6 @@ namespace iText.Layout {
 
         private void CompareAndValidate(String outPdf, String cmpPdf) {
             NUnit.Framework.Assert.IsNull(new VeraPdfValidator().Validate(outPdf));
-            // Android-Conversion-Skip-Line (TODO DEVSIX-7377 introduce pdf\a validation on Android)
             String result = new CompareTool().CompareByContent(outPdf, cmpPdf, DESTINATION_FOLDER, "diff_");
             if (result != null) {
                 NUnit.Framework.Assert.Fail(result);

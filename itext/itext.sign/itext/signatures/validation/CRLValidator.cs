@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using iText.Bouncycastleconnector;
+using iText.Commons.Actions;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Asn1;
 using iText.Commons.Bouncycastle.Asn1.X509;
@@ -33,6 +34,7 @@ using iText.Commons.Utils.Collections;
 using iText.Signatures;
 using iText.Signatures.Logs;
 using iText.Signatures.Validation.Context;
+using iText.Signatures.Validation.Events;
 using iText.Signatures.Validation.Extensions;
 using iText.Signatures.Validation.Report;
 
@@ -94,21 +96,12 @@ namespace iText.Signatures.Validation {
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
-        internal const String SAME_REASONS_CHECK = "CRLs that cover the same reason codes were already verified.";
-//\endcond
-
-//\cond DO_NOT_DOCUMENT
         internal const String UPDATE_DATE_BEFORE_CHECK_DATE = "nextUpdate: {0} of CRLResponse is before validation date {1}.";
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
         internal const String CERTIFICATE_IN_ISSUER_CHAIN = "Unable to validate CRL response: validated certificate is"
              + " part of issuer certificate chain.";
-//\endcond
-
-//\cond DO_NOT_DOCUMENT
-        internal const String CRL_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED = "Unable to validate CRL response: "
-             + "CRL response is signed by the same certificate as being validated.";
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
@@ -127,6 +120,8 @@ namespace iText.Signatures.Validation {
 
         private readonly ValidatorChainBuilder builder;
 
+        private readonly EventManager eventManager;
+
         /// <summary>
         /// Creates new
         /// <see cref="CRLValidator"/>
@@ -139,6 +134,7 @@ namespace iText.Signatures.Validation {
         protected internal CRLValidator(ValidatorChainBuilder builder) {
             this.certificateRetriever = builder.GetCertificateRetriever();
             this.properties = builder.GetProperties();
+            this.eventManager = builder.GetEventManager();
             this.builder = builder;
         }
 
@@ -151,6 +147,7 @@ namespace iText.Signatures.Validation {
         /// <param name="responseGenerationDate">trusted date at which response is generated</param>
         public virtual void Validate(ValidationReport report, ValidationContext context, IX509Certificate certificate
             , IX509Crl crl, DateTime validationDate, DateTime responseGenerationDate) {
+            ReportAlgortihmUsage(crl);
             ValidationContext localContext = context.SetValidatorContext(ValidatorContext.CRL_VALIDATOR);
             if (CertificateUtil.IsSelfSigned(certificate)) {
                 report.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, RevocationDataValidator.SELF_SIGNED_CERTIFICATE
@@ -223,6 +220,10 @@ namespace iText.Signatures.Validation {
                 report.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, ONLY_SOME_REASONS_CHECKED, ReportItem.ReportItemStatus
                     .INDETERMINATE));
             }
+        }
+
+        private void ReportAlgortihmUsage(IX509Crl crl) {
+            eventManager.OnEvent(new AlgorithmUsageEvent(crl.GetSigAlgName(), crl.GetSigAlgOID(), CRL_CHECK));
         }
 
         private static void VerifyRevocation(ValidationReport report, IX509Certificate certificate, DateTime verificationDate
@@ -328,11 +329,6 @@ namespace iText.Signatures.Validation {
                 ValidationReport candidateReport = new ValidationReport();
                 candidateReports[i] = candidateReport;
                 IX509Certificate[] certs = certificatesList[i];
-                if (JavaUtil.ArraysAsList(certs).Contains(certificate)) {
-                    candidateReport.AddReportItem(new CertificateReportItem(certificate, CRL_CHECK, CERTIFICATE_IN_ISSUER_CHAIN
-                        , ReportItem.ReportItemStatus.INDETERMINATE));
-                    continue;
-                }
                 IX509Certificate crlIssuer = certs[0];
                 IList<IX509Certificate> crlIssuerRoots = GetRoots(crlIssuer);
                 IList<IX509Certificate> subjectRoots = GetRoots(certificate);
@@ -343,21 +339,29 @@ namespace iText.Signatures.Validation {
                 }
                 SafeCalling.OnExceptionLog(() => crl.Verify(crlIssuer.GetPublicKey()), candidateReport, (e) => new CertificateReportItem
                     (certificate, CRL_CHECK, CRL_INVALID, e, ReportItem.ReportItemStatus.INDETERMINATE));
-                if (certificate.Equals(crlIssuer)) {
-                    // OCSP response is signed by this same certificate
-                    report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, CRL_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED
+                if (builder.IsCertificateBeingValidated((IX509Certificate)crlIssuer)) {
+                    // CRL response is signed by the certificate from the issue chain
+                    report.AddReportItem(new CertificateReportItem((IX509Certificate)crlIssuer, CRL_CHECK, CERTIFICATE_IN_ISSUER_CHAIN
                         , ReportItem.ReportItemStatus.INDETERMINATE));
                     continue;
                 }
-                ValidationReport responderReport = new ValidationReport();
-                SafeCalling.OnExceptionLog(() => builder.GetCertificateChainValidator().Validate(responderReport, context.
-                    SetCertificateSource(CertificateSource.CRL_ISSUER), (IX509Certificate)crlIssuer, responseGenerationDate
-                    ), candidateReport, (e) => new CertificateReportItem(certificate, CRL_CHECK, CRL_ISSUER_CHAIN_FAILED, 
-                    e, ReportItem.ReportItemStatus.INDETERMINATE));
-                AddResponderValidationReport(candidateReport, responderReport);
-                if (candidateReport.GetValidationResult() == ValidationReport.ValidationResult.VALID) {
-                    report.Merge(candidateReport);
-                    return;
+                else {
+                    builder.AddCertificateBeingValidated((IX509Certificate)crlIssuer);
+                    ValidationReport responderReport = new ValidationReport();
+                    try {
+                        SafeCalling.OnExceptionLog(() => builder.GetCertificateChainValidator().Validate(responderReport, context.
+                            SetCertificateSource(CertificateSource.CRL_ISSUER), (IX509Certificate)crlIssuer, responseGenerationDate
+                            ), candidateReport, (e) => new CertificateReportItem(certificate, CRL_CHECK, CRL_ISSUER_CHAIN_FAILED, 
+                            e, ReportItem.ReportItemStatus.INDETERMINATE));
+                    }
+                    finally {
+                        builder.RemoveCertificateBeingValidated((IX509Certificate)crlIssuer);
+                    }
+                    AddResponderValidationReport(candidateReport, responderReport);
+                    if (candidateReport.GetValidationResult() == ValidationReport.ValidationResult.VALID) {
+                        report.Merge(candidateReport);
+                        return;
+                    }
                 }
             }
             // if failed, add all logs

@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -32,7 +32,7 @@ namespace iText.Signatures.Validation {
         public virtual void LoadCertificates() {
             EuropeanTrustedListConfigurationFactory factory = EuropeanTrustedListConfigurationFactory.GetFactory()();
             IList<IX509Certificate> f = factory.GetCertificates();
-            NUnit.Framework.Assert.AreEqual(8, f.Count, "There should be 8 certificates loaded from the EU trusted list"
+            NUnit.Framework.Assert.AreEqual(6, f.Count, "There should be 6 certificates loaded from the EU trusted list"
                 );
         }
 

@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -326,6 +326,11 @@ namespace iText.Signatures.Validation {
         }
 
         private ValidationReport Validate(String signatureName) {
+            PdfDictionary dss = originalDocument.GetCatalog().GetPdfObject().GetAsDictionary(PdfName.DSS);
+            int previousDssHash = 0;
+            if (dss != null) {
+                previousDssHash = new PdfDSS(dss).GetHashCode();
+            }
             ValidationReport validationReport = new ValidationReport();
             bool validateSingleSignature = signatureName != null;
             SignatureUtil util = new SignatureUtil(originalDocument);
@@ -343,6 +348,7 @@ namespace iText.Signatures.Validation {
                     using (PdfDocument doc = new PdfDocument(new PdfReader(util.ExtractRevision(fieldName), originalDocument.GetReader
                         ().GetPropertiesCopy()).SetStrictnessLevel(PdfReader.StrictnessLevel.CONSERVATIVE), new DocumentProperties
                         ().SetEventCountingMetaInfo(metaInfo))) {
+                        previousDssHash = ReadAndCompareDss(doc, previousDssHash);
                         subReport.Merge(ValidateLatestSignature(doc));
                     }
                 }
@@ -371,6 +377,19 @@ namespace iText.Signatures.Validation {
                     , signatureName), ReportItem.ReportItemStatus.INDETERMINATE));
             }
             return validationReport;
+        }
+
+        private int ReadAndCompareDss(PdfDocument doc, int previousDssHash) {
+            int dssHash = 0;
+            PdfDictionary dss = doc.GetCatalog().GetPdfObject().GetAsDictionary(PdfName.DSS);
+            if (dss != null) {
+                dssHash = new PdfDSS(dss).GetHashCode();
+            }
+            if (dssHash != previousDssHash) {
+                eventManager.OnEvent(new DSSProcessedEvent());
+                return dssHash;
+            }
+            return previousDssHash;
         }
 
         private void FindValidationClients() {
@@ -409,6 +428,10 @@ namespace iText.Signatures.Validation {
                     , latestSignatureName), ReportItem.ReportItemStatus.INVALID));
             }
             try {
+                eventManager.OnEvent(new AlgorithmUsageEvent(pkcs7.GetDigestAlgorithmName(), pkcs7.GetDigestAlgorithmOid()
+                    , SIGNATURE_VERIFICATION));
+                eventManager.OnEvent(new AlgorithmUsageEvent(pkcs7.GetSignatureAlgorithmName(), pkcs7.GetSignatureMechanismOid
+                    (), SIGNATURE_VERIFICATION));
                 if (!pkcs7.VerifySignatureIntegrityAndAuthenticity()) {
                     validationReport.AddReportItem(new ReportItem(SIGNATURE_VERIFICATION, MessageFormatUtil.Format(CANNOT_VERIFY_SIGNATURE
                         , latestSignatureName), ReportItem.ReportItemStatus.INVALID));

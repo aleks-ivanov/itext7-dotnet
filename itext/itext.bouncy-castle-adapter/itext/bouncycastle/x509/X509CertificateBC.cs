@@ -1,6 +1,6 @@
 /*
     This file is part of the iText (R) project.
-    Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
     Authors: Apryse Software.
 
     This program is offered under a commercial and under the AGPL license.
@@ -80,6 +80,12 @@ namespace iText.Bouncycastle.X509 {
         /// <summary><inheritDoc/></summary>
         public IPublicKey GetPublicKey() {
             return new PublicKeyBC(certificate.GetPublicKey());
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public string GetSigAlgName()
+        {
+            return certificate.SigAlgName;
         }
 
         /// <summary><inheritDoc/></summary>
@@ -208,5 +214,6 @@ namespace iText.Bouncycastle.X509 {
         public override String ToString() {
             return certificate.ToString();
         }
+        
     }
 }

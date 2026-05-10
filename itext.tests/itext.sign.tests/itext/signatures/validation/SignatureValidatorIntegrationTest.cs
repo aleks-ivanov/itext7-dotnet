@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -488,7 +488,8 @@ namespace iText.Signatures.Validation {
 
         [NUnit.Framework.Test]
         public virtual void InfiniteRecursionForOCSPFromDSSTest() {
-            LotlService service = new LotlService(new LotlFetchingProperties(new RemoveOnFailingCountryData()));
+            LotlService service = new EuropeanLotlService(new LotlFetchingProperties(new RemoveOnFailingCountryData())
+                );
             service.WithCustomResourceRetriever(new FromDiskResourceRetriever(SOURCE_FOLDER_LOTL_FILES));
             service.WithLotlValidator(() => new LotlValidator(service));
             service.InitializeCache();
@@ -505,7 +506,7 @@ namespace iText.Signatures.Validation {
                 SignatureValidator signatureValidator = chainBuilder.BuildSignatureValidator(document);
                 ValidationReport report = signatureValidator.ValidateSignatures();
                 AssertValidationReport.AssertThat(report, (a) => a.HasStatus(ValidationReport.ValidationResult.VALID).HasNumberOfFailures
-                    (0).HasLogItem((l) => l.WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage(OCSPValidator.OCSP_RESPONSE_IS_SIGNED_BY_CERTIFICATE_BEING_VALIDATED
+                    (0).HasLogItem((l) => l.WithCheckName(OCSPValidator.OCSP_CHECK).WithMessage(OCSPValidator.CERTIFICATE_IN_ISSUER_CHAIN
                     )));
             }
         }

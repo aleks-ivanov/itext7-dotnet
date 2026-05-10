@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -104,12 +104,19 @@ namespace iText.Kernel.Pdf.Annot {
         /// <summary>Remove widget annotation from AcroForm hierarchy.</summary>
         public virtual void ReleaseFormFieldFromWidgetAnnotation() {
             PdfDictionary annotationDictionary = GetPdfObject();
-            PdfDictionary parent = annotationDictionary.GetAsDictionary(PdfName.Parent);
-            if (parent != null) {
-                PdfArray kids = parent.GetAsArray(PdfName.Kids);
+            PdfDictionary fieldDictionary = annotationDictionary.GetAsDictionary(PdfName.Parent);
+            if (fieldDictionary != null) {
+                PdfArray kids = fieldDictionary.GetAsArray(PdfName.Kids);
                 kids.Remove(annotationDictionary);
+                if (kids.GetIndirectReference() != null) {
+                    kids.SetModified();
+                }
+                else {
+                    fieldDictionary.SetModified();
+                }
                 if (kids.IsEmpty()) {
-                    parent.Remove(PdfName.Kids);
+                    fieldDictionary.Remove(PdfName.Kids);
+                    fieldDictionary.SetModified();
                 }
             }
         }
@@ -123,7 +130,7 @@ namespace iText.Kernel.Pdf.Annot {
         public virtual iText.Kernel.Pdf.Annot.PdfWidgetAnnotation SetVisibility(int visibility) {
             switch (visibility) {
                 case HIDDEN: {
-                    GetPdfObject().Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT | PdfAnnotation.HIDDEN));
+                    Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT | PdfAnnotation.HIDDEN));
                     break;
                 }
 
@@ -132,13 +139,13 @@ namespace iText.Kernel.Pdf.Annot {
                 }
 
                 case HIDDEN_BUT_PRINTABLE: {
-                    GetPdfObject().Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT | PdfAnnotation.NO_VIEW));
+                    Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT | PdfAnnotation.NO_VIEW));
                     break;
                 }
 
                 case VISIBLE:
                 default: {
-                    GetPdfObject().Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT));
+                    Put(PdfName.F, new PdfNumber(PdfAnnotation.PRINT));
                     break;
                 }
             }

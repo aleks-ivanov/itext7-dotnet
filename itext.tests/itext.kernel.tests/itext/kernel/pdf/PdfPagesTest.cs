@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -32,6 +32,7 @@ using iText.Kernel.Geom;
 using iText.Kernel.Pdf.Annot;
 using iText.Kernel.Pdf.Canvas;
 using iText.Kernel.Pdf.Extgstate;
+using iText.Kernel.Pdf.Layer;
 using iText.Kernel.Pdf.Xobject;
 using iText.Kernel.Utils;
 using iText.Test;
@@ -46,6 +47,10 @@ namespace iText.Kernel.Pdf {
             .CurrentContext.TestDirectory) + "/resources/itext/kernel/pdf/PdfPagesTest/";
 
         private static readonly PdfName PageNum = new PdfName("PageNum");
+
+        private static ICollection<Object[]> AppendModes() {
+            return JavaUtil.ArraysAsList(new Object[][] { new Object[] { true }, new Object[] { false } });
+        }
 
         [NUnit.Framework.OneTimeSetUp]
         public static void Setup() {
@@ -104,11 +109,15 @@ namespace iText.Kernel.Pdf {
             VerifyPagesOrder(DESTINATION_FOLDER + filename, pageCount);
         }
 
-        [NUnit.Framework.Test]
-        public virtual void ReversePagesTest2() {
+        [NUnit.Framework.TestCaseSource("AppendModes")]
+        public virtual void ReversePagesTest2(bool appendMode) {
             String filename = "1000PagesDocument_reversed.pdf";
+            StampingProperties props = new StampingProperties();
+            if (appendMode) {
+                props.UseAppendMode();
+            }
             PdfDocument pdfDoc = new PdfDocument(new PdfReader(SOURCE_FOLDER + "1000PagesDocument.pdf"), CompareTool.CreateTestPdfWriter
-                (DESTINATION_FOLDER + filename));
+                (DESTINATION_FOLDER + filename), props);
             int n = pdfDoc.GetNumberOfPages();
             for (int i = n - 1; i > 0; --i) {
                 pdfDoc.MovePage(i, n + 1);
@@ -350,6 +359,19 @@ namespace iText.Kernel.Pdf {
         }
 
         [NUnit.Framework.Test]
+        public virtual void RemovePageWithFormFieldsAppendModeTest() {
+            String testName = "docWithFieldsRemovePage.pdf";
+            String outPdf = DESTINATION_FOLDER + testName;
+            String sourceFile = SOURCE_FOLDER + "docWithFieldsIndirectKids.pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFile), CompareTool.CreateTestPdfWriter(outPdf
+                ), new StampingProperties().UseAppendMode())) {
+                pdfDoc.RemovePage(1);
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outPdf, SOURCE_FOLDER + "cmp_" + testName
+                , DESTINATION_FOLDER));
+        }
+
+        [NUnit.Framework.Test]
         public virtual void GetPageSizeWithInheritedMediaBox() {
             double eps = 0.0000001;
             String filename = SOURCE_FOLDER + "inheritedMediaBox.pdf";
@@ -533,7 +555,7 @@ namespace iText.Kernel.Pdf {
         [NUnit.Framework.Test]
         public virtual void VerifyPagesAreNotReadOnOpenTest() {
             String srcFile = SOURCE_FOLDER + "taggedOnePage.pdf";
-            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(this, srcFile);
+            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(srcFile);
             PdfDocument document = new PdfDocument(reader);
             document.Close();
             NUnit.Framework.Assert.IsFalse(reader.pagesAreRead);
@@ -561,7 +583,7 @@ namespace iText.Kernel.Pdf {
         public virtual void ReadPagesInBlocksTest() {
             String srcFile = SOURCE_FOLDER + "docWithBalancedPageTree.pdf";
             int maxAmountOfPagesReadAtATime = 0;
-            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(this, srcFile);
+            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(srcFile);
             PdfDocument document = new PdfDocument(reader);
             for (int page = 1; page <= document.GetNumberOfPages(); page++) {
                 document.GetPage(page);
@@ -578,7 +600,7 @@ namespace iText.Kernel.Pdf {
         [NUnit.Framework.Test]
         public virtual void ReadSinglePageTest() {
             String srcFile = SOURCE_FOLDER + "allPagesAreLeaves.pdf";
-            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(this, srcFile);
+            PdfPagesTest.CustomPdfReader reader = new PdfPagesTest.CustomPdfReader(srcFile);
             reader.SetMemorySavingMode(true);
             PdfDocument document = new PdfDocument(reader);
             int amountOfPages = document.GetNumberOfPages();
@@ -593,13 +615,17 @@ namespace iText.Kernel.Pdf {
             document.Close();
         }
 
-        [NUnit.Framework.Test]
-        public virtual void ImplicitPagesTreeRebuildingTest() {
+        [NUnit.Framework.TestCaseSource("AppendModes")]
+        public virtual void ImplicitPagesTreeRebuildingTest(bool appendMode) {
             String inFileName = SOURCE_FOLDER + "implicitPagesTreeRebuilding.pdf";
             String outFileName = DESTINATION_FOLDER + "implicitPagesTreeRebuilding.pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_implicitPagesTreeRebuilding.pdf";
+            StampingProperties props = new StampingProperties();
+            if (appendMode) {
+                props.UseAppendMode();
+            }
             PdfDocument pdfDocument = new PdfDocument(new PdfReader(inFileName), CompareTool.CreateTestPdfWriter(outFileName
-                ));
+                ), props);
             pdfDocument.Close();
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
                 ));
@@ -661,8 +687,155 @@ namespace iText.Kernel.Pdf {
             }
             NUnit.Framework.Assert.AreEqual(2, pdfDocument.GetCatalog().GetPageTree().GetParents().Count);
             NUnit.Framework.Assert.AreEqual(1, pdfDocument.GetCatalog().GetPageTree().GetParents()[0].GetCount());
-            // TODO DEVSIX-5575 remove expected exception and add proper assertions
-            NUnit.Framework.Assert.Catch(typeof(NullReferenceException), () => pdfDocument.Close());
+            NUnit.Framework.Assert.DoesNotThrow(() => pdfDocument.Close());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void LayerOnAndOffStateTest() {
+            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(new MemoryStream()));
+            PdfPage page = pdfDocument.AddNewPage();
+            // Create a layer that is ON
+            PdfLayer layerOn = new PdfLayer("LayerOn", pdfDocument);
+            layerOn.SetOn(true);
+            // Create a layer that is OFF
+            PdfLayer layerOff = new PdfLayer("LayerOff", pdfDocument);
+            layerOff.SetOn(false);
+            PdfCanvas canvas = new PdfCanvas(page);
+            // Add content to the ON layer
+            canvas.BeginLayer(layerOn);
+            canvas.SetFillColor(ColorConstants.RED);
+            canvas.Rectangle(100, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            // Add content to the OFF layer
+            canvas.BeginLayer(layerOff);
+            canvas.SetFillColor(ColorConstants.BLUE);
+            canvas.Rectangle(350, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            // Verify layer states before closing
+            NUnit.Framework.Assert.IsTrue(layerOn.IsOn(), "LayerOn should be ON");
+            NUnit.Framework.Assert.IsFalse(layerOff.IsOn(), "LayerOff should be OFF");
+            pdfDocument.Close();
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void LayerPropertiesPersistenceTest() {
+            String filename = DESTINATION_FOLDER + "layerPropertiesPersistence.pdf";
+            // Create document with layers
+            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(filename));
+            PdfPage page = pdfDocument.AddNewPage();
+            // Create a layer that is ON
+            PdfLayer layerOn = new PdfLayer("LayerOn", pdfDocument);
+            layerOn.SetOn(true);
+            layerOn.SetOnPanel(true);
+            layerOn.SetLocked(true);
+            PdfLayer childLayer = new PdfLayer("ChildLayer", pdfDocument);
+            childLayer.SetOn(false);
+            layerOn.AddChild(childLayer);
+            // Create a layer that is OFF
+            PdfLayer layerOff = new PdfLayer("LayerOff", pdfDocument);
+            layerOff.SetOn(false);
+            layerOff.SetOnPanel(false);
+            layerOff.SetLocked(true);
+            PdfCanvas canvas = new PdfCanvas(page);
+            // Add content to the ON layer
+            canvas.BeginLayer(layerOn);
+            canvas.SetFillColor(ColorConstants.RED);
+            canvas.Rectangle(100, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            // Add content to the OFF layer
+            canvas.BeginLayer(layerOff);
+            canvas.SetFillColor(ColorConstants.BLUE);
+            canvas.Rectangle(350, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            pdfDocument.Close();
+            // Reopen the document and verify layer states are persisted
+            PdfDocument reopenedDoc = new PdfDocument(new PdfReader(filename));
+            NUnit.Framework.Assert.AreEqual(2, reopenedDoc.GetPage(1).GetPdfLayers().Count);
+            // Find the layers by name and verify their states
+            PdfLayer reopenedLayerOn = null;
+            PdfLayer reopenedLayerOff = null;
+            foreach (PdfLayer layer in reopenedDoc.GetPage(1).GetPdfLayers()) {
+                String layerName = layer.GetPdfObject().GetAsString(PdfName.Name).GetValue();
+                if ("LayerOn".Equals(layerName)) {
+                    reopenedLayerOn = layer;
+                }
+                else {
+                    if ("LayerOff".Equals(layerName)) {
+                        reopenedLayerOff = layer;
+                    }
+                }
+            }
+            NUnit.Framework.Assert.IsNotNull(reopenedLayerOn, "LayerOn should exist after reopening");
+            NUnit.Framework.Assert.IsNotNull(reopenedLayerOff, "LayerOff should exist after reopening");
+            NUnit.Framework.Assert.IsTrue(reopenedLayerOn.IsOn());
+            NUnit.Framework.Assert.IsTrue(reopenedLayerOn.IsOnPanel());
+            NUnit.Framework.Assert.IsTrue(reopenedLayerOn.IsLocked());
+            NUnit.Framework.Assert.AreEqual(1, reopenedLayerOn.GetChildren().Count);
+            NUnit.Framework.Assert.IsFalse(reopenedLayerOn.GetChildren()[0].IsOn());
+            NUnit.Framework.Assert.IsFalse(reopenedLayerOff.IsOn());
+            NUnit.Framework.Assert.IsFalse(reopenedLayerOff.IsOnPanel());
+            NUnit.Framework.Assert.IsTrue(reopenedLayerOff.IsLocked());
+            reopenedDoc.Close();
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void LayerOnAndOffStatePersistenceViaOCPropertiesTest() {
+            String filename = DESTINATION_FOLDER + "layerStatePersistenceViaOCProperties.pdf";
+            // Create document with layers
+            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(filename));
+            PdfPage page = pdfDocument.AddNewPage();
+            // Create a layer that is ON
+            PdfLayer layerOn = new PdfLayer("LayerOn", pdfDocument);
+            layerOn.SetOn(true);
+            // Create a layer that is OFF
+            PdfLayer layerOff = new PdfLayer("LayerOff", pdfDocument);
+            layerOff.SetOn(false);
+            PdfCanvas canvas = new PdfCanvas(page);
+            // Add content to the ON layer
+            canvas.BeginLayer(layerOn);
+            canvas.SetFillColor(ColorConstants.RED);
+            canvas.Rectangle(100, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            // Add content to the OFF layer
+            canvas.BeginLayer(layerOff);
+            canvas.SetFillColor(ColorConstants.BLUE);
+            canvas.Rectangle(350, 100, 200, 200);
+            canvas.Fill();
+            canvas.EndLayer();
+            // Verify layer states before closing
+            NUnit.Framework.Assert.IsTrue(layerOn.IsOn(), "LayerOn should be ON before close");
+            NUnit.Framework.Assert.IsFalse(layerOff.IsOn(), "LayerOff should be OFF before close");
+            pdfDocument.Close();
+            // Reopen the document and verify layer states are persisted via OCProperties
+            PdfDocument reopenedDoc = new PdfDocument(new PdfReader(filename));
+            PdfOCProperties ocProperties = reopenedDoc.GetCatalog().GetOCProperties(false);
+            NUnit.Framework.Assert.IsNotNull(ocProperties, "OCProperties should exist after reopening");
+            IList<PdfLayer> layers = ocProperties.GetLayers();
+            NUnit.Framework.Assert.AreEqual(2, layers.Count, "Should have 2 layers");
+            // Find the layers by name and verify their states
+            PdfLayer reopenedLayerOn = null;
+            PdfLayer reopenedLayerOff = null;
+            foreach (PdfLayer layer in layers) {
+                String layerName = layer.GetPdfObject().GetAsString(PdfName.Name).GetValue();
+                if ("LayerOn".Equals(layerName)) {
+                    reopenedLayerOn = layer;
+                }
+                else {
+                    if ("LayerOff".Equals(layerName)) {
+                        reopenedLayerOff = layer;
+                    }
+                }
+            }
+            NUnit.Framework.Assert.IsNotNull(reopenedLayerOn, "LayerOn should be found after reopening");
+            NUnit.Framework.Assert.IsNotNull(reopenedLayerOff, "LayerOff should be found after reopening");
+            NUnit.Framework.Assert.IsTrue(reopenedLayerOn.IsOn(), "LayerOn should still be ON after reopening");
+            NUnit.Framework.Assert.IsFalse(reopenedLayerOff.IsOn(), "LayerOff should still be OFF after reopening");
+            reopenedDoc.Close();
         }
 
         private static void FindAndAssertNullPages(PdfDocument pdfDocument, ICollection<int> nullPages) {
@@ -725,21 +898,18 @@ namespace iText.Kernel.Pdf {
 
             public int numOfPagesRead = 0;
 
-            public CustomPdfReader(PdfPagesTest _enclosing, String filename)
+            public CustomPdfReader(String filename)
                 : base(filename) {
-                this._enclosing = _enclosing;
             }
 
             protected internal override PdfObject ReadObject(PdfIndirectReference reference) {
                 PdfObject toReturn = base.ReadObject(reference);
                 if (toReturn is PdfDictionary && PdfName.Page.Equals(((PdfDictionary)toReturn).Get(PdfName.Type))) {
-                    this.numOfPagesRead++;
-                    this.pagesAreRead = true;
+                    numOfPagesRead++;
+                    pagesAreRead = true;
                 }
                 return toReturn;
             }
-
-            private readonly PdfPagesTest _enclosing;
         }
     }
 }

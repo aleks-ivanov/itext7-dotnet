@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -1653,7 +1653,7 @@ namespace iText.Layout.Renderer {
         internal static bool CodePointIsOfSpecialScript(int codePoint) {
             UnicodeScript? glyphScript = UnicodeScriptUtil.Of(codePoint);
             return UnicodeScript.THAI == glyphScript || UnicodeScript.KHMER == glyphScript || UnicodeScript.LAO == glyphScript
-                 || UnicodeScript.MYANMAR == glyphScript;
+                 || UnicodeScript.MYANMAR == glyphScript || UnicodeScript.TIBETAN == glyphScript;
         }
 //\endcond
 

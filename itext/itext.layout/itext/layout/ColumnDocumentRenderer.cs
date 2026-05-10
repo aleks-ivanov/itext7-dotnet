@@ -1,6 +1,6 @@
 /*
 This file is part of the iText (R) project.
-Copyright (c) 1998-2025 Apryse Group NV
+Copyright (c) 1998-2026 Apryse Group NV
 Authors: Apryse Software.
 
 This program is offered under a commercial and under the AGPL license.
@@ -84,8 +84,8 @@ namespace iText.Layout {
         }
 
         protected internal override LayoutArea UpdateCurrentArea(LayoutResult overflowResult) {
-            if (overflowResult != null && overflowResult.GetAreaBreak() != null && overflowResult.GetAreaBreak().GetAreaType
-                () != AreaBreakType.NEXT_AREA) {
+            if (overflowResult != null && ((overflowResult.GetAreaBreak() != null && overflowResult.GetAreaBreak().GetAreaType
+                () != AreaBreakType.NEXT_AREA) || overflowResult.GetSectionBreak() != null)) {
                 nextAreaNumber = 0;
             }
             if (nextAreaNumber % columns.Length == 0) {
