@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Json;
 using iText.Commons.Utils;
 using iText.Kernel.Exceptions;
@@ -71,13 +72,14 @@ namespace iText.Signatures.Validation.Lotl {
         }
 //\endcond
 
-        public static iText.Signatures.Validation.Lotl.LotlCacheDataV1 Deserialize(Stream inputStream) {
+//\cond DO_NOT_DOCUMENT
+        internal static iText.Signatures.Validation.Lotl.LotlCacheDataV1 Deserialize(Stream inputStream) {
             try {
                 using (Stream @is = inputStream) {
                     using (MemoryStream buffer = new MemoryStream()) {
                         byte[] data = new byte[4096];
                         int bytesRead;
-                        while ((bytesRead = @is.JRead(data, 0, data.Length)) != -1) {
+                        while ((bytesRead = @is.JRead(data, 0, data.Length)) > 0) {
                             buffer.Write(data, 0, bytesRead);
                         }
                         byte[] json = buffer.ToArray();
@@ -90,30 +92,43 @@ namespace iText.Signatures.Validation.Lotl {
                 throw new PdfException(SignExceptionMessageConstant.COULD_NOT_INITIALIZE_FROM_FILE, e);
             }
         }
+//\endcond
 
-        public virtual void Serialize(Stream os) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void Serialize(Stream os) {
             os.Write(ToJson().ToJson().GetBytes(System.Text.Encoding.UTF8));
         }
+//\endcond
 
-        public virtual EuropeanResourceFetcher.Result GetEuropeanResourceFetcherCache() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual EuropeanResourceFetcher.Result GetEuropeanResourceFetcherCache() {
             return europeanResourceFetcherCache;
         }
+//\endcond
 
-        public virtual IDictionary<String, long?> GetTimeStamps() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual IDictionary<String, long?> GetTimeStamps() {
             return timeStamps;
         }
+//\endcond
 
-        public virtual PivotFetcher.Result GetPivotCache() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual PivotFetcher.Result GetPivotCache() {
             return pivotCache;
         }
+//\endcond
 
-        public virtual IDictionary<String, CountrySpecificLotlFetcher.Result> GetCountrySpecificLotlCache() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual IDictionary<String, CountrySpecificLotlFetcher.Result> GetCountrySpecificLotlCache() {
             return countrySpecificLotlCache;
         }
+//\endcond
 
-        public virtual EuropeanLotlFetcher.Result GetLotlCache() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual EuropeanLotlFetcher.Result GetLotlCache() {
             return lotlCache;
         }
+//\endcond
 
         /// <summary>
         /// <inheritDoc/>.
@@ -219,7 +234,7 @@ namespace iText.Signatures.Validation.Lotl {
             if (JsonNull.JSON_NULL != timestampsJson) {
                 JsonObject timestampsJsonObject = (JsonObject)timestampsJson;
                 foreach (KeyValuePair<String, JsonValue> timestampJson in timestampsJsonObject.GetFields()) {
-                    timestampsFromJson.Put(timestampJson.Key, (long)((JsonNumber)timestampJson.Value).GetValue());
+                    timestampsFromJson.Put(timestampJson.Key, ((JsonNumber)timestampJson.Value).GetLongValue());
                 }
             }
             lotlCacheDataFromJson.timeStamps = timestampsFromJson;

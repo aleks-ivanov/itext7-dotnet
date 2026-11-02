@@ -23,18 +23,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Utils;
+using iText.IO.Font.Constants;
+using iText.IO.Image;
 using iText.Kernel.Colors;
+using iText.Kernel.Exceptions;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas;
 using iText.Kernel.Pdf.Event;
+using iText.Kernel.Pdf.Tagging;
 using iText.Kernel.Utils;
+using iText.Layout.Borders;
 using iText.Layout.Element;
+using iText.Layout.Exceptions;
+using iText.Layout.Font;
 using iText.Layout.Layout;
+using iText.Layout.Logs;
 using iText.Layout.Properties;
 using iText.Layout.Properties.Margins;
 using iText.Layout.Renderer;
+using iText.Layout.Testutil;
 using iText.Test;
+using iText.Test.Attributes;
 
 namespace iText.Layout {
     [NUnit.Framework.Category("IntegrationTest")]
@@ -44,14 +55,491 @@ namespace iText.Layout {
 
         private static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/layout/PageMarginsTest/";
 
-        private const String TEXT_BYRON = "When a man hath no freedom to fight for at home,\n" + "    Let him combat for that of his neighbours;\n"
-             + "Let him think of the glories of Greece and of Rome,\n" + "    And get knocked on the head for his labours.\n"
-             + "\n" + "To do good to Mankind is the chivalrous plan,\n" + "    And is always as nobly requited;\n"
-             + "Then battle for Freedom wherever you can,\n" + "    And, if not shot or hanged, you'll get knighted.";
+        private static readonly String FONTS = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+            .CurrentContext.TestDirectory) + "/resources/itext/layout/fonts/";
+
+        private static readonly String DOG = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+            .CurrentContext.TestDirectory) + "/resources/itext/layout/PageMarginsTest/DOG.bmp";
 
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
             CreateOrClearDestinationFolder(DESTINATION_FOLDER);
+        }
+
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(DESTINATION_FOLDER);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteTest() {
+            String fileName = "footnote";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Footnote footnote3 = new Footnote("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(iText.IO.Logs.IoLogMessageConstant.FONT_PROPERTY_MUST_BE_PDF_FONT_OBJECT, LogLevel = LogLevelConstants
+            .ERROR)]
+        public virtual void FootnoteWithFontFamilyTest() {
+            String fileName = "footnoteWithFontFamily";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    FontProvider provider = new FontProvider();
+                    provider.GetFontSet().AddFont(StandardFonts.HELVETICA, null, "helvetica");
+                    provider.GetFontSet().AddFont(StandardFonts.COURIER, null, "courier");
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    anchor.SetProperty(Property.FONT, new String[] { "helvetica" });
+                    anchor.SetProperty(Property.FONT_PROVIDER, provider);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Footnote footnote3 = new Footnote("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteAnchorWithMultipleResolvedFontTest() {
+            String fileName = "footnoteAnchorFonts";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            Exception exception = NUnit.Framework.Assert.Catch(typeof(PdfException), () => {
+                using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                    using (Document document = new Document(pdfDocument)) {
+                        FontProvider provider = new FontProvider();
+                        // This font only contains latin script
+                        provider.GetFontSet().AddFont(FONTS + "NotoSansCJKjp-Regular.otf", null, "NotoSansCJK");
+                        // This font does contains Cyrillic script
+                        provider.GetFontSet().AddFont(FONTS + "NotoSans-Regular.ttf", null, "NotoSans");
+                        Footnote footnote = new Footnote("Footnote text");
+                        footnote.SetBackgroundColor(ColorConstants.CYAN);
+                        FootnoteAnchor anchor = new FootnoteAnchor("Д H", footnote);
+                        anchor.SetProperty(Property.FONT, new String[] { "NotoSansCJK", "NotoSans" });
+                        anchor.SetProperty(Property.FONT_PROVIDER, provider);
+                        Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                        p.Add(anchor);
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                        Div div1 = new Div();
+                        div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                        document.Add(div1);
+                    }
+                }
+            }
+            );
+            NUnit.Framework.Assert.AreEqual(LayoutExceptionMessageConstant.FOOTNOTE_ANCHOR_LAYOUT_CONSISTENCY, exception
+                .Message);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableTest() {
+            String fileName = "footnoteInTable";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableTaggingTest() {
+            String fileName = "footnoteInTableTagging";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableFooterTest() {
+            String fileName = "footnoteInTableFooter";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 24; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 1) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 23) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i < 4) {
+                            table.AddHeaderCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.CYAN, 2)));
+                        }
+                        else {
+                            if (i > 19) {
+                                table.AddFooterCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.BLUE, 2)));
+                            }
+                            else {
+                                table.AddCell(paragraph);
+                            }
+                        }
+                    }
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableFooterTaggingTest() {
+            String fileName = "footnoteInTableFooterTagging";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 24; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 1) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 23) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i < 4) {
+                            table.AddHeaderCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.CYAN, 2)));
+                        }
+                        else {
+                            if (i > 19) {
+                                table.AddFooterCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.BLUE, 2)));
+                            }
+                            else {
+                                table.AddCell(paragraph);
+                            }
+                        }
+                    }
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableHeaderTest() {
+            String fileName = "footnoteInTableHeader";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 1) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i < 4) {
+                            table.AddHeaderCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2)));
+                        }
+                        else {
+                            table.AddCell(paragraph);
+                        }
+                    }
+                    table.AddCell(img);
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteInTableHeaderTaggingTest() {
+            String fileName = "footnoteInTableHeaderTagging";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor = new FootnoteAnchor(new Text("1").SetFontSize(6).SetTextRise(7), footnote);
+                    Footnote footnote2 = new Footnote("Footnote text 2");
+                    footnote2.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor(new Text("2").SetFontSize(6).SetTextRise(7), footnote2);
+                    Image img = LoadImage();
+                    Table table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 5) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        table.AddCell(paragraph);
+                    }
+                    table.AddCell(img);
+                    document.Add(table);
+                    footnote = new Footnote("Footnote text 3");
+                    footnote.SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2));
+                    anchor = new FootnoteAnchor(new Text("3").SetFontSize(6).SetTextRise(7), footnote);
+                    footnote2 = new Footnote("Footnote text 4");
+                    footnote2.SetBorder(new SolidBorder(ColorConstants.DARK_GRAY, 2));
+                    anchor2 = new FootnoteAnchor(new Text("4").SetFontSize(6).SetTextRise(7), footnote2);
+                    table = new Table(4);
+                    for (int i = 0; i < 23; ++i) {
+                        Paragraph paragraph = new Paragraph("Cell " + i);
+                        if (i == 1) {
+                            paragraph.Add(anchor).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i == 19) {
+                            paragraph.Add(anchor2).SetBorder(new SolidBorder(ColorConstants.GREEN, 1));
+                        }
+                        if (i < 4) {
+                            table.AddHeaderCell(new Cell().Add(paragraph).SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 2)));
+                        }
+                        else {
+                            table.AddCell(paragraph);
+                        }
+                    }
+                    table.AddCell(img);
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza() + "\n\n" + TestResourceUtil.GetByronStanza() 
+                        + "\n\n" + "Two more \nlines"));
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
         }
 
         [NUnit.Framework.Test]
@@ -59,14 +547,14 @@ namespace iText.Layout {
             String fileName = "pageMargins";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
                     pdfDocument.AddNewPage();
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(elements));
                     SectionBreak sectionBreak2 = new SectionBreak(new PageMarginBoxes(elements2));
@@ -92,11 +580,11 @@ namespace iText.Layout {
             String fileName = "pageSizes";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     SectionBreak sectionBreak = new SectionBreak().SetPageSize(PageSize.A4.Rotate());
                     SectionBreak sectionBreak2 = new SectionBreak().SetPageSize(PageSize.A5);
@@ -120,11 +608,11 @@ namespace iText.Layout {
             String fileName = "sectionBreakAfterAreaBreak";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
                     SectionBreak sectionBreak2 = new SectionBreak(new PageMarginBoxes(elements2));
                     Div div1 = new Div();
@@ -150,9 +638,9 @@ namespace iText.Layout {
             String fileName = "sectionBreakAfterAreaBreakPageSize";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(PageSize.A4.Rotate());
                     SectionBreak sectionBreak2 = new SectionBreak(PageSize.A5.Rotate());
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
@@ -176,11 +664,11 @@ namespace iText.Layout {
             String fileName = "twoSectionBreaksInARow";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(PageSize.A4.Rotate(), new PageMarginBoxes(elements));
                     SectionBreak sectionBreak2 = new SectionBreak(PageSize.A5, new PageMarginBoxes(elements2));
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
@@ -201,12 +689,12 @@ namespace iText.Layout {
             String fileName = "sectionBreakAfterContent";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     SectionBreak sectionBreak = new SectionBreak(PageSize.A3.Rotate(), new PageMarginBoxes(elements));
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
@@ -225,13 +713,13 @@ namespace iText.Layout {
             String fileName = "sectionBreakWithSameMarginsAfterContent";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
-                    IList<PageMarginContent> pageMargins = GetPageMargins1();
+                    IList<PageMarginContent> pageMargins = PageMarginsTestUtil.GetPageMargins1();
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(pageMargins));
                     SectionBreak sectionBreak1 = new SectionBreak(new PageMarginBoxes(pageMargins));
                     SectionBreak sectionBreak2 = new SectionBreak(PageSize.A3, new PageMarginBoxes(pageMargins));
@@ -249,11 +737,11 @@ namespace iText.Layout {
             String fileName = "differentSectionBreaks";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
                     SectionBreak sectionBreak2 = new SectionBreak(PageSize.A4.Rotate(), new PageMarginBoxes(elements2));
                     Div div1 = new Div();
@@ -274,17 +762,17 @@ namespace iText.Layout {
             String fileName = "staticMargins";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
                     // Set static margins
                     document.SetMargins(100, 100, 100, 100);
-                    IList<PageMarginContent> elements = GetPageMargins1();
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
                     IList<PageMarginContent> elements3 = new List<PageMarginContent>();
                     elements3.Add(new PageMarginContent(MarginBoxName.BOTTOM, new Div().Add(new Paragraph("TEST BOTTOM MARGIN\nWITH SOME FOOTNOTE"
                         )).SetBackgroundColor(ColorConstants.CYAN).SetMinHeight(50)));
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     Div div1 = new Div();
                     Div div2 = new Div();
@@ -303,10 +791,10 @@ namespace iText.Layout {
             String fileName = "pageMarginsViaDocument";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
                     document.SetPageMargins(1, new PageMarginBoxes(elements));
                     document.SetPageMargins((pageNum) => pageNum % 2 == 0, new PageMarginBoxes(elements2));
                     document.SetPageMargins((pageNum) => {
@@ -321,9 +809,9 @@ namespace iText.Layout {
                         return null;
                     }
                     );
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 5; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
                     Div div2 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(209, 247, 29));
@@ -344,19 +832,19 @@ namespace iText.Layout {
             String fileName = "pageMarginsViaDocumentAndSectionBreak";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    IList<PageMarginContent> elements2 = GetPageMargins2();
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    IList<PageMarginContent> elements2 = PageMarginsTestUtil.GetPageMargins2();
                     document.SetPageMargins((pageNum) => pageNum > 0 && pageNum % 2 == 0, new PageMarginBoxes(elements));
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements2));
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 7; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
                     Div div2 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(209, 247, 29));
-                    document.Add(new Paragraph(TEXT_BYRON));
+                    document.Add(new Paragraph(TestResourceUtil.GetByronStanza()));
                     document.Add(sectionBreak);
                     document.Add(div1);
                     document.Add(div2);
@@ -371,13 +859,13 @@ namespace iText.Layout {
             String fileName = "pageSizeViaAreaBreakAndSectionBreak";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
                     SectionBreak sectionBreak = new SectionBreak(PageSize.A5);
                     AreaBreak areaBreak = new AreaBreak(PageSize.A5.Rotate());
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     for (int i = 0; i < 7; i++) {
-                        p.Add(TEXT_BYRON);
+                        p.Add(TestResourceUtil.GetByronStanza());
                     }
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
                     Div div2 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(209, 247, 29));
@@ -396,10 +884,10 @@ namespace iText.Layout {
             String fileName = "fixedPosition";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
                     div1.SetFixedPosition(0, 100, 300);
@@ -416,11 +904,10 @@ namespace iText.Layout {
             String fileName = "relativePosition";
             String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
             String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName))) {
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
                 using (Document document = new Document(pdfDocument)) {
-                    pdfDocument.SetTagged();
-                    IList<PageMarginContent> elements = GetPageMargins1();
-                    Paragraph p = new Paragraph(TEXT_BYRON);
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
                     SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
                     Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
                     div1.SetRelativePosition(50, 50, 0, 0);
@@ -430,6 +917,154 @@ namespace iText.Layout {
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
                 , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void RelativePositionTaggingTest() {
+            String fileName = "relativePositionTagging";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
+                    Div div1 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(65, 151, 29));
+                    div1.SetRelativePosition(50, 50, 0, 0);
+                    Div div2 = new Div().Add(p).SetBackgroundColor(new DeviceRgb(209, 247, 29));
+                    document.Add(div1).Add(sectionBreak).Add(div2);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteNotLinkedToElementTest() {
+            String fileName = "footnoteNotLinkedToElement";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    Footnote paragraphFootnote = new Footnote("Footnote text");
+                    paragraphFootnote.SetBackgroundColor(ColorConstants.RED);
+                    FootnoteAnchor anchor = new FootnoteAnchor("1", paragraphFootnote);
+                    p.Add(anchor);
+                    for (int i = 0; i < 3; i++) {
+                        p.Add("\n\n").Add(TestResourceUtil.GetByronStanza());
+                    }
+                    PageMarginBoxes pageMarginBoxes = new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1());
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(pageMarginBoxes);
+                    Footnote footnote = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    // This API is not supposed to be used by the users, but this util class can't be hidden.
+                    FootnotesUtil.AddFootnotesToPage(1, JavaCollectionsUtil.SingletonList((FootnoteRenderer)footnote.CreateRendererSubTree
+                        ()), pageMarginBoxes, document.GetFootnotesProperties());
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnotesOneByOneTest() {
+            String fileName = "footnotesOneByOne";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    for (int i = 0; i < 2; i++) {
+                        p.Add("\n\n").Add(TestResourceUtil.GetByronStanza());
+                    }
+                    Footnote footnote1 = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote1.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor1 = new FootnoteAnchor("1", footnote1);
+                    Footnote footnote2 = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote2.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("2", footnote2);
+                    p.Add(anchor1).Add(anchor2);
+                    Div div = new Div().Add(p).SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 3));
+                    document.Add(div);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnotesOneByOne2Test() {
+            String fileName = "footnotesOneByOne2";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    document.SetFontSize(20);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    Footnote footnote1 = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote1.SetBackgroundColor(ColorConstants.YELLOW);
+                    FootnoteAnchor anchor1 = new FootnoteAnchor("1", footnote1);
+                    Footnote footnote2 = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote2.SetBackgroundColor(ColorConstants.PINK);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("2", footnote2);
+                    p.Add(anchor1).Add(anchor2);
+                    Div div = new Div().Add(p).SetBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 3));
+                    document.Add(div);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void ImageAsFootnoteAnchorTest() {
+            String fileName = "imageAsFootnoteAnchor";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    Footnote footnote = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote.SetBorder(new DashedBorder(ColorConstants.YELLOW, 3));
+                    iText.Layout.Element.Image image = new Image(ImageDataFactory.Create(SOURCE_FOLDER + "bulb.gif"));
+                    image.SetWidth(15);
+                    FootnoteAnchor anchor = new FootnoteAnchor(image, footnote);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza()).Add(anchor).Add(TestResourceUtil.GetByronStanza
+                        ());
+                    Div div = new Div().Add(p).SetBorder(new SolidBorder(ColorConstants.GREEN, 3));
+                    document.Add(div);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void ImageAsFootnoteAnchorTaggingTest() {
+            String fileName = "imageAsFootnoteTaggingAnchor";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote(TestResourceUtil.GetByronStanza());
+                    footnote.SetBorder(new DashedBorder(ColorConstants.YELLOW, 3));
+                    iText.Layout.Element.Image image = new iText.Layout.Element.Image(ImageDataFactory.Create(SOURCE_FOLDER + 
+                        "bulb.gif"));
+                    image.SetWidth(15);
+                    FootnoteAnchor anchor = new FootnoteAnchor(image, footnote);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza()).Add(anchor).Add(TestResourceUtil.GetByronStanza
+                        ());
+                    Div div = new Div().Add(p).SetBorder(new SolidBorder(ColorConstants.GREEN, 3));
+                    document.Add(div);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
         }
 
         [NUnit.Framework.Test]
@@ -445,30 +1080,374 @@ namespace iText.Layout {
             NUnit.Framework.Assert.DoesNotThrow(() => document.Close());
         }
 
-        private static IList<PageMarginContent> GetPageMargins1() {
-            IList<PageMarginContent> elements = new List<PageMarginContent>();
-            elements.Add(new PageMarginContent(MarginBoxName.TOP, new Div().Add(new Paragraph("TEST TOP MARGIN")).SetBackgroundColor
-                (ColorConstants.PINK).SetHeight(200)));
-            elements.Add(new PageMarginContent(MarginBoxName.RIGHT, new Div().Add(new Paragraph("TEST RIGHT MARGIN")).
-                SetBackgroundColor(ColorConstants.YELLOW).SetWidth(200)));
-            elements.Add(new PageMarginContent(MarginBoxName.BOTTOM, new Div().Add(new Paragraph("TEST BOTTOM MARGIN\nTEST BOTTOM MARGIN\nTEST BOTTOM MARGIN"
-                )).SetBackgroundColor(ColorConstants.GREEN)));
-            elements.Add(new PageMarginContent(MarginBoxName.LEFT, new Div().Add(new Paragraph("TEST LEFT MARGIN, TEST LEFT MARGIN"
-                )).SetBackgroundColor(ColorConstants.BLUE)));
-            return elements;
+        [NUnit.Framework.Test]
+        public virtual void FootnoteTaggingPdfV17Test() {
+            String fileName = "footnoteV17";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_1_7);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Footnote footnote3 = new Footnote("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
         }
 
-        private static IList<PageMarginContent> GetPageMargins2() {
-            IList<PageMarginContent> elements2 = new List<PageMarginContent>();
-            elements2.Add(new PageMarginContent(MarginBoxName.TOP, new Div().Add(new Paragraph("TEST TOP MARGIN")).SetBackgroundColor
-                (ColorConstants.LIGHT_GRAY).SetHeight(100)));
-            elements2.Add(new PageMarginContent(MarginBoxName.RIGHT, new Div().Add(new Paragraph("TEST RIGHT MARGIN"))
-                .SetBackgroundColor(ColorConstants.CYAN)));
-            elements2.Add(new PageMarginContent(MarginBoxName.BOTTOM, new Div().Add(new Paragraph("TEST BOTTOM MARGIN"
-                )).SetBackgroundColor(ColorConstants.ORANGE)));
-            elements2.Add(new PageMarginContent(MarginBoxName.LEFT, new Div().Add(new Paragraph("TEST LEFT MARGIN")).SetBackgroundColor
-                (ColorConstants.RED).SetWidth(100)));
-            return elements2;
+        [NUnit.Framework.Test]
+        public virtual void FootnotePdfV17ManualNoteTagIdTest() {
+            String fileName = "footnoteV17_ID";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_1_7);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Paragraph fn3p = new Paragraph("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    Footnote footnote3 = new Footnote(fn3p);
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    footnote3.GetAccessibilityProperties().SetStructureElementIdString("TEST ID3");
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnotePdfV17ManualTagRoleTest() {
+            String fileName = "footnoteV17_Role";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_1_7);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    anchor.GetAccessibilityProperties().SetRole(StandardRoles.LBL);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Paragraph fn3p = new Paragraph("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    Footnote footnote3 = new Footnote(fn3p);
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    footnote3.GetAccessibilityProperties().SetRole(StandardRoles.QUOTE);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnoteTaggingPdfV20Test() {
+            String fileName = "footnoteV20";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_2_0);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Footnote footnote3 = new Footnote("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnotePdfV20ManualNoteTagIdTest() {
+            String fileName = "footnoteV20_ID";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_2_0);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Paragraph fn3p = new Paragraph("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    Footnote footnote3 = new Footnote(fn3p);
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    footnote3.GetAccessibilityProperties().SetStructureElementIdString("TEST ID3");
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void FootnotePdfV20ManualTagRoleTest() {
+            String fileName = "footnoteV20_Role";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".xml";
+            WriterProperties writerProperties = new WriterProperties();
+            writerProperties.SetPdfVersion(PdfVersion.PDF_2_0);
+            using (PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName, writerProperties
+                ))) {
+                using (Document document = new Document(pdfDocument)) {
+                    pdfDocument.SetTagged();
+                    Footnote footnote = new Footnote("Footnote text");
+                    footnote.SetBackgroundColor(ColorConstants.CYAN);
+                    FootnoteAnchor anchor = new FootnoteAnchor("[1]", footnote);
+                    anchor.GetAccessibilityProperties().SetRole(StandardRoles.LINK);
+                    Footnote footnote2 = new Footnote(new Paragraph("Footnote text 2").SetMargin(0));
+                    footnote2.SetBackgroundColor(ColorConstants.ORANGE);
+                    FootnoteAnchor anchor2 = new FootnoteAnchor("[2]", footnote2);
+                    Paragraph fn3p = new Paragraph("Footnote text 3\nSecond line\nThird line\nFourth line");
+                    Footnote footnote3 = new Footnote(fn3p);
+                    footnote3.SetBackgroundColor(ColorConstants.RED);
+                    footnote3.GetAccessibilityProperties().SetRole(StandardRoles.ASIDE);
+                    FootnoteAnchor anchor3 = new FootnoteAnchor("[3]", footnote3);
+                    Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor2);
+                    p.Add("\n\n");
+                    p.Add(TestResourceUtil.GetByronStanza());
+                    p.Add(anchor3);
+                    for (int i = 0; i < 5; i++) {
+                        p.Add("\n\n");
+                        p.Add(TestResourceUtil.GetByronStanza());
+                    }
+                    SectionBreak sectionBreak = new SectionBreak().SetPageMargins(new PageMarginBoxes(PageMarginsTestUtil.GetPageMargins1
+                        ()));
+                    Div div1 = new Div();
+                    div1.Add(p).SetBorder(new SolidBorder(ColorConstants.MAGENTA, 5));
+                    document.Add(sectionBreak);
+                    document.Add(div1);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareTagStructureAgainstXml(outFileName, cmpFileName));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.SECTION_BREAK_IGNORED)]
+        public virtual void SectionBreakInsideTableHeaderTest() {
+            String fileName = "sectionBreakInsideTableHeader";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Div().Add(new Paragraph("Before section break")).Add(sectionBreak).Add(new Paragraph
+                        ("After section break")));
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell("Table cell content 3");
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        // TODO DEVSIX-10049 Fix SectionBreak margins not working
+        [NUnit.Framework.Test]
+        public virtual void SectionBreakInsideTableBodyTest() {
+            String fileName = "sectionBreakInsideTableBody";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell(new Div().Add(new Paragraph("Before section break")).Add(sectionBreak).Add(new Paragraph("After section break"
+                        )));
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.SECTION_BREAK_IGNORED)]
+        public virtual void SectionBreakInsideTableFooterTest() {
+            String fileName = "sectionBreakInsideTableFooter";
+            String outFileName = DESTINATION_FOLDER + fileName + ".pdf";
+            String cmpFileName = SOURCE_FOLDER + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    IList<PageMarginContent> elements = PageMarginsTestUtil.GetPageMargins1();
+                    SectionBreak sectionBreak = new SectionBreak(new PageMarginBoxes(elements));
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell("Table cell content 3");
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Div().Add(new Paragraph("Before section break")).Add(sectionBreak).Add(new Paragraph
+                        ("After section break")));
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, DESTINATION_FOLDER
+                , "diff_" + fileName));
+        }
+
+        private static iText.Layout.Element.Image LoadImage() {
+            try {
+                return new iText.Layout.Element.Image(ImageDataFactory.Create(DOG));
+            }
+            catch (UriFormatException e) {
+                throw new PdfException(e.Message);
+            }
         }
 
         private void AddFooterTable(int numColumns, String values, Document document) {

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Forms.Xfa {
 //\cond DO_NOT_DOCUMENT
@@ -30,16 +31,21 @@ namespace iText.Forms.Xfa {
     /// beginning from the lower hierarchy.
     /// </summary>
     internal class InverseStore {
-        protected internal IList<String> part = new List<String>();
+//\cond DO_NOT_DOCUMENT
+        internal IList<String> part = new List<String>();
+//\endcond
 
-        protected internal IList<Object> follow = new List<Object>();
+//\cond DO_NOT_DOCUMENT
+        internal IList<Object> follow = new List<Object>();
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>
         /// Gets the full name by traversing the hierarchy using only the
         /// index 0.
         /// </summary>
         /// <returns>the full name</returns>
-        public virtual String GetDefaultName() {
+        internal virtual String GetDefaultName() {
             InverseStore store = this;
             while (true) {
                 Object obj = store.follow[0];
@@ -49,7 +55,9 @@ namespace iText.Forms.Xfa {
                 store = (InverseStore)obj;
             }
         }
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Search the current node for a similar name.</summary>
         /// <remarks>
         /// Search the current node for a similar name. A similar name starts
@@ -59,7 +67,7 @@ namespace iText.Forms.Xfa {
         /// </remarks>
         /// <param name="name">the name to search</param>
         /// <returns><c>true</c> if a similitude was found</returns>
-        public virtual bool IsSimilar(String name) {
+        internal virtual bool IsSimilar(String name) {
             int idx = name.IndexOf('[');
             name = name.JSubstring(0, idx + 1);
             for (int k = 0; k < part.Count; ++k) {
@@ -69,6 +77,7 @@ namespace iText.Forms.Xfa {
             }
             return false;
         }
+//\endcond
     }
 //\endcond
 }

@@ -24,17 +24,31 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.util.zlib;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.IO.Font {
 //\cond DO_NOT_DOCUMENT
     internal class WoffConverter {
         private const long woffSignature = 0x774F4646L;
 
-        public static bool IsWoffFont(byte[] woffBytes) {
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Checks whether bytes begin with the WOFF signature.</summary>
+        /// <param name="woffBytes">the candidate font bytes</param>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// when the WOFF signature is present
+        /// </returns>
+        internal static bool IsWoffFont(byte[] woffBytes) {
             return BytesToUInt(woffBytes, 0) == woffSignature;
         }
+//\endcond
 
-        public static byte[] Convert(byte[] woffBytes) {
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Converts a WOFF font to an uncompressed OpenType font.</summary>
+        /// <param name="woffBytes">the complete WOFF source</param>
+        /// <returns>newly allocated OpenType bytes</returns>
+        internal static byte[] Convert(byte[] woffBytes) {
             int srcPos = 0;
             int destPos = 0;
             // signature
@@ -166,7 +180,7 @@ namespace iText.IO.Font {
                         }
                         bytesRead += readRes;
                     }
-                    if (zip.Read() >= 0) {
+                    if (zip.ReadByte() >= 0) {
                         throw new ArgumentException();
                     }
                 }
@@ -177,6 +191,7 @@ namespace iText.IO.Font {
             }
             return otfBytes;
         }
+//\endcond
 
         private static long BytesToUInt(byte[] b, int start) {
             return (b[start] & 0xFFL) << 24 | (b[start + 1] & 0xFFL) << 16 | (b[start + 2] & 0xFFL) << 8 | (b[start + 

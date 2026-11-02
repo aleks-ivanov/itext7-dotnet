@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font.Constants;
 
@@ -35,8 +35,7 @@ namespace iText.IO.Font {
     /// without having to enter a path as parameter.
     /// </summary>
     internal class FontRegisterProvider {
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(iText.IO.Font.FontRegisterProvider
-            ));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.IO.Font.FontRegisterProvider));
 
         /// <summary>This is a map of postscriptfontnames of fonts and the path of their font file.</summary>
         private readonly IDictionary<String, String> fontNames = new Dictionary<String, String>();
@@ -102,7 +101,8 @@ namespace iText.IO.Font {
         }
 //\endcond
 
-        protected internal virtual void RegisterStandardFonts() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void RegisterStandardFonts() {
             fontNames.Put(StringNormalizer.ToLowerCase(StandardFonts.COURIER), StandardFonts.COURIER);
             fontNames.Put(StringNormalizer.ToLowerCase(StandardFonts.COURIER_BOLD), StandardFonts.COURIER_BOLD);
             fontNames.Put(StringNormalizer.ToLowerCase(StandardFonts.COURIER_OBLIQUE), StandardFonts.COURIER_OBLIQUE);
@@ -122,8 +122,10 @@ namespace iText.IO.Font {
                 );
             fontNames.Put(StringNormalizer.ToLowerCase(StandardFonts.ZAPFDINGBATS), StandardFonts.ZAPFDINGBATS);
         }
+//\endcond
 
-        protected internal virtual void RegisterStandardFontFamilies() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void RegisterStandardFontFamilies() {
             IList<String> family;
             family = new List<String>();
             family.Add(StandardFonts.COURIER);
@@ -150,8 +152,10 @@ namespace iText.IO.Font {
             family.Add(StandardFonts.ZAPFDINGBATS);
             fontFamilies.Put(StringNormalizer.ToLowerCase(StandardFontFamilies.ZAPFDINGBATS), family);
         }
+//\endcond
 
-        protected internal virtual FontProgram GetFontProgram(String fontName, bool cached) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual FontProgram GetFontProgram(String fontName, bool cached) {
             FontProgram fontProgram = null;
             fontName = fontNames.Get(StringNormalizer.ToLowerCase(fontName));
             if (fontName != null) {
@@ -159,6 +163,7 @@ namespace iText.IO.Font {
             }
             return fontProgram;
         }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
         /// <summary>Register a font by giving explicitly the font family and name.</summary>
@@ -270,7 +275,7 @@ namespace iText.IO.Font {
                         }
                     }
                 }
-                LOGGER.LogTrace(MessageFormatUtil.Format("Registered {0}", path));
+                LOGGER.Trace(() => MessageFormatUtil.Format("Registered {0}", path));
             }
             catch (System.IO.IOException e) {
                 throw new iText.IO.Exceptions.IOException(e);
@@ -308,7 +313,7 @@ namespace iText.IO.Font {
         /// <param name="scanSubdirectories">recursively scan subdirectories if <c>true</c></param>
         /// <returns>the number of fonts registered</returns>
         internal virtual int RegisterFontDirectory(String dir, bool scanSubdirectories) {
-            LOGGER.LogDebug(MessageFormatUtil.Format("Registering directory {0}, looking for fonts", dir));
+            LOGGER.Debug(() => MessageFormatUtil.Format("Registering directory {0}, looking for fonts", dir));
             int count = 0;
             try {
                 String[] files = FileUtil.ListFilesInDirectory(dir, scanSubdirectories);
@@ -392,15 +397,19 @@ namespace iText.IO.Font {
         }
 //\endcond
 
-        public virtual void ClearRegisteredFonts() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void ClearRegisteredFonts() {
             fontNames.Clear();
             RegisterStandardFonts();
         }
+//\endcond
 
-        public virtual void ClearRegisteredFontFamilies() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void ClearRegisteredFontFamilies() {
             fontFamilies.Clear();
             RegisterStandardFontFamilies();
         }
+//\endcond
     }
 //\endcond
 }

@@ -23,12 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using iText.Commons.Exceptions;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 
 namespace iText.IO.Exceptions {
     /// <summary>Exception class for exceptions in io module.</summary>
     public class IOException : ITextException {
-        /// <summary>Object for more details</summary>
+        /// <summary>The object that provides additional context for this exception.</summary>
         protected internal Object obj;
 
         private IList<Object> messageParams;

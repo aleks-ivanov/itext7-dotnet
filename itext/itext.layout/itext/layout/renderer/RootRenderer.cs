@@ -22,25 +22,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
 using iText.Commons.Actions;
 using iText.Commons.Actions.Sequence;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
+using iText.Commons.Utils.Collections;
 using iText.Kernel.Actions.Events;
+using iText.Kernel.Exceptions;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Layout;
+using iText.Layout.Exceptions;
 using iText.Layout.Layout;
 using iText.Layout.Logs;
 using iText.Layout.Margincollapse;
 using iText.Layout.Properties;
+using iText.Layout.Properties.Margins;
 using iText.Layout.Tagging;
+using iText.Layout.Utils;
 
 namespace iText.Layout.Renderer {
     public abstract class RootRenderer : AbstractRenderer {
         /// <summary>The Logger instance.</summary>
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(RootRenderer));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(RootRenderer));
+
+        private const int MAX_AMOUNT_OF_ELEMENT_LAYOUTS = 1_000_000;
 
         protected internal bool immediateFlush = true;
 
@@ -50,6 +57,10 @@ namespace iText.Layout.Renderer {
 
 //\cond DO_NOT_DOCUMENT
         internal IList<Rectangle> floatRendererAreas;
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        internal IDictionary<int, int?> latestFootnoteNumber = new Dictionary<int, int?>();
 //\endcond
 
         private readonly IList<IRenderer> waitingNextPageRenderers = new List<IRenderer>();
@@ -110,9 +121,10 @@ namespace iText.Layout.Renderer {
                 if (marginsCollapsingEnabled && currentArea != null) {
                     childMarginsInfo = marginsCollapseHandler.StartChildMarginsHandling(renderer, currentArea.GetBBox());
                 }
-                while (clearanceOverflowsToNextPage || (currentArea != null && renderer != null && (result = renderer.SetParent
-                    (this).Layout(new LayoutContext(currentArea.Clone(), childMarginsInfo, floatRendererAreas))).GetStatus
-                    () != LayoutResult.FULL)) {
+                int rendererLayoutCounter = 0;
+                while (clearanceOverflowsToNextPage || (currentArea != null && renderer != null && (result = LayoutChild(renderer
+                    , childMarginsInfo)).GetStatus() != LayoutResult.FULL)) {
+                    rendererLayoutCounter = GetRendererLayoutCounter(rendererLayoutCounter);
                     bool currentAreaNeedsToBeUpdated = false;
                     if (clearanceOverflowsToNextPage) {
                         result = new LayoutResult(LayoutResult.NOTHING, null, null, renderer);
@@ -129,6 +141,8 @@ namespace iText.Layout.Renderer {
                                 currentAreaNeedsToBeUpdated = true;
                             }
                         }
+                        addedPositionedRenderers = LayoutPositionedRenderersInStaticLoop(addedPositionedRenderers, result.GetSplitRenderer
+                            ());
                     }
                     else {
                         if (result.GetStatus() == LayoutResult.NOTHING && !clearanceOverflowsToNextPage) {
@@ -146,7 +160,7 @@ namespace iText.Layout.Renderer {
                                 else {
                                     ((ImageRenderer)result.GetOverflowRenderer()).AutoScale(currentArea);
                                     result.GetOverflowRenderer().SetProperty(Property.FORCED_PLACEMENT, true);
-                                    LOGGER.LogWarning(MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, ""));
+                                    LOGGER.Warn(() => MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, ""));
                                 }
                             }
                             else {
@@ -204,7 +218,7 @@ namespace iText.Layout.Renderer {
                 if (renderer != null && result != null) {
                     if (true.Equals(renderer.GetProperty<bool?>(Property.KEEP_WITH_NEXT))) {
                         if (true.Equals(renderer.GetProperty<bool?>(Property.FORCED_PLACEMENT))) {
-                            LOGGER.LogWarning(iText.IO.Logs.IoLogMessageConstant.ELEMENT_WAS_FORCE_PLACED_KEEP_WITH_NEXT_WILL_BE_IGNORED
+                            LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.ELEMENT_WAS_FORCE_PLACED_KEEP_WITH_NEXT_WILL_BE_IGNORED
                                 );
                             ShrinkCurrentAreaAndProcessRenderer(renderer, resultRenderers, result);
                         }
@@ -221,33 +235,153 @@ namespace iText.Layout.Renderer {
                     }
                 }
             }
-            foreach (IRenderer addedPositionedRenderer in addedPositionedRenderers) {
-                positionedRenderers.Add(addedPositionedRenderer);
-                renderer = positionedRenderers[positionedRenderers.Count - 1];
-                int? positionedPageNumber = renderer.GetProperty<int?>(Property.PAGE_NUMBER);
-                if (positionedPageNumber == null) {
-                    positionedPageNumber = currentArea.GetPageNumber();
-                }
-                LayoutArea layoutArea;
-                // For position=absolute, if none of the top, bottom, left, right properties are provided,
-                // the content should be displayed in the flow of the current content, not overlapping it.
-                // The behavior is just if it would be statically positioned except it does not affect other elements
-                if (Convert.ToInt32(LayoutPosition.ABSOLUTE).Equals(renderer.GetProperty<int?>(Property.POSITION)) && AbstractRenderer
-                    .NoAbsolutePositionInfo(renderer)) {
-                    layoutArea = new LayoutArea((int)positionedPageNumber, currentArea.GetBBox().Clone());
+            foreach (IRenderer positionedRenderer in addedPositionedRenderers) {
+                LayoutPositionedRenderer(positionedRenderer);
+            }
+        }
+
+        private IList<IRenderer> LayoutPositionedRenderersInStaticLoop(IList<IRenderer> addedPositionedRenderers, 
+            IRenderer splitRenderer) {
+            IList<IRenderer> remainingAddedPositionedRenderers = new List<IRenderer>();
+            foreach (IRenderer positionedRenderer in addedPositionedRenderers) {
+                if (positionedRenderer.HasProperty(Property.POSITIONED_ELEMENT_WRAPPED) && IsRendererInSplitRendererTree(positionedRenderer
+                    , splitRenderer)) {
+                    // Positioned renderer wrapper, if exists, was already layouted.
+                    // It means we need to layout positioned renderer on the same page.
+                    LayoutPositionedRenderer(positionedRenderer);
                 }
                 else {
-                    layoutArea = new LayoutArea((int)positionedPageNumber, initialCurrentArea.GetBBox().Clone());
-                }
-                Rectangle fullBbox = layoutArea.GetBBox().Clone();
-                PreparePositionedRendererAndAreaForLayout(renderer, fullBbox, layoutArea.GetBBox());
-                renderer.Layout(new PositionedLayoutContext(new LayoutArea(layoutArea.GetPageNumber(), fullBbox), layoutArea
-                    ));
-                if (immediateFlush) {
-                    FlushSingleRenderer(renderer);
-                    positionedRenderers.JRemoveAt(positionedRenderers.Count - 1);
+                    remainingAddedPositionedRenderers.Add(positionedRenderer);
                 }
             }
+            return remainingAddedPositionedRenderers;
+        }
+
+        private void LayoutPositionedRenderer(IRenderer positionedRenderer) {
+            positionedRenderers.Add(positionedRenderer);
+            int? positionedPageNumber = positionedRenderer.GetProperty<int?>(Property.PAGE_NUMBER);
+            if (positionedPageNumber == null) {
+                positionedPageNumber = currentArea.GetPageNumber();
+            }
+            LayoutArea layoutArea;
+            // For position=absolute, if none of the top, bottom, left, right properties are provided,
+            // the content should be displayed in the flow of the current content, not overlapping it.
+            // The behavior is just if it would be statically positioned except it does not affect other elements
+            if (Convert.ToInt32(LayoutPosition.ABSOLUTE).Equals(positionedRenderer.GetProperty<int?>(Property.POSITION
+                )) && AbstractRenderer.HorizontalCoordinateMissingForAbsolutePosition(positionedRenderer) && AbstractRenderer
+                .VerticalCoordinateMissingForAbsolutePosition(positionedRenderer)) {
+                layoutArea = new LayoutArea((int)positionedPageNumber, currentArea.GetBBox().Clone());
+            }
+            else {
+                layoutArea = new LayoutArea((int)positionedPageNumber, initialCurrentArea.GetBBox().Clone());
+            }
+            Rectangle fullBbox = layoutArea.GetBBox().Clone();
+            PreparePositionedRendererAndAreaForLayout(positionedRenderer, fullBbox, layoutArea.GetBBox());
+            positionedRenderer.Layout(new PositionedLayoutContext(new LayoutArea(layoutArea.GetPageNumber(), fullBbox)
+                , layoutArea));
+            if (immediateFlush) {
+                FlushSingleRenderer(positionedRenderer);
+                positionedRenderers.JRemoveAt(positionedRenderers.Count - 1);
+            }
+        }
+
+        private LayoutResult LayoutChild(IRenderer renderer, MarginsCollapseInfo childMarginsInfo) {
+            FootnotesCounterHandler footnotesCounterHandler = FootnotesCounterHandler.GetFootnotesCounterHandler(this);
+            if (footnotesCounterHandler != null) {
+                footnotesCounterHandler.Reset();
+            }
+            bool isForcedPlacement = true.Equals(renderer.GetProperty<bool?>(Property.FORCED_PLACEMENT));
+            LayoutResult layoutResult = renderer.SetParent(this).Layout(new LayoutContext(currentArea.Clone(), childMarginsInfo
+                , floatRendererAreas));
+            if (footnotesCounterHandler == null) {
+                return layoutResult;
+            }
+            IList<FootnoteAnchorRenderer> footnoteAnchors = new List<FootnoteAnchorRenderer>();
+            // Process footnotes that were collected during renderer layout.
+            IDictionary<Footnote, FootnoteRenderer> footnotes = footnotesCounterHandler.CollectFootnotes(renderer, footnoteAnchors
+                );
+            int footnoteAnchorsNum = footnotes.Count;
+            if (footnoteAnchorsNum == 0) {
+                return layoutResult;
+            }
+            int pageNum = currentArea.GetPageNumber();
+            PageMarginBoxes pageMarginBoxes = null;
+            Document document = new Document(this.GetPdfDocument());
+            if (this is DocumentRenderer) {
+                document = (Document)this.GetModelElement();
+                pageMarginBoxes = document.GetPageMargins(currentArea.GetPageNumber());
+            }
+            FootnotesProperties footnotesProperties = document.GetFootnotesProperties();
+            FootnoteNumberingConfig footnoteNumberingConfig = footnotesProperties.GetFootnoteNumberingConfig();
+            if (FootnoteNumberingConfig.PER_PAGE != footnoteNumberingConfig && !latestFootnoteNumber.ContainsKey(pageNum
+                ) && latestFootnoteNumber.ContainsKey(pageNum - 1)) {
+                latestFootnoteNumber.Put(pageNum, latestFootnoteNumber.Get(pageNum - 1));
+            }
+            int rendererAdditionalLayoutCounter = 0;
+            bool footnotesPlaced = false;
+            float decreasedHeight = 0;
+            bool footnotesNumDefined = false;
+            // We need to run the layout once again for table footers containing footnotes.
+            bool extraRun = false;
+            int footnotesNum = 0;
+            while (!footnotesPlaced || extraRun) {
+                if (footnotesNumDefined) {
+                    decreasedHeight = 0;
+                }
+                else {
+                    // Restore initial current area.
+                    currentArea.GetBBox().MoveDown(decreasedHeight).IncreaseHeight(decreasedHeight);
+                    // Decrease current area from the bottom to the height of footnotes.
+                    footnotesNum = footnoteAnchorsNum;
+                    decreasedHeight = 0;
+                    foreach (FootnoteRenderer footnoteRenderer in footnotes.Values) {
+                        float footnoteHeight = footnoteRenderer.GetOccupiedArea().GetBBox().GetHeight();
+                        currentArea.GetBBox().MoveUp((float)footnoteHeight).DecreaseHeight((float)footnoteHeight);
+                        decreasedHeight += (float)footnoteHeight;
+                    }
+                }
+                footnotesCounterHandler.UpdateFootnoteNumberingAndStyles(footnotesProperties, (int)latestFootnoteNumber.GetOrDefault
+                    (pageNum, 0), footnoteAnchors);
+                footnotesCounterHandler.Reset();
+                if (isForcedPlacement) {
+                    renderer.SetProperty(Property.FORCED_PLACEMENT, true);
+                }
+                layoutResult = renderer.SetParent(this).Layout(new LayoutContext(currentArea.Clone(), childMarginsInfo, floatRendererAreas
+                    ));
+                if (layoutResult.GetStatus() == LayoutResult.NOTHING) {
+                    footnotes.Clear();
+                    footnotesCounterHandler.Reset();
+                }
+                else {
+                    footnotes = footnotesCounterHandler.CollectFootnotes(layoutResult.GetStatus() == LayoutResult.PARTIAL ? layoutResult
+                        .GetSplitRenderer() : renderer, footnoteAnchors);
+                }
+                if (extraRun) {
+                    extraRun = false;
+                }
+                else {
+                    footnoteAnchorsNum = footnotes.Count;
+                    // Number of the placed anchors == number of footnotes we reserved the space for before the layout
+                    footnotesPlaced = footnoteAnchorsNum == footnotesNum;
+                    extraRun = footnotesPlaced;
+                    if (footnoteAnchorsNum > footnotesNum) {
+                        footnotesNumDefined = true;
+                        // Decrease current area from the bottom until extra anchor will be moved to the next page.
+                        // This logic can be improved in the future.
+                        currentArea.GetBBox().MoveUp(1).DecreaseHeight(1);
+                    }
+                }
+                rendererAdditionalLayoutCounter = GetRendererLayoutCounter(rendererAdditionalLayoutCounter);
+            }
+            if (pageMarginBoxes == null) {
+                pageMarginBoxes = new PageMarginBoxes(JavaCollectionsUtil.EmptyList<PageMarginContent>());
+                document.SetPageMargins(currentArea.GetPageNumber(), pageMarginBoxes);
+            }
+            FootnotesUtil.AddFootnotesToPage(pageNum, new List<FootnoteRenderer>(footnotes.Values), pageMarginBoxes, footnotesProperties
+                );
+            latestFootnoteNumber.Put(pageNum, latestFootnoteNumber.ContainsKey(pageNum) ? (latestFootnoteNumber.Get(pageNum
+                ) + footnotes.Count) : footnotes.Count);
+            return layoutResult;
         }
 
         /// <summary>Draws (flushes) the content.</summary>
@@ -285,10 +419,7 @@ namespace iText.Layout.Renderer {
                 keepWithNextHangingRenderer = null;
                 AddChild(rendererToBeAdded);
             }
-            if (!immediateFlush) {
-                Flush();
-            }
-            FlushWaitingDrawingElements(true);
+            FlushOnClose();
             LayoutTaggingHelper taggingHelper = this.GetProperty<LayoutTaggingHelper>(Property.TAGGING_HELPER);
             if (taggingHelper != null) {
                 taggingHelper.ReleaseAllHints();
@@ -327,7 +458,17 @@ namespace iText.Layout.Renderer {
             }
         }
 
+        [Obsolete]
         protected internal virtual void FlushWaitingDrawingElements() {
+            FlushWaitingDrawingElements(true);
+        }
+
+        /// <summary>Draws (flushes) the content, of this element and all its children that were not yet processed.</summary>
+        /// <seealso cref="AbstractRenderer.Draw(DrawContext)"/>
+        protected internal virtual void FlushOnClose() {
+            if (!immediateFlush) {
+                Flush();
+            }
             FlushWaitingDrawingElements(true);
         }
 
@@ -457,7 +598,7 @@ namespace iText.Layout.Renderer {
                     }
                 }
                 if (!ableToProcessKeepWithNext) {
-                    LOGGER.LogWarning(iText.IO.Logs.IoLogMessageConstant.RENDERER_WAS_NOT_ABLE_TO_PROCESS_KEEP_WITH_NEXT);
+                    LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.RENDERER_WAS_NOT_ABLE_TO_PROCESS_KEEP_WITH_NEXT);
                     keepWithNextHangingRendererLayoutResult = keepWithNextHangingRenderer.Layout(new LayoutContext(currentArea
                         .Clone()));
                     ShrinkCurrentAreaAndProcessRenderer(keepWithNextHangingRenderer, new List<IRenderer>(), keepWithNextHangingRendererLayoutResult
@@ -494,15 +635,26 @@ namespace iText.Layout.Renderer {
             }
         }
 
+        private int GetRendererLayoutCounter(int rendererLayoutCounter) {
+            rendererLayoutCounter++;
+            LayoutInfiniteLoopResolver loopResolver = GetPdfDocument().GetDiContainer().GetInstance<LayoutInfiniteLoopResolver
+                >();
+            int limit = loopResolver == null ? MAX_AMOUNT_OF_ELEMENT_LAYOUTS : loopResolver.GetMaxPagesCountForSingleElement
+                ();
+            if (rendererLayoutCounter > limit) {
+                throw new PdfException(MessageFormatUtil.Format(LayoutExceptionMessageConstant.INFINITE_LOOP_DETECTED, limit
+                     / 3));
+            }
+            return rendererLayoutCounter;
+        }
+
         private bool UpdateForcedPlacement(IRenderer currentRenderer, IRenderer overflowRenderer) {
             if (true.Equals(currentRenderer.GetProperty<bool?>(Property.FORCED_PLACEMENT))) {
                 return false;
             }
             else {
                 overflowRenderer.SetProperty(Property.FORCED_PLACEMENT, true);
-                if (LOGGER.IsEnabled(LogLevel.Warning)) {
-                    LOGGER.LogWarning(MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, ""));
-                }
+                LOGGER.Warn(() => MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, ""));
                 return true;
             }
         }
@@ -526,10 +678,8 @@ namespace iText.Layout.Renderer {
                 return false;
             }
             toDisableKeepTogether.SetProperty(Property.KEEP_TOGETHER, false);
-            if (LOGGER.IsEnabled(LogLevel.Warning)) {
-                LOGGER.LogWarning(MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, "KeepTogether property will be ignored."
-                    ));
-            }
+            LOGGER.Warn(() => MessageFormatUtil.Format(LayoutLogMessageConstant.ELEMENT_DOES_NOT_FIT_AREA, "KeepTogether property will be ignored."
+                ));
             if (!rendererIsFloat) {
                 rootRendererStateHandler.AttemptGoBackToStoredPreviousStateAndStoreNextState(this);
             }

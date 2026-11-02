@@ -21,6 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System.IO;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.IO.Codec {
 //\cond DO_NOT_DOCUMENT
@@ -53,17 +54,20 @@ namespace iText.IO.Codec {
         internal bool blocks = false;
 //\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <param name="output">destination for output data</param>
         /// <param name="blocks">GIF LZW requires block counts for output data</param>
-        public BitFile(Stream output, bool blocks) {
+        internal BitFile(Stream output, bool blocks) {
             this.output = output;
             this.blocks = blocks;
             buffer = new byte[256];
             index = 0;
             bitsLeft = 8;
         }
+//\endcond
 
-        public virtual void Flush() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void Flush() {
             int numBytes = index + (bitsLeft == 8 ? 0 : 1);
             if (numBytes > 0) {
                 if (blocks) {
@@ -75,8 +79,10 @@ namespace iText.IO.Codec {
                 bitsLeft = 8;
             }
         }
+//\endcond
 
-        public virtual void WriteBits(int bits, int numbits) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void WriteBits(int bits, int numbits) {
             int bitsWritten = 0;
             // gif block count
             int numBytes = 255;
@@ -137,6 +143,7 @@ namespace iText.IO.Codec {
             }
             while (numbits != 0);
         }
+//\endcond
     }
 //\endcond
 }

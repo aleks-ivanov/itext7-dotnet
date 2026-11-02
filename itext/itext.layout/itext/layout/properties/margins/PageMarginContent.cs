@@ -1,6 +1,27 @@
+/*
+This file is part of the iText (R) project.
+Copyright (c) 1998-2026 Apryse Group NV
+Authors: Apryse Software.
+
+This program is offered under a commercial and under the AGPL license.
+For commercial licensing, contact us at https://itextpdf.com/sales.  For AGPL licensing, see below.
+
+AGPL licensing:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 using System;
 using iText.Commons.Utils;
-using iText.Kernel.Geom;
 using iText.Layout.Element;
 
 namespace iText.Layout.Properties.Margins {
@@ -10,12 +31,8 @@ namespace iText.Layout.Properties.Margins {
     /// linked to
     /// <see cref="MarginBoxName"/>.
     /// </summary>
-    public class PageMarginContent {
+    public class PageMarginContent : AbstractPageContent {
         private readonly MarginBoxName marginBoxName;
-
-        private readonly IElement marginContent;
-
-        private Rectangle pageMarginBoxRectangle;
 
         /// <summary>
         /// Creates new
@@ -32,9 +49,31 @@ namespace iText.Layout.Properties.Margins {
         /// <see cref="iText.Layout.Element.IElement"/>
         /// layout element with margin content
         /// </param>
-        public PageMarginContent(MarginBoxName marginBoxName, IElement marginContent) {
+        public PageMarginContent(MarginBoxName marginBoxName, IElement marginContent)
+            : base(marginContent) {
             this.marginBoxName = marginBoxName;
-            this.marginContent = marginContent;
+        }
+
+        /// <summary>
+        /// Creates new
+        /// <see cref="PageMarginContent"/>
+        /// instance.
+        /// </summary>
+        /// <remarks>
+        /// Creates new
+        /// <see cref="PageMarginContent"/>
+        /// instance.
+        /// <para />
+        /// The margin will have the specified size in points.
+        /// </remarks>
+        /// <param name="marginBoxName">
+        /// 
+        /// <see cref="MarginBoxName"/>
+        /// specifying margin name based on its location on the page
+        /// </param>
+        /// <param name="marginInPoints"><c>float</c> specifying the margin in points</param>
+        public PageMarginContent(MarginBoxName marginBoxName, float marginInPoints)
+            : this(marginBoxName, GetStaticMarginContent(marginBoxName, marginInPoints)) {
         }
 
         /// <summary>
@@ -47,10 +86,9 @@ namespace iText.Layout.Properties.Margins {
         /// <see cref="PageMarginContent"/>
         /// instance to copy
         /// </param>
-        public PageMarginContent(iText.Layout.Properties.Margins.PageMarginContent other) {
+        public PageMarginContent(iText.Layout.Properties.Margins.PageMarginContent other)
+            : base(other) {
             this.marginBoxName = other.marginBoxName;
-            this.marginContent = other.marginContent;
-            this.pageMarginBoxRectangle = other.pageMarginBoxRectangle;
         }
 
         /// <summary>
@@ -63,39 +101,38 @@ namespace iText.Layout.Properties.Margins {
             return marginBoxName;
         }
 
-        /// <summary>Returns renderer for layout element representing page margin content.</summary>
-        /// <returns>
+        /// <summary>
+        /// Creates
+        /// <see cref="iText.Layout.Element.Div"/>
+        /// layout element of the fixed size to represent a static margin.
+        /// </summary>
+        /// <param name="marginBoxName">
         /// 
-        /// <see cref="iText.Layout.Element.IElement"/>
-        /// layout element for page margin content
-        /// </returns>
-        public virtual IElement GetMarginContent() {
-            return marginContent;
-        }
-
-//\cond DO_NOT_DOCUMENT
-        /// <summary>Sets the rectangle in which page margin box contents are shown.</summary>
-        /// <param name="pageMarginBoxRectangle">
-        /// 
-        /// <see cref="iText.Kernel.Geom.Rectangle"/>
-        /// defining position and dimensions of the margin box content area
+        /// <see cref="MarginBoxName"/>
+        /// specifying margin name based on its location on the page
         /// </param>
-        internal virtual void SetPageMarginBoxRectangle(Rectangle pageMarginBoxRectangle) {
-            this.pageMarginBoxRectangle = pageMarginBoxRectangle;
-        }
-//\endcond
-
-//\cond DO_NOT_DOCUMENT
-        /// <summary>Gets the rectangle in which page margin box contents should be shown.</summary>
+        /// <param name="marginInPoints">
+        /// 
+        /// <c>float</c>
+        /// specifying the margin in points
+        /// </param>
         /// <returns>
-        /// the
-        /// <see cref="iText.Kernel.Geom.Rectangle"/>
-        /// defining position and dimensions of the margin box content area
+        /// 
+        /// <see cref="iText.Layout.Element.Div"/>
+        /// layout element with static size
         /// </returns>
-        internal virtual Rectangle GetPageMarginBoxRectangle() {
-            return pageMarginBoxRectangle;
+        private static Div GetStaticMarginContent(MarginBoxName marginBoxName, float marginInPoints) {
+            Div staticMarginContent = new Div();
+            if (marginBoxName == MarginBoxName.TOP || marginBoxName == MarginBoxName.BOTTOM) {
+                staticMarginContent.SetHeight(marginInPoints);
+            }
+            else {
+                if (marginBoxName == MarginBoxName.LEFT || marginBoxName == MarginBoxName.RIGHT) {
+                    staticMarginContent.SetWidth(marginInPoints);
+                }
+            }
+            return staticMarginContent;
         }
-//\endcond
 
         public override bool Equals(Object o) {
             if (this == o) {
@@ -106,12 +143,11 @@ namespace iText.Layout.Properties.Margins {
             }
             iText.Layout.Properties.Margins.PageMarginContent that = (iText.Layout.Properties.Margins.PageMarginContent
                 )o;
-            return Object.Equals(marginBoxName, that.marginBoxName) && Object.Equals(marginContent, that.marginContent
-                );
+            return Object.Equals(marginBoxName, that.marginBoxName) && Object.Equals(GetContent(), that.GetContent());
         }
 
         public override int GetHashCode() {
-            return JavaUtil.ArraysHashCode((Object)marginBoxName, marginContent);
+            return JavaUtil.ArraysHashCode((Object)marginBoxName, GetContent());
         }
     }
 }

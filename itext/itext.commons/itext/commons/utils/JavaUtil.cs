@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Commons.Utils {
     /// <summary>
@@ -337,11 +338,11 @@ namespace iText.Commons.Utils {
         public static Stream CorrectWavFile(Stream stream) {
             String header = "";
             for (int i = 0; i < 4; i++) {
-                header = header + (char) stream.Read();
+                header = header + (char) stream.ReadByte();
             }
             stream.Position = 0;
             if (header.Equals("RIFF")) {
-                stream.Read();
+                stream.ReadByte();
             }
 
             return stream;
@@ -353,6 +354,25 @@ namespace iText.Commons.Utils {
 
         public static String CharToString(char ch) {
             return ch.ToString();
+        }
+
+        // CryptographicOperations.FixedTimeEquals exists starting from netstandard2.1, .NET Core 2.1+, .NET 5+
+        public static bool FixedTimeEquals(byte[] a, byte[] b)
+        {
+            if (a == null || b == null) {
+                return false;
+            }
+
+            if (a.Length != b.Length) {
+                return false;
+            }
+
+            int diff = 0;
+            for (int i = 0; i < a.Length; i++) {
+                diff |= a[i] ^ b[i];
+            }
+
+            return diff == 0;
         }
     }
 }

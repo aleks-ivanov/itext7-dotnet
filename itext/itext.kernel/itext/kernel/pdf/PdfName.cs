@@ -147,6 +147,8 @@ namespace iText.Kernel.Pdf {
 
         public static readonly iText.Kernel.Pdf.PdfName AllOn = CreateDirectName("AllOn");
 
+        public static readonly iText.Kernel.Pdf.PdfName Alpha = CreateDirectName("Alpha");
+
         public static readonly iText.Kernel.Pdf.PdfName Alt = CreateDirectName("Alt");
 
         public static readonly iText.Kernel.Pdf.PdfName Alternate = CreateDirectName("Alternate");
@@ -957,6 +959,8 @@ namespace iText.Kernel.Pdf {
         public static readonly iText.Kernel.Pdf.PdfName Limits = CreateDirectName("Limits");
 
         public static readonly iText.Kernel.Pdf.PdfName Line = CreateDirectName("Line");
+
+        public static readonly iText.Kernel.Pdf.PdfName Linearized = CreateDirectName("Linearized");
 
         public static readonly iText.Kernel.Pdf.PdfName LineArrow = CreateDirectName("LineArrow");
 

@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font;
 using iText.Kernel.Font;
@@ -39,6 +39,8 @@ namespace iText.Layout.Font {
     /// </remarks>
     /// <seealso cref="FontProvider"/>
     public sealed class FontSet {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Font.FontSet));
+
         // FontSet MUST be final to avoid overriding #add(FontInfo) method or remove functionality.
         private static readonly AtomicLong lastId = new AtomicLong();
 
@@ -122,13 +124,13 @@ namespace iText.Layout.Font {
         /// <param name="alias">font alias.</param>
         /// <param name="unicodeRange">sets the specific range of characters to be used from the font</param>
         /// <returns>true, if font was successfully added, otherwise false.</returns>
-        public bool AddFont(FontProgram fontProgram, String encoding, String alias, Range unicodeRange) {
+        public bool AddFont(FontProgram fontProgram, String encoding, String alias, iText.Layout.Font.Range unicodeRange
+            ) {
             if (fontProgram == null) {
                 return false;
             }
             if (fontProgram is Type3Font) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Font.FontSet));
-                logger.LogError(iText.IO.Logs.IoLogMessageConstant.TYPE3_FONT_CANNOT_BE_ADDED);
+                LOGGER.Error(() => iText.IO.Logs.IoLogMessageConstant.TYPE3_FONT_CANNOT_BE_ADDED);
                 return false;
             }
             FontInfo fi = FontInfo.Create(fontProgram, encoding, alias, unicodeRange);
@@ -213,7 +215,7 @@ namespace iText.Layout.Font {
         /// <param name="unicodeRange">sets the specific range of characters to be used from the font</param>
         /// <returns>true, if font was successfully added, otherwise false.</returns>
         /// <seealso cref="iText.IO.Font.PdfEncodings"/>
-        public bool AddFont(String fontPath, String encoding, String alias, Range unicodeRange) {
+        public bool AddFont(String fontPath, String encoding, String alias, iText.Layout.Font.Range unicodeRange) {
             return AddFont(FontInfo.Create(fontPath, encoding, alias, unicodeRange));
         }
 
@@ -304,7 +306,7 @@ namespace iText.Layout.Font {
         /// <param name="unicodeRange">sets the specific range of characters to be used from the font</param>
         /// <returns>true, if font was successfully added, otherwise false.</returns>
         /// <seealso cref="iText.IO.Font.PdfEncodings"/>
-        public bool AddFont(byte[] fontData, String encoding, String alias, Range unicodeRange) {
+        public bool AddFont(byte[] fontData, String encoding, String alias, iText.Layout.Font.Range unicodeRange) {
             return AddFont(FontInfo.Create(fontData, encoding, alias, unicodeRange));
         }
 
@@ -439,7 +441,7 @@ namespace iText.Layout.Font {
         /// <param name="alias">font alias.</param>
         /// <param name="unicodeRange">sets the specific range of characters to be used from the font</param>
         /// <returns>true, if font was successfully added, otherwise false.</returns>
-        public bool AddFont(FontInfo fontInfo, String alias, Range unicodeRange) {
+        public bool AddFont(FontInfo fontInfo, String alias, iText.Layout.Font.Range unicodeRange) {
             return AddFont(FontInfo.Create(fontInfo, alias, unicodeRange));
         }
 

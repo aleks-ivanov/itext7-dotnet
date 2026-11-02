@@ -23,9 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
 using iText.Commons.Datastructures;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Util;
 using iText.Kernel.Colors;
@@ -63,6 +63,9 @@ namespace iText.Layout.Renderer {
     /// this default implementation.
     /// </remarks>
     public abstract class AbstractRenderer : IRenderer {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
+
+        /// <summary>The overlap epsilon.</summary>
         public const float OVERLAP_EPSILON = 1e-4f;
 
         /// <summary>
@@ -137,6 +140,10 @@ namespace iText.Layout.Renderer {
 
         protected internal bool isLastRendererForModelElement = true;
 
+        protected internal bool? isVerticalMode;
+
+        private bool relativePositioningTranslationApplied = false;
+
         /// <summary>Creates a renderer.</summary>
         protected internal AbstractRenderer() {
         }
@@ -165,6 +172,10 @@ namespace iText.Layout.Renderer {
             // https://www.webkit.org/blog/116/webcore-rendering-iii-layout-basics
             // "The rules can be summarized as follows:"...
             int? positioning = renderer.GetProperty<int?>(Property.POSITION);
+            bool verticalCoordinateMissing = iText.Layout.Renderer.AbstractRenderer.VerticalCoordinateMissingForAbsolutePosition
+                (renderer);
+            bool horizontalCoordinateMissing = iText.Layout.Renderer.AbstractRenderer.HorizontalCoordinateMissingForAbsolutePosition
+                (renderer);
             if (positioning == null || positioning == LayoutPosition.RELATIVE || positioning == LayoutPosition.STATIC) {
                 childRenderers.Add(renderer);
             }
@@ -183,12 +194,8 @@ namespace iText.Layout.Renderer {
                 }
                 else {
                     if (positioning == LayoutPosition.ABSOLUTE) {
-                        // For position=absolute, if none of the top, bottom, left, right properties are provided,
-                        // the content should be displayed in the flow of the current content, not overlapping it.
-                        // The behavior is just if it would be statically positioned except it does not affect other elements
                         iText.Layout.Renderer.AbstractRenderer positionedParent = this;
-                        bool noPositionInfo = iText.Layout.Renderer.AbstractRenderer.NoAbsolutePositionInfo(renderer);
-                        while (!positionedParent.IsPositioned() && !noPositionInfo) {
+                        while (!positionedParent.IsPositioned() && !(verticalCoordinateMissing && horizontalCoordinateMissing)) {
                             IRenderer parent = positionedParent.parent;
                             if (parent is iText.Layout.Renderer.AbstractRenderer) {
                                 positionedParent = (iText.Layout.Renderer.AbstractRenderer)parent;
@@ -206,6 +213,19 @@ namespace iText.Layout.Renderer {
                     }
                 }
             }
+            if (positioning != null && positioning == LayoutPosition.ABSOLUTE) {
+                // For position=absolute, if properties for certain coordinates are not provided
+                // (there is no strict coordinates where to place the element),
+                // the content should be displayed as if it's in the flow of the current content.
+                // The behavior is just as if it would be statically positioned except it does not affect other elements.
+                if (!(this is FlexContainerRenderer || this is GridContainerRenderer || this is GridItemRenderer)) {
+                    // Static positioning is different for Flex and Grid layout, that's why for now it's not calculated.
+                    if (verticalCoordinateMissing || horizontalCoordinateMissing) {
+                        childRenderers.Add(new AbsolutelyPositionedRenderer(renderer, verticalCoordinateMissing, horizontalCoordinateMissing
+                            ));
+                    }
+                }
+            }
             // Fetch positioned renderers from non-positioned child because they might be stuck there
             // because child's parent was null previously
             if (renderer is iText.Layout.Renderer.AbstractRenderer && !((iText.Layout.Renderer.AbstractRenderer)renderer
@@ -216,7 +236,9 @@ namespace iText.Layout.Renderer {
                 int pos = 0;
                 IList<IRenderer> childPositionedRenderers = ((iText.Layout.Renderer.AbstractRenderer)renderer).positionedRenderers;
                 while (pos < childPositionedRenderers.Count) {
-                    if (iText.Layout.Renderer.AbstractRenderer.NoAbsolutePositionInfo(childPositionedRenderers[pos])) {
+                    if (iText.Layout.Renderer.AbstractRenderer.VerticalCoordinateMissingForAbsolutePosition(childPositionedRenderers
+                        [pos]) && iText.Layout.Renderer.AbstractRenderer.HorizontalCoordinateMissingForAbsolutePosition(childPositionedRenderers
+                        [pos])) {
                         pos++;
                     }
                     else {
@@ -235,6 +257,20 @@ namespace iText.Layout.Renderer {
         /// <summary><inheritDoc/></summary>
         public virtual IList<IRenderer> GetChildRenderers() {
             return childRenderers;
+        }
+
+        /// <summary>
+        /// Gets the fixed positioned child
+        /// <see cref="IRenderer"/>
+        /// s.
+        /// </summary>
+        /// <returns>
+        /// a list of direct fixed positioned child
+        /// <see cref="IRenderer">renderers</see>
+        /// of this instance
+        /// </returns>
+        public virtual IEnumerable<IRenderer> GetPositionenRenderers() {
+            return positionedRenderers;
         }
 
         /// <summary><inheritDoc/></summary>
@@ -286,6 +322,17 @@ namespace iText.Layout.Renderer {
         }
 
         /// <summary><inheritDoc/></summary>
+        public virtual T1 GetOwnProperty<T1>(int property) {
+            return (T1)properties.Get(property);
+        }
+
+        /// <summary><inheritDoc/></summary>
+        public virtual T1 GetProperty<T1>(int property, T1 defaultValue) {
+            T1 result = this.GetProperty<T1>(property);
+            return result != null ? result : defaultValue;
+        }
+
+        /// <summary><inheritDoc/></summary>
         public virtual T1 GetProperty<T1>(int key) {
             Object property;
             if ((property = properties.Get(key)) != null || properties.ContainsKey(key)) {
@@ -304,17 +351,6 @@ namespace iText.Layout.Renderer {
                 return (T1)property;
             }
             return modelElement != null ? modelElement.GetDefaultProperty<T1>(key) : (T1)(Object)null;
-        }
-
-        /// <summary><inheritDoc/></summary>
-        public virtual T1 GetOwnProperty<T1>(int property) {
-            return (T1)properties.Get(property);
-        }
-
-        /// <summary><inheritDoc/></summary>
-        public virtual T1 GetProperty<T1>(int property, T1 defaultValue) {
-            T1 result = this.GetProperty<T1>(property);
-            return result != null ? result : defaultValue;
         }
 
         /// <summary><inheritDoc/></summary>
@@ -474,6 +510,90 @@ namespace iText.Layout.Renderer {
         }
 
         /// <summary>
+        /// Draws a background layer if it is defined by a key
+        /// <see cref="iText.Layout.Properties.Property.BACKGROUND"/>
+        /// in either the layout element or this
+        /// <see cref="IRenderer"/>
+        /// itself.
+        /// </summary>
+        /// <param name="drawContext">the context (canvas, document, etc.) of this drawing operation.</param>
+        public virtual void DrawBackground(DrawContext drawContext) {
+            Background background = this.GetProperty<Background>(Property.BACKGROUND);
+            IList<BackgroundImage> backgroundImagesList = this.GetProperty<IList<BackgroundImage>>(Property.BACKGROUND_IMAGE
+                );
+            if (background != null || backgroundImagesList != null) {
+                Rectangle bBox = GetOccupiedAreaBBox();
+                bool isTagged = drawContext.IsTaggingEnabled();
+                if (isTagged) {
+                    drawContext.GetCanvas().OpenTag(new CanvasArtifact());
+                }
+                Rectangle backgroundArea = GetBackgroundArea(ApplyMargins(bBox, false));
+                if (backgroundArea.GetWidth() <= 0 || backgroundArea.GetHeight() <= 0) {
+                    LOGGER.Info(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
+                        , "background"));
+                }
+                else {
+                    bool backgroundAreaIsClipped = false;
+                    if (background != null) {
+                        // TODO DEVSIX-4525 determine how background-clip affects background-radius
+                        Rectangle clippedBackgroundArea = ApplyBackgroundBoxProperty(backgroundArea.Clone(), background.GetBackgroundClip
+                            ());
+                        backgroundAreaIsClipped = ClipBackgroundArea(drawContext, clippedBackgroundArea);
+                        DrawColorBackground(background, drawContext, clippedBackgroundArea);
+                    }
+                    if (backgroundImagesList != null) {
+                        backgroundAreaIsClipped = DrawBackgroundImagesList(backgroundImagesList, backgroundAreaIsClipped, drawContext
+                            , backgroundArea);
+                    }
+                    if (backgroundAreaIsClipped) {
+                        drawContext.GetCanvas().RestoreState();
+                    }
+                }
+                if (isTagged) {
+                    drawContext.GetCanvas().CloseTag();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create a
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfFormXObject"/>
+        /// with the given area and containing a gradient inside.
+        /// </summary>
+        /// <param name="gradientBuilder">the gradient builder</param>
+        /// <param name="xObjectArea">the result object area</param>
+        /// <param name="document">the pdf document</param>
+        /// <returns>the xObject with a specified area and a gradient</returns>
+        public static PdfFormXObject CreateXObject(IGradientBuilder gradientBuilder, Rectangle xObjectArea, PdfDocument
+             document) {
+            Rectangle formBBox = new Rectangle(0, 0, xObjectArea.GetWidth(), xObjectArea.GetHeight());
+            PdfFormXObject xObject = new PdfFormXObject(formBBox);
+            if (gradientBuilder != null) {
+                Color gradientColor = gradientBuilder.BuildColor(formBBox, null, document);
+                if (gradientColor != null) {
+                    new PdfCanvas(xObject, document).SetColor(gradientColor, true).Rectangle(formBBox).Fill();
+                }
+            }
+            return xObject;
+        }
+
+        /// <summary>
+        /// Create a
+        /// <see cref="iText.Kernel.Pdf.Xobject.PdfFormXObject"/>
+        /// with the given area and containing a linear gradient inside.
+        /// </summary>
+        /// <param name="linearGradientBuilder">the linear gradient builder</param>
+        /// <param name="xObjectArea">the result object area</param>
+        /// <param name="document">the pdf document</param>
+        /// <returns>the xObject with a specified area and a linear gradient</returns>
+        [System.ObsoleteAttribute(@"use CreateXObject(iText.Kernel.Colors.Gradients.IGradientBuilder, iText.Kernel.Geom.Rectangle, iText.Kernel.Pdf.PdfDocument) instead"
+            )]
+        public static PdfFormXObject CreateXObject(AbstractLinearGradientBuilder linearGradientBuilder, Rectangle 
+            xObjectArea, PdfDocument document) {
+            return CreateXObject((IGradientBuilder)linearGradientBuilder, xObjectArea, document);
+        }
+
+        /// <summary>
         /// Apply
         /// <c>Property.OPACITY</c>
         /// property if specified by setting corresponding values in graphic state dictionary
@@ -502,53 +622,6 @@ namespace iText.Layout.Renderer {
             }
         }
 
-        /// <summary>
-        /// Draws a background layer if it is defined by a key
-        /// <see cref="iText.Layout.Properties.Property.BACKGROUND"/>
-        /// in either the layout element or this
-        /// <see cref="IRenderer"/>
-        /// itself.
-        /// </summary>
-        /// <param name="drawContext">the context (canvas, document, etc.) of this drawing operation.</param>
-        public virtual void DrawBackground(DrawContext drawContext) {
-            Background background = this.GetProperty<Background>(Property.BACKGROUND);
-            IList<BackgroundImage> backgroundImagesList = this.GetProperty<IList<BackgroundImage>>(Property.BACKGROUND_IMAGE
-                );
-            if (background != null || backgroundImagesList != null) {
-                Rectangle bBox = GetOccupiedAreaBBox();
-                bool isTagged = drawContext.IsTaggingEnabled();
-                if (isTagged) {
-                    drawContext.GetCanvas().OpenTag(new CanvasArtifact());
-                }
-                Rectangle backgroundArea = GetBackgroundArea(ApplyMargins(bBox, false));
-                if (backgroundArea.GetWidth() <= 0 || backgroundArea.GetHeight() <= 0) {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                    logger.LogInformation(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
-                        , "background"));
-                }
-                else {
-                    bool backgroundAreaIsClipped = false;
-                    if (background != null) {
-                        // TODO DEVSIX-4525 determine how background-clip affects background-radius
-                        Rectangle clippedBackgroundArea = ApplyBackgroundBoxProperty(backgroundArea.Clone(), background.GetBackgroundClip
-                            ());
-                        backgroundAreaIsClipped = ClipBackgroundArea(drawContext, clippedBackgroundArea);
-                        DrawColorBackground(background, drawContext, clippedBackgroundArea);
-                    }
-                    if (backgroundImagesList != null) {
-                        backgroundAreaIsClipped = DrawBackgroundImagesList(backgroundImagesList, backgroundAreaIsClipped, drawContext
-                            , backgroundArea);
-                    }
-                    if (backgroundAreaIsClipped) {
-                        drawContext.GetCanvas().RestoreState();
-                    }
-                }
-                if (isTagged) {
-                    drawContext.GetCanvas().CloseTag();
-                }
-            }
-        }
-
         private void DrawColorBackground(Background background, DrawContext drawContext, Rectangle colorBackgroundArea
             ) {
             double backgroundRectangleWidth = (double)colorBackgroundArea.GetWidth() + background.GetExtraLeft() + background
@@ -556,8 +629,7 @@ namespace iText.Layout.Renderer {
             double backgroundRectangleHeight = (double)colorBackgroundArea.GetHeight() + background.GetExtraTop() + background
                 .GetExtraBottom();
             if (backgroundRectangleWidth < EPS || backgroundRectangleHeight < EPS) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogInformation(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
+                LOGGER.Info(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
                     , "background"));
                 return;
             }
@@ -611,11 +683,11 @@ namespace iText.Layout.Renderer {
             UnitValue xPosition = UnitValue.CreatePointValue(0);
             UnitValue yPosition = UnitValue.CreatePointValue(0);
             if (backgroundXObject == null) {
-                AbstractLinearGradientBuilder gradientBuilder = backgroundImage.GetLinearGradientBuilder();
+                IGradientBuilder gradientBuilder = backgroundImage.GetGradientBuilder();
                 if (gradientBuilder == null) {
                     return;
                 }
-                // fullWidth and fullHeight is 0 because percentage shifts are ignored for linear-gradients
+                // fullWidth and fullHeight is 0 because percentage shifts are ignored for gradient backgrounds
                 backgroundImage.GetBackgroundPosition().CalculatePositionValues(0, 0, xPosition, yPosition);
                 backgroundXObject = CreateXObject(gradientBuilder, originBackgroundArea, drawContext.GetDocument());
             }
@@ -627,8 +699,7 @@ namespace iText.Layout.Renderer {
                 .GetTop() - imageWidthAndHeight[1] - yPosition.GetValue(), imageWidthAndHeight[0], imageWidthAndHeight
                 [1]);
             if (imageRectangle.GetWidth() <= 0 || imageRectangle.GetHeight() <= 0) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogInformation(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
+                LOGGER.Info(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_OR_ZERO_SIZES
                     , "background-image"));
             }
             else {
@@ -697,28 +768,6 @@ namespace iText.Layout.Renderer {
                 ++counterX;
             }
             while (!backgroundImage.GetRepeat().IsNoRepeatOnXAxis() && (isCurrentOverlaps || isNextOverlaps));
-        }
-
-        /// <summary>
-        /// Create a
-        /// <see cref="iText.Kernel.Pdf.Xobject.PdfFormXObject"/>
-        /// with the given area and containing a linear gradient inside.
-        /// </summary>
-        /// <param name="linearGradientBuilder">the linear gradient builder</param>
-        /// <param name="xObjectArea">the result object area</param>
-        /// <param name="document">the pdf document</param>
-        /// <returns>the xObject with a specified area and a linear gradient</returns>
-        public static PdfFormXObject CreateXObject(AbstractLinearGradientBuilder linearGradientBuilder, Rectangle 
-            xObjectArea, PdfDocument document) {
-            Rectangle formBBox = new Rectangle(0, 0, xObjectArea.GetWidth(), xObjectArea.GetHeight());
-            PdfFormXObject xObject = new PdfFormXObject(formBBox);
-            if (linearGradientBuilder != null) {
-                Color gradientColor = linearGradientBuilder.BuildColor(formBBox, null, document);
-                if (gradientColor != null) {
-                    new PdfCanvas(xObject, document).SetColor(gradientColor, true).Rectangle(formBBox).Fill();
-                }
-            }
-            return xObject;
         }
 
         /// <summary>Evaluate the actual background</summary>
@@ -995,9 +1044,8 @@ namespace iText.Layout.Renderer {
                 float leftWidth = borders[3] != null ? borders[3].GetWidth() : 0;
                 Rectangle bBox = GetBorderAreaBBox();
                 if (bBox.GetWidth() < 0 || bBox.GetHeight() < 0) {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                    logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_SIZE, "border"
-                        ));
+                    LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.RECTANGLE_HAS_NEGATIVE_SIZE
+                        , "border"));
                     return;
                 }
                 float x1 = bBox.GetX();
@@ -1088,9 +1136,8 @@ namespace iText.Layout.Renderer {
 
         /// <summary><inheritDoc/></summary>
         public virtual void Move(float dxRight, float dyUp) {
-            ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
             if (occupiedArea == null) {
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
                     , "Moving won't be performed."));
                 return;
             }
@@ -1701,8 +1748,7 @@ namespace iText.Layout.Renderer {
         protected internal virtual float? RetrieveUnitValue(float baseValue, int property, bool pointOnly) {
             UnitValue value = this.GetProperty<UnitValue>(property);
             if (pointOnly && value.GetUnitType() == UnitValue.POINT) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , property));
             }
             if (value != null) {
@@ -1777,23 +1823,19 @@ namespace iText.Layout.Renderer {
         /// </returns>
         protected internal virtual Rectangle ApplyMargins(Rectangle rect, UnitValue[] margins, bool reverse) {
             if (!margins[TOP_SIDE].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.MARGIN_TOP));
             }
             if (!margins[RIGHT_SIDE].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.MARGIN_RIGHT));
             }
             if (!margins[BOTTOM_SIDE].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.MARGIN_BOTTOM));
             }
             if (!margins[LEFT_SIDE].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.MARGIN_LEFT));
             }
             return rect.ApplyMargins(margins[TOP_SIDE].GetValue(), margins[RIGHT_SIDE].GetValue(), margins[BOTTOM_SIDE
@@ -1840,28 +1882,71 @@ namespace iText.Layout.Renderer {
         /// </returns>
         protected internal virtual Rectangle ApplyPaddings(Rectangle rect, UnitValue[] paddings, bool reverse) {
             if (paddings[0] != null && !paddings[0].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.PADDING_TOP));
             }
             if (paddings[1] != null && !paddings[1].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.PADDING_RIGHT));
             }
             if (paddings[2] != null && !paddings[2].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.PADDING_BOTTOM));
             }
             if (paddings[3] != null && !paddings[3].IsPointValue()) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                     , Property.PADDING_LEFT));
             }
             return rect.ApplyMargins(paddings[0] != null ? paddings[0].GetValue() : 0, paddings[1] != null ? paddings[
                 1].GetValue() : 0, paddings[2] != null ? paddings[2].GetValue() : 0, paddings[3] != null ? paddings[3]
                 .GetValue() : 0, reverse);
+        }
+
+        protected internal virtual void ApplyAbsolutePosition(Rectangle parentRect) {
+            float? top = this.GetPropertyAsFloat(Property.TOP);
+            float? bottom = this.GetPropertyAsFloat(Property.BOTTOM);
+            float? left = this.GetPropertyAsFloat(Property.LEFT);
+            float? right = this.GetPropertyAsFloat(Property.RIGHT);
+            if (right == null && left == null && BaseDirection.RIGHT_TO_LEFT == this.GetProperty<BaseDirection?>(Property
+                .BASE_DIRECTION)) {
+                right = 0f;
+            }
+            try {
+                if (right != null) {
+                    Move(parentRect.GetRight() - (float)right - occupiedArea.GetBBox().GetRight(), 0);
+                }
+                if (left != null) {
+                    Move(parentRect.GetLeft() + (float)left - occupiedArea.GetBBox().GetLeft(), 0);
+                }
+                if (top != null) {
+                    Move(0, parentRect.GetTop() - (float)top - occupiedArea.GetBBox().GetTop());
+                }
+                if (bottom != null) {
+                    Move(0, parentRect.GetBottom() + (float)bottom - occupiedArea.GetBBox().GetBottom());
+                }
+                if (left == null && right == null) {
+                    float? leftCalculated = this.GetPropertyAsFloat(Property.LEFT_CALCULATED);
+                    if (leftCalculated == null) {
+                        Move(parentRect.GetLeft() - occupiedArea.GetBBox().GetLeft(), 0);
+                    }
+                    else {
+                        Move((float)leftCalculated - occupiedArea.GetBBox().GetX(), 0);
+                    }
+                }
+                if (top == null && bottom == null) {
+                    float? topCalculated = this.GetPropertyAsFloat(Property.TOP_CALCULATED);
+                    if (topCalculated == null) {
+                        Move(0, parentRect.GetTop() - occupiedArea.GetBBox().GetTop());
+                    }
+                    else {
+                        Move(0, (float)topCalculated - occupiedArea.GetBBox().GetHeight() - occupiedArea.GetBBox().GetY());
+                    }
+                }
+            }
+            catch (Exception) {
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
+                    , "Absolute positioning might be applied incorrectly."));
+            }
         }
 
         /// <summary>Applies the given border box (borders) on the given rectangle</summary>
@@ -1888,40 +1973,10 @@ namespace iText.Layout.Renderer {
             return rect.ApplyMargins(topWidth, rightWidth, bottomWidth, leftWidth, reverse);
         }
 
-        protected internal virtual void ApplyAbsolutePosition(Rectangle parentRect) {
-            float? top = this.GetPropertyAsFloat(Property.TOP);
-            float? bottom = this.GetPropertyAsFloat(Property.BOTTOM);
-            float? left = this.GetPropertyAsFloat(Property.LEFT);
-            float? right = this.GetPropertyAsFloat(Property.RIGHT);
-            if (left == null && right == null && BaseDirection.RIGHT_TO_LEFT.Equals(this.GetProperty<BaseDirection?>(Property
-                .BASE_DIRECTION))) {
-                right = 0f;
-            }
-            if (top == null && bottom == null) {
-                top = 0f;
-            }
-            try {
-                if (right != null) {
-                    Move(parentRect.GetRight() - (float)right - occupiedArea.GetBBox().GetRight(), 0);
-                }
-                if (left != null) {
-                    Move(parentRect.GetLeft() + (float)left - occupiedArea.GetBBox().GetLeft(), 0);
-                }
-                if (top != null) {
-                    Move(0, parentRect.GetTop() - (float)top - occupiedArea.GetBBox().GetTop());
-                }
-                if (bottom != null) {
-                    Move(0, parentRect.GetBottom() + (float)bottom - occupiedArea.GetBBox().GetBottom());
-                }
-            }
-            catch (Exception) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
-                    , "Absolute positioning might be applied incorrectly."));
-            }
-        }
-
         protected internal virtual void ApplyRelativePositioningTranslation(bool reverse) {
+            if (reverse != relativePositioningTranslationApplied) {
+                return;
+            }
             float top = (float)this.GetPropertyAsFloat(Property.TOP, 0f);
             float bottom = (float)this.GetPropertyAsFloat(Property.BOTTOM, 0f);
             float left = (float)this.GetPropertyAsFloat(Property.LEFT, 0f);
@@ -1932,6 +1987,7 @@ namespace iText.Layout.Renderer {
             if (dxRight != 0 || dyUp != 0) {
                 Move(dxRight, dyUp);
             }
+            relativePositioningTranslationApplied = !reverse;
         }
 
         protected internal virtual void ApplyDestination(PdfDocument document) {
@@ -1959,9 +2015,8 @@ namespace iText.Layout.Renderer {
                 if (destinationName != null) {
                     int pageNumber = occupiedArea.GetPageNumber();
                     if (pageNumber < 1 || pageNumber > document.GetNumberOfPages()) {
-                        ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
                         String logMessageArg = "Property.DESTINATION, which specifies this element location as destination, " + "see ElementPropertyContainer.setDestination.";
-                        logger.LogWarning(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN
+                        LOGGER.Warn(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN
                             , logMessageArg));
                         return;
                     }
@@ -2005,7 +2060,6 @@ namespace iText.Layout.Renderer {
         }
 
         protected internal virtual void ApplyLinkAnnotation(PdfDocument document) {
-            ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
             PdfLinkAnnotation linkAnnotation = this.GetProperty<PdfLinkAnnotation>(Property.LINK_ANNOTATION);
             if (linkAnnotation == null) {
                 return;
@@ -2013,7 +2067,7 @@ namespace iText.Layout.Renderer {
             int pageNumber = occupiedArea.GetPageNumber();
             if (pageNumber < 1 || pageNumber > document.GetNumberOfPages()) {
                 String logMessageArg = "Property.LINK_ANNOTATION, which specifies a link associated with this element content area, see com.itextpdf.layout.element.Link.";
-                logger.LogWarning(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN
+                LOGGER.Warn(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.UNABLE_TO_APPLY_PAGE_DEPENDENT_PROP_UNKNOWN_PAGE_ON_WHICH_ELEMENT_IS_DRAWN
                     , logMessageArg));
                 return;
             }
@@ -2028,7 +2082,7 @@ namespace iText.Layout.Renderer {
             // TODO DEVSIX-1655 This check is necessary because, in some cases, our renderer's hierarchy may contain
             //  a renderer from the different page that was already flushed
             if (page.IsFlushed()) {
-                logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PAGE_WAS_FLUSHED_ACTION_WILL_NOT_BE_PERFORMED
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PAGE_WAS_FLUSHED_ACTION_WILL_NOT_BE_PERFORMED
                     , "link annotation applying"));
             }
             else {
@@ -2086,8 +2140,7 @@ namespace iText.Layout.Renderer {
             ) {
             if (wasHeightClipped) {
                 // if height was clipped, max height exists and can be resolved
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                logger.LogWarning(iText.IO.Logs.IoLogMessageConstant.CLIP_ELEMENT);
+                LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.CLIP_ELEMENT);
                 if (enlargeOccupiedAreaOnHeightWasClipped) {
                     float? maxHeight = RetrieveMaxHeight();
                     splitRenderer.occupiedArea.GetBBox().MoveDown((float)maxHeight - usedHeight).SetHeight((float)maxHeight);
@@ -2275,8 +2328,7 @@ namespace iText.Layout.Renderer {
                         }
                     }
                     catch (NullReferenceException) {
-                        ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.AbstractRenderer));
-                        logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
+                        LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED
                             , "Some of the children might not end up aligned horizontally."));
                     }
                 }
@@ -2504,9 +2556,14 @@ namespace iText.Layout.Renderer {
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
-        internal static bool NoAbsolutePositionInfo(IRenderer renderer) {
-            return !renderer.HasProperty(Property.TOP) && !renderer.HasProperty(Property.BOTTOM) && !renderer.HasProperty
-                (Property.LEFT) && !renderer.HasProperty(Property.RIGHT);
+        internal static bool VerticalCoordinateMissingForAbsolutePosition(IRenderer renderer) {
+            return !renderer.HasProperty(Property.TOP) && !renderer.HasProperty(Property.BOTTOM);
+        }
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        internal static bool HorizontalCoordinateMissingForAbsolutePosition(IRenderer renderer) {
+            return !renderer.HasProperty(Property.LEFT) && !renderer.HasProperty(Property.RIGHT);
         }
 //\endcond
 
@@ -2991,14 +3048,40 @@ namespace iText.Layout.Renderer {
 //\cond DO_NOT_DOCUMENT
         internal virtual bool LogWarningIfGetNextRendererNotOverridden(Type baseClass, Type rendererClass) {
             if (baseClass != rendererClass) {
-                ILogger logger = ITextLogManager.GetLogger(baseClass);
-                logger.LogWarning(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.GET_NEXT_RENDERER_SHOULD_BE_OVERRIDDEN
+                LazyLogger logger = new LazyLogger(baseClass);
+                logger.Warn(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.GET_NEXT_RENDERER_SHOULD_BE_OVERRIDDEN
                     ));
                 return false;
             }
             else {
                 return true;
             }
+        }
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        internal virtual bool IsRendererInSplitRendererTree(IRenderer positionedRenderer, IRenderer splitRenderer) {
+            foreach (IRenderer childRenderer in splitRenderer.GetChildRenderers()) {
+                if (childRenderer is AbsolutelyPositionedRenderer && ((AbsolutelyPositionedRenderer)childRenderer).GetWrappedRenderer
+                    () == positionedRenderer) {
+                    return true;
+                }
+                if (IsRendererInSplitRendererTree(positionedRenderer, childRenderer)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+//\endcond
+
+//\cond DO_NOT_DOCUMENT
+        internal virtual bool IsVerticalWriting() {
+            if (isVerticalMode == null) {
+                WritingMode? writingMode = this.GetProperty<WritingMode?>(Property.WRITING_MODE);
+                isVerticalMode = (writingMode == WritingMode.VERTICAL_LR || writingMode == WritingMode.VERTICAL_RL) && this
+                    .GetProperty<VerticalTextOrientation?>(Property.TEXT_ORIENTATION) == VerticalTextOrientation.UPRIGHT;
+            }
+            return isVerticalMode.Value;
         }
 //\endcond
 

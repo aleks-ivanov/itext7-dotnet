@@ -21,6 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Util;
 
@@ -52,6 +53,11 @@ namespace iText.IO.Font {
         /// <summary>Mapping map from unicode to simple code according to the encoding.</summary>
         protected internal IntHashtable unicodeToCode;
 
+        /// <summary>
+        /// Unicode values indexed by unsigned one-byte font code;
+        /// <c>-1</c>
+        /// marks an unmapped code.
+        /// </summary>
         protected internal int[] codeToUnicode;
 
         /// <summary>Encoding names.</summary>
@@ -60,6 +66,7 @@ namespace iText.IO.Font {
         /// <summary>Encodings unicode differences</summary>
         protected internal IntHashtable unicodeDifferences;
 
+        /// <summary>Creates an empty encoding with 256 code slots and no base encoding.</summary>
         protected internal FontEncoding() {
             unicodeToCode = new IntHashtable(256);
             codeToUnicode = ArrayUtil.FillWithValue(new int[256], -1);
@@ -67,6 +74,12 @@ namespace iText.IO.Font {
             fontSpecific = false;
         }
 
+        /// <summary>Creates an encoding from a named encoding or custom encoding description.</summary>
+        /// <param name="baseEncoding">
+        /// encoding name or custom specification beginning with
+        /// <c>#</c>
+        /// </param>
+        /// <returns>created encoding</returns>
         public static iText.IO.Font.FontEncoding CreateFontEncoding(String baseEncoding) {
             iText.IO.Font.FontEncoding encoding = new iText.IO.Font.FontEncoding();
             encoding.baseEncoding = NormalizeEncoding(baseEncoding);
@@ -79,6 +92,8 @@ namespace iText.IO.Font {
             return encoding;
         }
 
+        /// <summary>Creates an empty font encoding.</summary>
+        /// <returns>empty non-font-specific encoding</returns>
         public static iText.IO.Font.FontEncoding CreateEmptyFontEncoding() {
             iText.IO.Font.FontEncoding encoding = new iText.IO.Font.FontEncoding();
             encoding.baseEncoding = null;
@@ -117,10 +132,22 @@ namespace iText.IO.Font {
             }
         }
 
+        /// <summary>Gets the normalized base encoding name.</summary>
+        /// <returns>
+        /// base encoding name, or
+        /// <see langword="null"/>
+        /// for an empty encoding
+        /// </returns>
         public virtual String GetBaseEncoding() {
             return baseEncoding;
         }
 
+        /// <summary>Checks whether codes are interpreted using the font's built-in encoding.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// for a font-specific encoding
+        /// </returns>
         public virtual bool IsFontSpecific() {
             return fontSpecific;
         }
@@ -278,6 +305,11 @@ namespace iText.IO.Font {
             return Object.Equals(NormalizeEncoding(encoding), baseEncoding);
         }
 
+        /// <summary>
+        /// Parses the custom
+        /// <c>#</c>
+        /// -prefixed base encoding specification.
+        /// </summary>
         protected internal virtual void FillCustomEncoding() {
             differences = new String[256];
             StringTokenizer tok = new StringTokenizer(baseEncoding.Substring(1), " ,\t\n\r\f");
@@ -327,6 +359,7 @@ namespace iText.IO.Font {
             }
         }
 
+        /// <summary>Parses the named encoding.</summary>
         protected internal virtual void FillNamedEncoding() {
             // check if the encoding exists
             PdfEncodings.ConvertToBytes(" ", baseEncoding);
@@ -357,6 +390,7 @@ namespace iText.IO.Font {
             }
         }
 
+        /// <summary>Fills mappings from the PDF StandardEncoding table.</summary>
         protected internal virtual void FillStandardEncoding() {
             int[] encoded = PdfEncodings.standardEncoding;
             for (int ch = 0; ch < 256; ++ch) {

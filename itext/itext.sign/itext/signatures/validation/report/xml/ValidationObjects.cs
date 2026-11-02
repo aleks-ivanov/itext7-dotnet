@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Signatures.Validation.Report.Xml {
 //\cond DO_NOT_DOCUMENT
@@ -29,7 +30,8 @@ namespace iText.Signatures.Validation.Report.Xml {
         private readonly IDictionary<CollectableObject, CollectableObject> objects = new Dictionary<CollectableObject
             , CollectableObject>();
 
-        public virtual T AddObject<T>(T @object)
+//\cond DO_NOT_DOCUMENT
+        internal virtual T AddObject<T>(T @object)
             where T : CollectableObject {
             Object existing = objects.Get(@object);
             if (existing != null) {
@@ -38,10 +40,13 @@ namespace iText.Signatures.Validation.Report.Xml {
             objects.Put(@object, @object);
             return @object;
         }
+//\endcond
 
-        public virtual ICollection<CollectableObject> GetObjects() {
+//\cond DO_NOT_DOCUMENT
+        internal virtual ICollection<CollectableObject> GetObjects() {
             return objects.Values;
         }
+//\endcond
     }
 //\endcond
 }

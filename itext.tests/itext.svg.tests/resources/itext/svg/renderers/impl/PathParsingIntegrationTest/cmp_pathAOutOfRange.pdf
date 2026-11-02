@@ -15,7 +15,7 @@ endobj
 <</Pages 2 0 R/Type/Catalog>>
 endobj
 3 0 obj
-<</CreationDate(D:20250124014558+03'00')/ModDate(D:20250124014558+03'00')/Producer(iText® Core 9.1.0-SNAPSHOT \(AGPL version\) ©2000-2025 Apryse Group NV)>>
+<</CreationDate(D:20261016131405+03'00')/ModDate(D:20261016131405+03'00')/Producer(iText® Core 9.9.0-SNAPSHOT \(AGPL version\) ©2000-2026 Apryse Group NV)>>
 endobj
 2 0 obj
 <</Count 1/Kids[4 0 R]/Type/Pages>>
@@ -33,7 +33,7 @@ Q
 endstream
 endobj
 7 0 obj
-<</BBox[-81.82 0 1881.82 900]/Length 1719/Resources<<>>/Subtype/Form/Type/XObject>>stream
+<</BBox[-81.82 0 1881.82 900]/Length 1586/Resources<<>>/Subtype/Form/Type/XObject>>stream
 -81.82 0 1963.64 900 re
 W
 n
@@ -41,6 +41,7 @@ q
 q
 1 0 0 RG
 2.25 w
+4 M
 % path
 37.5 225 m
 37.25 252.21 79.01 282.66 130.79 293.01 c
@@ -51,6 +52,7 @@ Q
 q
 1 0.64706 0 RG
 2.25 w
+4 M
 % path
 37.5 225 m
 62.83 202.3 104.18 184.89 145.97 179.34 c
@@ -62,6 +64,7 @@ Q
 q
 1 1 0 RG
 2.25 w
+4 M
 % path
 37.5 225 m
 21.03 186.56 49.66 163.95 101.44 174.52 c
@@ -72,6 +75,7 @@ Q
 q
 0 0.50196 0 RG
 2.25 w
+4 M
 % path
 37.5 225 m
 37.91 197.77 -3.81 167.22 -55.69 156.76 c
@@ -82,39 +86,35 @@ Q
 q
 0.67843 0.84706 0.90196 RG
 2.25 w
+4 M
 % path
 37.5 225 m
 37.83 207.38 56.06 194.74 85.31 191.82 c
 114.57 188.91 150.4 196.17 179.33 210.87 c
 208.25 225.57 225.86 245.48 225.52 263.1 c
-h
 S
 Q
 q
 0 0 1 RG
 2.25 w
+4 M
 % path
 37.5 225 m
-37.75 197.79 -4.01 167.34 -55.79 156.99 c
--107.57 146.63 -149.75 160.29 -150 187.5 c
-h
 S
 Q
 q
 0 0 0.5451 RG
 2.25 w
+4 M
 % path
 37.5 225 m
-37.34 242.6 19.32 255.29 -9.77 258.29 c
--38.86 261.29 -74.6 254.14 -103.52 239.54 c
--132.45 224.94 -150.16 205.1 -150 187.5 c
-h
 S
 Q
 Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 0 75 m
 750 75 l
@@ -123,6 +123,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 0 150 m
 750 150 l
@@ -131,6 +132,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 0 225 m
 750 225 l
@@ -139,6 +141,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 0 300 m
 750 300 l
@@ -147,6 +150,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 75 0 m
 75 375 l
@@ -155,6 +159,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 150 0 m
 150 375 l
@@ -163,6 +168,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 225 0 m
 225 375 l
@@ -171,6 +177,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 300 0 m
 300 375 l
@@ -179,6 +186,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 375 0 m
 375 375 l
@@ -187,6 +195,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 450 0 m
 450 375 l
@@ -195,6 +204,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 525 0 m
 525 375 l
@@ -203,6 +213,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 600 0 m
 600 375 l
@@ -211,6 +222,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 675 0 m
 675 375 l
@@ -219,6 +231,7 @@ Q
 q
 0 0 0 RG
 1.5 w
+4 M
 % line
 750 0 m
 750 375 l
@@ -238,8 +251,8 @@ xref
 0000000491 00000 n 
 0000000714 00000 n 
 trailer
-<</ID [<9c1ec7faf75cb2bd23f691550059a3d1a3c0a89948fd3e9ed0f0f6c93ac14a6bb6fbad8b551b0e40cea79e5708e38992054fdf02492a88786addd407816f4cba><9c1ec7faf75cb2bd23f691550059a3d1a3c0a89948fd3e9ed0f0f6c93ac14a6bb6fbad8b551b0e40cea79e5708e38992054fdf02492a88786addd407816f4cba>]/Info 3 0 R/Root 1 0 R/Size 8>>
-%iText-Core-9.1.0-SNAPSHOT
+<</ID [<97d2bae75b727bb54fd53de4e845d1542e449e642103d035648565f3fef0472426c5ff3bf9e5ad603042fdb1e656a018bf1f7cf9b3179cf12b87881708deb42f><97d2bae75b727bb54fd53de4e845d1542e449e642103d035648565f3fef0472426c5ff3bf9e5ad603042fdb1e656a018bf1f7cf9b3179cf12b87881708deb42f>]/Info 3 0 R/Root 1 0 R/Size 8>>
+%iText-Core-9.9.0-SNAPSHOT
 startxref
-2549
+2416
 %%EOF

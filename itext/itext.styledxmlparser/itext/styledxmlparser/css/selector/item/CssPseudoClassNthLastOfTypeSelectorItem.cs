@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.StyledXmlParser.Css;
 using iText.StyledXmlParser.Node;
@@ -40,11 +41,13 @@ namespace iText.StyledXmlParser.Css.Selector.Item {
             return !children.IsEmpty() && ResolveNth(node, children);
         }
 
-        protected internal override bool ResolveNth(INode node, IList<INode> children) {
+//\cond DO_NOT_DOCUMENT
+        internal override bool ResolveNth(INode node, IList<INode> children) {
             IList<INode> reversedChildren = new List<INode>(children);
             JavaCollectionsUtil.Reverse(reversedChildren);
             return base.ResolveNth(node, reversedChildren);
         }
+//\endcond
     }
 //\endcond
 }

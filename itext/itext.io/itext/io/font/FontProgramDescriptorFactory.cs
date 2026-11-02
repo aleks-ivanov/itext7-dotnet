@@ -21,14 +21,23 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Font.Constants;
 using iText.IO.Font.Woff2;
 
 namespace iText.IO.Font {
+    /// <summary>Creates lightweight descriptors from registered, file-based, or in-memory font programs.</summary>
     public sealed class FontProgramDescriptorFactory {
         private static bool FETCH_CACHED_FIRST = true;
 
+        /// <summary>Attempts to create a descriptor for a font name or font file path.</summary>
+        /// <param name="fontName">registered font name, standard font name, or source path</param>
+        /// <returns>
+        /// matching descriptor, or
+        /// <see langword="null"/>
+        /// when the source is invalid or unsupported
+        /// </returns>
         public static FontProgramDescriptor FetchDescriptor(String fontName) {
             if (fontName == null || fontName.Length == 0) {
                 return null;
@@ -81,6 +90,13 @@ namespace iText.IO.Font {
             return fontDescriptor;
         }
 
+        /// <summary>Attempts to create a descriptor from in-memory TrueType/OpenType or Type 1 font data.</summary>
+        /// <param name="fontProgram">font bytes</param>
+        /// <returns>
+        /// descriptor, or
+        /// <see langword="null"/>
+        /// when bytes are empty, invalid, or unsupported
+        /// </returns>
         public static FontProgramDescriptor FetchDescriptor(byte[] fontProgram) {
             if (fontProgram == null || fontProgram.Length == 0) {
                 return null;
@@ -107,6 +123,9 @@ namespace iText.IO.Font {
             return fontDescriptor;
         }
 
+        /// <summary>Creates a descriptor from an already parsed font program.</summary>
+        /// <param name="fontProgram">parsed font program</param>
+        /// <returns>descriptor populated from the program's names and metrics</returns>
         public static FontProgramDescriptor FetchDescriptor(FontProgram fontProgram) {
             return FetchDescriptorFromFontProgram(fontProgram);
         }

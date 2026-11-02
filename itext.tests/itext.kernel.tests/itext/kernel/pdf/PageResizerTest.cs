@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Geom;
 using iText.Kernel.Utils;
@@ -58,8 +59,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer firstPageResizer = new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO);
                 firstPageResizer.Resize(pdfDocument.GetPage(1));
                 PageResizer secondPageResizer = new PageResizer(new PageSize(298, 120), PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO
@@ -78,8 +79,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer pageResizer = new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO);
                 pageResizer.Resize(pdfDocument.GetPage(1));
             }
@@ -95,8 +96,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
                 new PageResizer(PageSize.EXECUTIVE, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage
                     (2));
@@ -125,8 +126,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -141,8 +142,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -158,8 +159,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -176,16 +177,16 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
                  + "cmp_" + outFileName, DESTINATION_FOLDER, "diff"));
             // Reverting
-            using (PdfDocument pdfDocument_1 = new PdfDocument(new PdfReader(SOURCE_FOLDER + outFileName), new PdfWriter
-                (DESTINATION_FOLDER + outFileNameReverted))) {
+            using (PdfDocument pdfDocument_1 = new PdfDocument(new PdfReader(SOURCE_FOLDER + outFileName), CompareTool
+                .CreateTestPdfWriter(DESTINATION_FOLDER + outFileNameReverted))) {
                 PageResizer resizer = new PageResizer(new PageSize(PageSize.A4), PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO
                     );
                 resizer.Resize(pdfDocument_1.GetPage(1));
@@ -202,8 +203,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -219,8 +220,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -236,8 +237,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -253,8 +254,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -270,8 +271,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -287,8 +288,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.LEDGER, PageResizer.ResizeType.DEFAULT).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -303,8 +304,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     DEFAULT).Resize(pdfDocument.GetPage(1));
             }
@@ -320,8 +321,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A6, PageResizer.ResizeType.DEFAULT).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -336,8 +337,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -352,8 +353,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A3, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -368,8 +369,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.LEDGER, PageResizer.ResizeType.DEFAULT).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -384,8 +385,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(PageSize.A6, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
@@ -400,8 +401,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(new PageSize(PageSize.A5.GetHeight(), PageSize.A5.GetWidth()), PageResizer.ResizeType
                     .MAINTAIN_ASPECT_RATIO);
                 resizer.SetHorizontalAnchorPoint(PageResizer.HorizontalAnchorPoint.LEFT);
@@ -421,8 +422,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(new PageSize(PageSize.A5.GetHeight(), PageSize.A5.GetWidth()), PageResizer.ResizeType
                     .MAINTAIN_ASPECT_RATIO);
                 resizer.SetHorizontalAnchorPoint(PageResizer.HorizontalAnchorPoint.CENTER);
@@ -440,8 +441,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(new PageSize(PageSize.A5.GetHeight(), PageSize.A5.GetWidth()), PageResizer.ResizeType
                     .MAINTAIN_ASPECT_RATIO);
                 resizer.SetHorizontalAnchorPoint(PageResizer.HorizontalAnchorPoint.RIGHT);
@@ -459,8 +460,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(PageSize.A4, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO);
                 resizer.SetVerticalAnchorPoint(PageResizer.VerticalAnchorPoint.TOP);
                 NUnit.Framework.Assert.AreEqual(PageResizer.VerticalAnchorPoint.TOP, resizer.GetVerticalAnchorPoint());
@@ -478,8 +479,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(PageSize.A4, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO);
                 resizer.SetVerticalAnchorPoint(PageResizer.VerticalAnchorPoint.CENTER);
                 resizer.Resize(pdfDocument.GetPage(1));
@@ -496,8 +497,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(PageSize.A4, PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO);
                 resizer.SetVerticalAnchorPoint(PageResizer.VerticalAnchorPoint.BOTTOM);
                 resizer.Resize(pdfDocument.GetPage(1));
@@ -515,8 +516,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 PageResizer resizer = new PageResizer(new PageSize(1200, 1200), PageResizer.ResizeType.DEFAULT);
                 resizer.SetVerticalAnchorPoint(PageResizer.VerticalAnchorPoint.BOTTOM);
                 resizer.Resize(pdfDocument.GetPage(1));
@@ -530,8 +531,8 @@ namespace iText.Kernel.Pdf {
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(DESTINATION_FOLDER + outFileName, SOURCE_FOLDER
                  + "cmp_" + outFileName, DESTINATION_FOLDER, "diff"));
             // Reverting
-            using (PdfDocument pdfDocument_1 = new PdfDocument(new PdfReader(SOURCE_FOLDER + outFileName), new PdfWriter
-                (DESTINATION_FOLDER + outFileNameReverted))) {
+            using (PdfDocument pdfDocument_1 = new PdfDocument(new PdfReader(SOURCE_FOLDER + outFileName), CompareTool
+                .CreateTestPdfWriter(DESTINATION_FOLDER + outFileNameReverted))) {
                 PageResizer resizer = new PageResizer(new PageSize(PageSize.A4), PageResizer.ResizeType.DEFAULT);
                 resizer.SetVerticalAnchorPoint(PageResizer.VerticalAnchorPoint.BOTTOM);
                 resizer.Resize(pdfDocument_1.GetPage(1));
@@ -780,8 +781,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     DEFAULT).Resize(pdfDocument.GetPage(1));
             }
@@ -797,8 +798,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     DEFAULT).Resize(pdfDocument.GetPage(1));
             }
@@ -814,8 +815,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }
@@ -831,8 +832,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     DEFAULT).Resize(pdfDocument.GetPage(1));
             }
@@ -848,8 +849,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), new PdfWriter(
-                DESTINATION_FOLDER + outFileName), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(SOURCE_FOLDER + inFileName), CompareTool.CreateTestPdfWriter
+                (DESTINATION_FOLDER + outFileName), props)) {
                 new PageResizer(new PageSize(PageSize.A4.GetWidth() / 2, PageSize.A4.GetHeight()), PageResizer.ResizeType.
                     MAINTAIN_ASPECT_RATIO).Resize(pdfDocument.GetPage(1));
             }

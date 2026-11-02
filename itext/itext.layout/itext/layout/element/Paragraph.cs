@@ -22,10 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
-using iText.Kernel.Pdf.Tagging;
-using iText.Kernel.Pdf.Tagutils;
 using iText.Layout.Properties;
+using iText.Layout.Properties.Margins;
 using iText.Layout.Renderer;
 
 namespace iText.Layout.Element {
@@ -41,9 +41,7 @@ namespace iText.Layout.Element {
     /// which essentially acts as a container for
     /// <see cref="ILeafElement">leaf elements</see>.
     /// </remarks>
-    public class Paragraph : BlockElement<iText.Layout.Element.Paragraph> {
-        protected internal DefaultAccessibilityProperties tagProperties;
-
+    public class Paragraph : AbstractParagraph<iText.Layout.Element.Paragraph> {
         /// <summary>
         /// Creates a new
         /// <see cref="Paragraph"/>
@@ -83,8 +81,8 @@ namespace iText.Layout.Element {
         /// this
         /// <see cref="Paragraph"/>
         /// </returns>
-        public virtual iText.Layout.Element.Paragraph Add(String text) {
-            return Add(new Text(text));
+        public override iText.Layout.Element.Paragraph Add(String text) {
+            return base.Add(new Text(text));
         }
 
         /// <summary>
@@ -101,9 +99,8 @@ namespace iText.Layout.Element {
         /// this
         /// <see cref="Paragraph"/>
         /// </returns>
-        public virtual iText.Layout.Element.Paragraph Add(ILeafElement element) {
-            childElements.Add(element);
-            return this;
+        public override iText.Layout.Element.Paragraph Add(ILeafElement element) {
+            return base.Add(element);
         }
 
         /// <summary>
@@ -126,6 +123,23 @@ namespace iText.Layout.Element {
         }
 
         /// <summary>
+        /// Adds the
+        /// <see cref="iText.Layout.Properties.Margins.FootnoteAnchor"/>
+        /// element to this
+        /// <see cref="Paragraph"/>.
+        /// </summary>
+        /// <param name="footnoteAnchor">the footnote anchor to be added</param>
+        /// <returns>
+        /// this same
+        /// <see cref="Paragraph"/>
+        /// instance
+        /// </returns>
+        public virtual iText.Layout.Element.Paragraph Add(FootnoteAnchor footnoteAnchor) {
+            childElements.Add(footnoteAnchor);
+            return this;
+        }
+
+        /// <summary>
         /// Adds a
         /// <see cref="System.Collections.IList{E}"/>
         /// of layout elements to this
@@ -140,12 +154,8 @@ namespace iText.Layout.Element {
         /// this
         /// <see cref="Paragraph"/>
         /// </returns>
-        public virtual iText.Layout.Element.Paragraph AddAll<T2>(IList<T2> elements)
-            where T2 : ILeafElement {
-            foreach (ILeafElement element in elements) {
-                Add(element);
-            }
-            return this;
+        public override iText.Layout.Element.Paragraph AddAll<T2>(IList<T2> elements) {
+            return base.AddAll(elements);
         }
 
         /// <summary>
@@ -208,32 +218,6 @@ namespace iText.Layout.Element {
             return this;
         }
 
-        public override T1 GetDefaultProperty<T1>(int property) {
-            switch (property) {
-                case Property.LEADING: {
-                    return (T1)(Object)new Leading(Leading.MULTIPLIED, childElements.Count == 1 && childElements[0] is Image ? 
-                        1 : 1.35f);
-                }
-
-                case Property.FIRST_LINE_INDENT: {
-                    return (T1)(Object)0f;
-                }
-
-                case Property.MARGIN_TOP:
-                case Property.MARGIN_BOTTOM: {
-                    return (T1)(Object)UnitValue.CreatePointValue(4f);
-                }
-
-                case Property.TAB_DEFAULT: {
-                    return (T1)(Object)50f;
-                }
-
-                default: {
-                    return base.GetDefaultProperty<T1>(property);
-                }
-            }
-        }
-
         /// <summary>
         /// Sets the indent value for the first line of the
         /// <see cref="Paragraph"/>.
@@ -243,9 +227,8 @@ namespace iText.Layout.Element {
         /// the Paragraph, as a <c>float</c>
         /// </param>
         /// <returns>this Paragraph</returns>
-        public virtual iText.Layout.Element.Paragraph SetFirstLineIndent(float indent) {
-            SetProperty(Property.FIRST_LINE_INDENT, indent);
-            return this;
+        public override iText.Layout.Element.Paragraph SetFirstLineIndent(float indent) {
+            return base.SetFirstLineIndent(indent);
         }
 
         /// <summary>
@@ -254,16 +237,15 @@ namespace iText.Layout.Element {
         /// </summary>
         /// <param name="orphansControl">
         /// an instance of
-        /// <see cref="iText.Layout.Properties.ParagraphOrphansControl"/>.
+        /// <see cref="iText.Layout.Properties.ParagraphOrphansControl"/>
         /// </param>
         /// <returns>
         /// this
         /// <see cref="Paragraph"/>
-        /// instance.
+        /// instance
         /// </returns>
-        public virtual iText.Layout.Element.Paragraph SetOrphansControl(ParagraphOrphansControl orphansControl) {
-            SetProperty(Property.ORPHANS_CONTROL, orphansControl);
-            return this;
+        public override iText.Layout.Element.Paragraph SetOrphansControl(ParagraphOrphansControl orphansControl) {
+            return base.SetOrphansControl(orphansControl);
         }
 
         /// <summary>
@@ -272,16 +254,15 @@ namespace iText.Layout.Element {
         /// </summary>
         /// <param name="widowsControl">
         /// an instance of
-        /// <see cref="iText.Layout.Properties.ParagraphWidowsControl"/>.
+        /// <see cref="iText.Layout.Properties.ParagraphWidowsControl"/>
         /// </param>
         /// <returns>
         /// this
         /// <see cref="Paragraph"/>
-        /// instance.
+        /// instance
         /// </returns>
-        public virtual iText.Layout.Element.Paragraph SetWidowsControl(ParagraphWidowsControl widowsControl) {
-            SetProperty(Property.WIDOWS_CONTROL, widowsControl);
-            return this;
+        public override iText.Layout.Element.Paragraph SetWidowsControl(ParagraphWidowsControl widowsControl) {
+            return base.SetWidowsControl(widowsControl);
         }
 
         /// <summary>
@@ -347,27 +328,8 @@ namespace iText.Layout.Element {
         }
 
         /// <summary><inheritDoc/></summary>
-        public override AccessibilityProperties GetAccessibilityProperties() {
-            if (tagProperties == null) {
-                tagProperties = new DefaultAccessibilityProperties(StandardRoles.P);
-            }
-            return tagProperties;
-        }
-
-        /// <summary><inheritDoc/></summary>
         protected internal override IRenderer MakeNewRenderer() {
             return new ParagraphRenderer(this);
-        }
-
-        private void AddTabStopsAsProperty(IList<TabStop> newTabStops) {
-            IDictionary<float, TabStop> tabStops = this.GetProperty<IDictionary<float, TabStop>>(Property.TAB_STOPS);
-            if (tabStops == null) {
-                tabStops = new SortedDictionary<float, TabStop>();
-                SetProperty(Property.TAB_STOPS, tabStops);
-            }
-            foreach (TabStop tabStop in newTabStops) {
-                tabStops.Put(tabStop.GetTabPosition(), tabStop);
-            }
         }
     }
 }

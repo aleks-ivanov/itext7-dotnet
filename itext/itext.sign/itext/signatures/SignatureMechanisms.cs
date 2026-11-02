@@ -22,12 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using iText.Bouncycastleconnector;
-using iText.Commons;
 using iText.Commons.Bouncycastle;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Kernel.Crypto;
 using iText.Kernel.Logs;
+using iText.Signatures.Exceptions;
 
 namespace iText.Signatures {
     /// <summary>
@@ -36,7 +37,7 @@ namespace iText.Signatures {
     /// signature mechanism OID given a signature algorithm and a digest function.
     /// </summary>
     public class SignatureMechanisms {
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(SignatureMechanisms));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(SignatureMechanisms));
 
         private static readonly IBouncyCastleFactory BOUNCY_CASTLE_FACTORY = BouncyCastleFactoryCreator.GetFactory
             ();
@@ -197,7 +198,7 @@ namespace iText.Signatures {
             if (resultingOId != null) {
                 return resultingOId;
             }
-            LOGGER.LogWarning(KernelLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+            LOGGER.Warn(() => KernelLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
             resultingOId = BOUNCY_CASTLE_FACTORY.GetAlgorithmOid(digestAlgorithmName + "with" + signatureAlgorithmName
                 );
             if (resultingOId == null) {
@@ -212,6 +213,9 @@ namespace iText.Signatures {
         /// <param name="oid">an id (for instance "1.2.840.113549.1.1.1")</param>
         /// <returns>an algorithm name (for instance "RSA")</returns>
         public static String GetAlgorithm(String oid) {
+            if (oid == null) {
+                throw new ArgumentException(SignExceptionMessageConstant.OID_SHALL_NOT_BE_NULL);
+            }
             String ret = algorithmNames.Get(oid);
             if (ret == null) {
                 return oid;
@@ -230,7 +234,7 @@ namespace iText.Signatures {
             if (!algorithm.Equals(oid)) {
                 return digest + "with" + algorithm;
             }
-            LOGGER.LogWarning(KernelLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
+            LOGGER.Warn(() => KernelLogMessageConstant.ALGORITHM_NOT_FROM_SPEC);
             return BOUNCY_CASTLE_FACTORY.GetAlgorithmName(oid);
         }
     }

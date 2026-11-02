@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Text;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Geom;
@@ -143,7 +144,7 @@ namespace iText.Kernel.Pdf {
             double verticalScale = size.GetHeight() / originalPageSize.GetHeight();
             double horizontalFreeSpace = 0;
             double verticalFreeSpace = 0;
-            if (PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO == type) {
+            if (type == PageResizer.ResizeType.MAINTAIN_ASPECT_RATIO) {
                 double scale = Math.Min(horizontalScale, verticalScale);
                 horizontalScale = scale;
                 verticalScale = scale;
@@ -532,10 +533,7 @@ namespace iText.Kernel.Pdf {
             }
             // Scale font size in the Default Appearance string
             String da = null;
-            if (annotDict.GetAsString(PdfName.DA) != null) {
-                da = annotDict.GetAsString(PdfName.DA).ToUnicodeString();
-            }
-            else {
+            if (annotDict.GetAsString(PdfName.DA) == null) {
                 if (PdfName.Widget.Equals(annotDict.GetAsName(PdfName.Subtype))) {
                     // For widget annotation we should also check parents
                     da = GetDaFromParent(annotDict);
@@ -548,6 +546,9 @@ namespace iText.Kernel.Pdf {
                         }
                     }
                 }
+            }
+            else {
+                da = annotDict.GetAsString(PdfName.DA).ToUnicodeString();
             }
             if (da != null) {
                 annotDict.Put(PdfName.DA, new PdfString(ScaleDaString(da, lengthScale)));
@@ -634,14 +635,12 @@ namespace iText.Kernel.Pdf {
             if (parentDict == null) {
                 return null;
             }
+            PdfString da = parentDict.GetAsString(PdfName.DA);
+            if (da == null) {
+                return GetDaFromParent(parentDict);
+            }
             else {
-                PdfString da = parentDict.GetAsString(PdfName.DA);
-                if (da != null) {
-                    return da.ToUnicodeString();
-                }
-                else {
-                    return GetDaFromParent(parentDict);
-                }
+                return da.ToUnicodeString();
             }
         }
 

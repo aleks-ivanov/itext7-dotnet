@@ -331,7 +331,7 @@ namespace iText.Pdfa.Exceptions {
              + "DeviceGray colour space is used, or if a PDF/A OutputIntent is in effect.";
 
         public const String EMBEDDED_FONTS_SHALL_DEFINE_ALL_REFERENCED_GLYPHS = "Embedded fonts shall define all "
-             + "glyphs referenced for rendering within the conforming file.";
+             + "glyphs referenced for rendering within the conforming file. The '{0}' glyph isn't defined in embedded font.";
 
         public const String ICCBASED_COLOUR_SPACE_SHALL_NOT_BE_USED_IF_IT_IS_CMYK_AND_IS_IDENTICAL_TO_CURRENT_PROFILE
              = "An ICCBased colour space shall not be used where the profile is a CMYK destination profile and is "
@@ -341,6 +341,9 @@ namespace iText.Pdfa.Exceptions {
              + "used in a DeviceN or NChannel colorspace, an entry in the Colorants dictionary shall be present.";
 
         public const String OUTPUTINTENT_SHALL_NOT_CONTAIN_DESTOUTPUTPROFILEREF_KEY = "DestOutputProfileRef " + "shall not be present in output intent";
+
+        public const String SEPARATION_COLOR_ARRAY_DOES_NOT_ADHERE_TO_PDF_SPEC = "Separation color space array does "
+             + "not adhere to the form [/Separation name alternateSpace tintTransform].";
 
         private PdfaExceptionMessageConstant() {
         }

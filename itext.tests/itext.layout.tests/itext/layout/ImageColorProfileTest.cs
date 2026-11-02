@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Colors;
 using iText.IO.Font;
 using iText.IO.Image;
@@ -41,6 +42,11 @@ namespace iText.Layout {
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
             CreateDestinationFolder(destinationFolder);
+        }
+
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
         }
 
         [NUnit.Framework.Test]
@@ -129,7 +135,7 @@ namespace iText.Layout {
             String outFileName = destinationFolder + pdfName;
             String cmpFileName = sourceFolder + "cmp_" + pdfName;
             String diff = "diff_" + pdfName + "_";
-            PdfDocument pdf = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdf = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdf);
             ImageData imageData = ImageDataFactory.Create(sourceFolder + imageName);
             if (customImageAttribute != null) {

@@ -23,17 +23,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.Kernel.Geom;
 using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Layout;
+using iText.Layout.Logs;
 using iText.Layout.Margincollapse;
 using iText.Layout.Minmaxwidth;
 using iText.Layout.Properties;
 
 namespace iText.Layout.Renderer {
     public class FlexContainerRenderer : DivRenderer {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Renderer.FlexContainerRenderer
+            ));
+
         /// <summary>
         /// Used for caching purposes in FlexUtil
         /// We couldn't find the real use case when this map contains more than 1 entry
@@ -66,6 +72,7 @@ namespace iText.Layout.Renderer {
         /// </param>
         public FlexContainerRenderer(Div modelElement)
             : base(modelElement) {
+            SetProperty(Property.IGNORE_AREA_AND_SECTION_BREAKS, true);
         }
 
         /// <summary>
@@ -216,7 +223,7 @@ namespace iText.Layout.Renderer {
                 }
             }
             if (this.GetPropertyAsFloat(Property.ROTATION_ANGLE) != null) {
-                return RotationUtils.CountRotationMinMaxWidth(minMaxWidth, this);
+                return RotationUtils.CalculateRotationMinMaxWidth(minMaxWidth, this);
             }
             return minMaxWidth;
         }
@@ -372,8 +379,13 @@ namespace iText.Layout.Renderer {
             ) {
             Rectangle oldBBox = occupiedArea.GetBBox().Clone();
             Rectangle recalculatedRectangle = Rectangle.GetCommonRectangle(occupiedArea.GetBBox(), resultBBox);
-            occupiedArea.GetBBox().SetY(recalculatedRectangle.GetY());
-            occupiedArea.GetBBox().SetHeight(recalculatedRectangle.GetHeight());
+            if (IsVerticalWriting()) {
+                occupiedArea.SetBBox(recalculatedRectangle);
+            }
+            else {
+                occupiedArea.GetBBox().SetY(recalculatedRectangle.GetY());
+                occupiedArea.GetBBox().SetHeight(recalculatedRectangle.GetHeight());
+            }
             if (oldBBox.GetTop() < occupiedArea.GetBBox().GetTop()) {
                 occupiedArea.GetBBox().DecreaseHeight(occupiedArea.GetBBox().GetTop() - oldBBox.GetTop());
             }
@@ -532,21 +544,23 @@ namespace iText.Layout.Renderer {
         // TODO DEVSIX-5087 Support overflow visible/hidden property correctly
         /// <summary><inheritDoc/></summary>
         public override void AddChild(IRenderer renderer) {
+            if (renderer is AreaBreakRenderer || renderer is SectionBreakRenderer) {
+                LOGGER.Warn(() => LayoutLogMessageConstant.FLEX_CONTAINER_SHOULD_NOT_CONTAIN_AREA_OR_SECTION_BREAK);
+                return;
+            }
             // TODO DEVSIX-5087 Since overflow-fit is an internal iText overflow value, we do not need to support if
             // for html/css objects, such as flex. As for now we will set VISIBLE by default, however, while working
             // on the ticket one may come to some more satifactory approach
-            if (!(renderer is AreaBreakRenderer)) {
-                renderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
-                base.AddChild(renderer);
-            }
+            renderer.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
+            base.AddChild(renderer);
         }
 
         private static void OrderChildRenderers(IList<IRenderer> renderers) {
-            JavaCollectionsUtil.Sort(renderers, new _IComparer_570());
+            JavaCollectionsUtil.Sort(renderers, new _IComparer_583());
         }
 
-        private sealed class _IComparer_570 : IComparer<IRenderer> {
-            public _IComparer_570() {
+        private sealed class _IComparer_583 : IComparer<IRenderer> {
+            public _IComparer_583() {
             }
 
             public int Compare(IRenderer a, IRenderer b) {

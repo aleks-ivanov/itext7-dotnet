@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Font;
 using iText.Kernel.Pdf.Colorspace;
@@ -741,6 +742,7 @@ namespace iText.Kernel.Pdf {
                 : this(resourceType, prefix, 1) {
             }
 
+//\cond DO_NOT_DOCUMENT
             /// <summary>Gets the resource type of generator.</summary>
             /// <returns>
             /// Type of resource. May be
@@ -756,10 +758,12 @@ namespace iText.Kernel.Pdf {
             /// ,
             /// <see cref="PdfName.Font"/>.
             /// </returns>
-            public virtual PdfName GetResourceType() {
+            internal virtual PdfName GetResourceType() {
                 return resourceType;
             }
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
             /// <summary>Generates new (unique) resource name.</summary>
             /// <param name="resources">
             /// the
@@ -767,7 +771,7 @@ namespace iText.Kernel.Pdf {
             /// object for which name will be generated.
             /// </param>
             /// <returns>new (unique) resource name.</returns>
-            public virtual PdfName Generate(PdfResources resources) {
+            internal virtual PdfName Generate(PdfResources resources) {
                 PdfName newName = new PdfName(prefix + counter++);
                 PdfDictionary r = resources.GetPdfObject();
                 if (r.ContainsKey(resourceType)) {
@@ -777,6 +781,7 @@ namespace iText.Kernel.Pdf {
                 }
                 return newName;
             }
+//\endcond
         }
 //\endcond
     }

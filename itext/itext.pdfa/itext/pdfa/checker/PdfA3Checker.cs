@@ -21,8 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.Kernel.Pdf;
 using iText.Pdfa.Exceptions;
@@ -41,6 +40,8 @@ namespace iText.Pdfa.Checker {
     /// The specification implemented by this class is ISO 19005-3
     /// </remarks>
     public class PdfA3Checker : PdfA2Checker {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(PdfAChecker));
+
         protected internal static readonly ICollection<PdfName> allowedAFRelationships = JavaCollectionsUtil.UnmodifiableSet
             (new HashSet<PdfName>(JavaUtil.ArraysAsList(PdfName.Source, PdfName.Data, PdfName.Alternative, PdfName
             .Supplement, PdfName.Unspecified)));
@@ -67,30 +68,36 @@ namespace iText.Pdfa.Checker {
                         );
                 }
                 PdfDictionary ef = fileSpec.GetAsDictionary(PdfName.EF);
-                PdfStream embeddedFile = ef.GetAsStream(PdfName.F);
-                if (embeddedFile == null) {
-                    throw new PdfAConformanceException(PdfaExceptionMessageConstant.EF_KEY_OF_FILE_SPECIFICATION_DICTIONARY_SHALL_CONTAIN_DICTIONARY_WITH_VALID_F_KEY
+                CheckFileSpecEmbeddedStream(ef.GetAsStream(PdfName.F));
+            }
+        }
+
+        /// <summary><inheritDoc/></summary>
+        protected internal override void CheckFileSpecEmbeddedStream(PdfStream embeddedFile) {
+            if (IsAlreadyChecked(embeddedFile)) {
+                return;
+            }
+            if (embeddedFile == null) {
+                throw new PdfAConformanceException(PdfaExceptionMessageConstant.EF_KEY_OF_FILE_SPECIFICATION_DICTIONARY_SHALL_CONTAIN_DICTIONARY_WITH_VALID_F_KEY
+                    );
+            }
+            if (!embeddedFile.ContainsKey(PdfName.Subtype)) {
+                throw new PdfAConformanceException(PdfaExceptionMessageConstant.MIME_TYPE_SHALL_BE_SPECIFIED_USING_THE_SUBTYPE_KEY_OF_THE_FILE_SPECIFICATION_STREAM_DICTIONARY
+                    );
+            }
+            if (embeddedFile.ContainsKey(PdfName.Params)) {
+                PdfObject @params = embeddedFile.Get(PdfName.Params);
+                if (!@params.IsDictionary()) {
+                    throw new PdfAConformanceException(PdfaExceptionMessageConstant.EMBEDDED_FILE_SHALL_CONTAIN_PARAMS_KEY_WITH_DICTIONARY_AS_VALUE
                         );
                 }
-                if (!embeddedFile.ContainsKey(PdfName.Subtype)) {
-                    throw new PdfAConformanceException(PdfaExceptionMessageConstant.MIME_TYPE_SHALL_BE_SPECIFIED_USING_THE_SUBTYPE_KEY_OF_THE_FILE_SPECIFICATION_STREAM_DICTIONARY
+                if (((PdfDictionary)@params).GetAsString(PdfName.ModDate) == null) {
+                    throw new PdfAConformanceException(PdfaExceptionMessageConstant.EMBEDDED_FILE_SHALL_CONTAIN_PARAMS_KEY_WITH_VALID_MODDATE_KEY
                         );
                 }
-                if (embeddedFile.ContainsKey(PdfName.Params)) {
-                    PdfObject @params = embeddedFile.Get(PdfName.Params);
-                    if (!@params.IsDictionary()) {
-                        throw new PdfAConformanceException(PdfaExceptionMessageConstant.EMBEDDED_FILE_SHALL_CONTAIN_PARAMS_KEY_WITH_DICTIONARY_AS_VALUE
-                            );
-                    }
-                    if (((PdfDictionary)@params).GetAsString(PdfName.ModDate) == null) {
-                        throw new PdfAConformanceException(PdfaExceptionMessageConstant.EMBEDDED_FILE_SHALL_CONTAIN_PARAMS_KEY_WITH_VALID_MODDATE_KEY
-                            );
-                    }
-                }
-                else {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(PdfAChecker));
-                    logger.LogWarning(PdfAConformanceLogMessageConstant.EMBEDDED_FILE_SHOULD_CONTAIN_PARAMS_KEY);
-                }
+            }
+            else {
+                LOGGER.Warn(() => PdfAConformanceLogMessageConstant.EMBEDDED_FILE_SHOULD_CONTAIN_PARAMS_KEY);
             }
         }
     }

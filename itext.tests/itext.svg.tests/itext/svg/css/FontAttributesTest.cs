@@ -23,21 +23,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using iText.IO.Font;
 using iText.Layout.Font;
+using iText.Layout.Logs;
 using iText.StyledXmlParser.Css.Media;
 using iText.StyledXmlParser.Resolver.Font;
 using iText.Svg.Processors.Impl;
 using iText.Svg.Renderers;
 using iText.Test;
+using iText.Test.Attributes;
 
 namespace iText.Svg.Css {
     [NUnit.Framework.Category("IntegrationTest")]
     public class FontAttributesTest : SvgIntegrationTest {
-        public static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+        private static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/svg/css/FontAttributesTest/";
 
-        public static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/svg/css/FontAttributesTest/";
+        private static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/svg/css/FontAttributesTest/";
 
-        public static readonly String FONTS_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+        private static readonly String FONTS_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/svg/fonts/";
 
         [NUnit.Framework.OneTimeSetUp]
@@ -90,6 +92,8 @@ namespace iText.Svg.Css {
         }
 
         [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.TYPOGRAPHY_NOT_FOUND_WARNING, LogLevel = LogLevelConstants.WARN, Count
+             = 1)]
         public virtual void UnicodeBidiTest() {
             // Set up font provider
             String fontPath = FONTS_FOLDER + "NotoSansArabic-Regular.ttf";

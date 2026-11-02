@@ -31,6 +31,7 @@ using iText.Bouncycastleconnector;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Digest;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Eutrustedlistsresources;
 using iText.Kernel.Exceptions;
@@ -64,7 +65,7 @@ namespace iText.Signatures.Validation {
             }
 
             byte[] expectedHash = Convert.FromBase64String(hashB64);
-            if (!certHash.SequenceEqual(expectedHash)) {
+            if (!JavaUtil.FixedTimeEquals(expectedHash, certHash)) {
                 throw new PdfException(MessageFormatUtil.Format(SignExceptionMessageConstant.CERTIFICATE_HASH_MISMATCH,
                     cert
                         .GetIssuerDN().ToString()));
@@ -77,7 +78,7 @@ namespace iText.Signatures.Validation {
         /// And verifies if they match the expected SHA-256 hash.
         /// </remarks>
         /// <returns>A list of X509Certificates.</returns>
-        public virtual IList<IX509Certificate> LoadCertificates() {
+        internal virtual IList<IX509Certificate> LoadCertificates() {
             List<IX509Certificate> result = new List<IX509Certificate>();
             foreach (var pemContainer in config
                          .GetCertificates()) {

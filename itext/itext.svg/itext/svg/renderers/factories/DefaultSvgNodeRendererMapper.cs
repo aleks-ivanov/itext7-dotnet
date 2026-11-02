@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Svg;
 using iText.Svg.Renderers;
@@ -39,7 +40,13 @@ namespace iText.Svg.Renderers.Factories {
         private static readonly String LINEAR_GRADIENT_LC = StringNormalizer.ToLowerCase(SvgConstants.Tags.LINEAR_GRADIENT
             );
 
+        private static readonly String RADIAL_GRADIENT_LC = StringNormalizer.ToLowerCase(SvgConstants.Tags.RADIAL_GRADIENT
+            );
+
         private static readonly String TEXT_LEAF_LC = StringNormalizer.ToLowerCase(SvgConstants.Tags.TEXT_LEAF);
+
+        private static readonly String FOREIGN_OBJECT_LC = StringNormalizer.ToLowerCase(SvgConstants.Tags.FOREIGN_OBJECT
+            );
 
 //\cond DO_NOT_DOCUMENT
         /// <summary>
@@ -67,26 +74,31 @@ namespace iText.Svg.Renderers.Factories {
             result.Put(SvgConstants.Tags.LINE, () => new LineSvgNodeRenderer());
             result.Put(SvgConstants.Tags.LINEAR_GRADIENT, () => new LinearGradientSvgNodeRenderer());
             result.Put(SvgConstants.Tags.MARKER, () => new MarkerSvgNodeRenderer());
+            result.Put(SvgConstants.Tags.MASK, () => new MaskSvgNodeRenderer());
             result.Put(SvgConstants.Tags.PATTERN, () => new PatternSvgNodeRenderer());
             result.Put(SvgConstants.Tags.PATH, () => new PathSvgNodeRenderer());
             result.Put(SvgConstants.Tags.POLYGON, () => new PolygonSvgNodeRenderer());
             result.Put(SvgConstants.Tags.POLYLINE, () => new PolylineSvgNodeRenderer());
+            result.Put(SvgConstants.Tags.RADIAL_GRADIENT, () => new RadialGradientSvgNodeRenderer());
             result.Put(SvgConstants.Tags.RECT, () => new RectangleSvgNodeRenderer());
             result.Put(SvgConstants.Tags.STOP, () => new StopSvgNodeRenderer());
             result.Put(SvgConstants.Tags.SVG, () => new SvgTagSvgNodeRenderer());
             result.Put(SvgConstants.Tags.SYMBOL, () => new SymbolSvgNodeRenderer());
             result.Put(SvgConstants.Tags.TEXT, () => new TextSvgBranchRenderer());
+            result.Put(SvgConstants.Tags.A, () => new ANodeRenderer());
+            result.Put(SvgConstants.Tags.FOREIGN_OBJECT, () => new ForeignObjectNodeRenderer());
             result.Put(SvgConstants.Tags.TSPAN, () => new TextSvgTSpanBranchRenderer());
             result.Put(SvgConstants.Tags.USE, () => new UseSvgNodeRenderer());
             result.Put(SvgConstants.Tags.TEXT_LEAF, () => new TextLeafSvgNodeRenderer());
             // TODO: DEVSIX-3923 remove normalization (.toLowerCase)
             result.Put(CLIP_PATH_LC, () => new ClipPathSvgNodeRenderer());
             result.Put(LINEAR_GRADIENT_LC, () => new LinearGradientSvgNodeRenderer());
+            result.Put(RADIAL_GRADIENT_LC, () => new RadialGradientSvgNodeRenderer());
             result.Put(TEXT_LEAF_LC, () => new TextLeafSvgNodeRenderer());
+            result.Put(FOREIGN_OBJECT_LC, () => new ForeignObjectNodeRenderer());
             mapping = JavaCollectionsUtil.UnmodifiableMap(result);
             // Not supported tags as of yet
             ICollection<String> ignoredTags = new HashSet<String>();
-            ignoredTags.Add(SvgConstants.Tags.A);
             ignoredTags.Add(SvgConstants.Tags.ALT_GLYPH);
             ignoredTags.Add(SvgConstants.Tags.ALT_GLYPH_DEF);
             ignoredTags.Add(SvgConstants.Tags.ALT_GLYPH_ITEM);
@@ -123,14 +135,11 @@ namespace iText.Svg.Renderers.Factories {
             ignoredTags.Add(SvgConstants.Tags.FONT_FACE_NAME);
             ignoredTags.Add(SvgConstants.Tags.FONT_FACE_SRC);
             ignoredTags.Add(SvgConstants.Tags.FONT_FACE_URI);
-            ignoredTags.Add(SvgConstants.Tags.FOREIGN_OBJECT);
             ignoredTags.Add(SvgConstants.Tags.GLYPH);
             ignoredTags.Add(SvgConstants.Tags.GLYPH_REF);
             ignoredTags.Add(SvgConstants.Tags.HKERN);
-            ignoredTags.Add(SvgConstants.Tags.MASK);
             ignoredTags.Add(SvgConstants.Tags.METADATA);
             ignoredTags.Add(SvgConstants.Tags.MISSING_GLYPH);
-            ignoredTags.Add(SvgConstants.Tags.RADIAL_GRADIENT);
             ignoredTags.Add(SvgConstants.Tags.STYLE);
             ignoredTags.Add(SvgConstants.Tags.TITLE);
             ignored = JavaCollectionsUtil.UnmodifiableCollection(ignoredTags);

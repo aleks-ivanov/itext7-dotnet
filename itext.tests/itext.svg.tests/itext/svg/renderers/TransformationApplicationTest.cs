@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas;
@@ -36,7 +37,7 @@ namespace iText.Svg.Renderers {
         [NUnit.Framework.Test]
         public virtual void NormalDrawTest() {
             byte[] expected = "1 0 0 1 7.5 0 cm\n0 0 0 rg\nf\n".GetBytes(System.Text.Encoding.UTF8);
-            ISvgNodeRenderer nodeRenderer = new _AbstractSvgNodeRenderer_50();
+            ISvgNodeRenderer nodeRenderer = new _AbstractSvgNodeRenderer_49();
             // do nothing
             IDictionary<String, String> attributeMap = new Dictionary<String, String>();
             attributeMap.Put(SvgConstants.Attributes.TRANSFORM, "translate(10)");
@@ -50,8 +51,8 @@ namespace iText.Svg.Renderers {
             NUnit.Framework.Assert.AreEqual(expected, actual);
         }
 
-        private sealed class _AbstractSvgNodeRenderer_50 : AbstractSvgNodeRenderer {
-            public _AbstractSvgNodeRenderer_50() {
+        private sealed class _AbstractSvgNodeRenderer_49 : AbstractSvgNodeRenderer {
+            public _AbstractSvgNodeRenderer_49() {
             }
 
             public override ISvgNodeRenderer CreateDeepCopy() {

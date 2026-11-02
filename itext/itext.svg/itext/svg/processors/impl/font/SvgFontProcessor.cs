@@ -22,8 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font;
 using iText.Layout.Font;
@@ -35,6 +34,9 @@ using iText.Svg.Processors.Impl;
 namespace iText.Svg.Processors.Impl.Font {
     /// <summary>Class that processes and add resolved css fonts to the FontProvider</summary>
     public class SvgFontProcessor {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Svg.Processors.Impl.Font.SvgFontProcessor
+            ));
+
         private readonly SvgProcessorContext context;
 
         /// <summary>
@@ -67,9 +69,8 @@ namespace iText.Svg.Processors.Impl.Font {
                         }
                     }
                     if (!findSupportedSrc) {
-                        ITextLogManager.GetLogger(typeof(iText.Svg.Processors.Impl.Font.SvgFontProcessor)).LogError(MessageFormatUtil
-                            .Format(iText.StyledXmlParser.Logs.StyledXmlParserLogMessageConstant.UNABLE_TO_RETRIEVE_FONT, fontFace
-                            ));
+                        LOGGER.Error(() => MessageFormatUtil.Format(iText.StyledXmlParser.Logs.StyledXmlParserLogMessageConstant.UNABLE_TO_RETRIEVE_FONT
+                            , fontFace));
                     }
                 }
             }
@@ -79,7 +80,8 @@ namespace iText.Svg.Processors.Impl.Font {
         /// <param name="fontFamily">the font family</param>
         /// <param name="src">the source of the font</param>
         /// <returns>true, if successful</returns>
-        private bool CreateFont(String fontFamily, CssFontFace.CssFontFaceSrc src, Range unicodeRange) {
+        private bool CreateFont(String fontFamily, CssFontFace.CssFontFaceSrc src, iText.Layout.Font.Range unicodeRange
+            ) {
             if (!CssFontFace.IsSupportedFontFormat(src.GetFormat())) {
                 return false;
             }

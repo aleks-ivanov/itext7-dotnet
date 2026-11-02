@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Font;
 using iText.Kernel.Colors;
@@ -143,14 +144,14 @@ namespace iText.Kernel.Pdf {
             pdfDoc.RemovePage(102);
             pdfDoc.Close();
             CompareTool compareTool = new CompareTool();
-            String diffContent = compareTool.CompareByContent(DESTINATION_FOLDER + filename, SOURCE_FOLDER + "cmp_" + 
-                filename, DESTINATION_FOLDER, "diff_");
             String diffTags = compareTool.CompareTagStructures(DESTINATION_FOLDER + filename, SOURCE_FOLDER + "cmp_" +
                  filename);
+            String diffContent = compareTool.CompareByContent(DESTINATION_FOLDER + filename, SOURCE_FOLDER + "cmp_" + 
+                filename, DESTINATION_FOLDER, "diff_");
             if (diffContent != null || diffTags != null) {
-                diffContent = diffContent != null ? diffContent : "";
                 diffTags = diffTags != null ? diffTags : "";
-                NUnit.Framework.Assert.Fail(diffContent + diffTags);
+                diffContent = diffContent != null ? diffContent : "";
+                NUnit.Framework.Assert.Fail(diffTags + diffContent);
             }
         }
 

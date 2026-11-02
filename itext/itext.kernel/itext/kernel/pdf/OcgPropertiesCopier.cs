@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font;
 using iText.Kernel.Logs;
@@ -33,19 +33,19 @@ using iText.Kernel.Pdf.Layer;
 namespace iText.Kernel.Pdf {
 //\cond DO_NOT_DOCUMENT
     internal sealed class OcgPropertiesCopier {
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.OcgPropertiesCopier
-            ));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Kernel.Pdf.OcgPropertiesCopier));
 
         private OcgPropertiesCopier() {
         }
 
+//\cond DO_NOT_DOCUMENT
         // Empty constructor
         /// <summary>Copy unique page OCGs stored inside annotations/xobjects/resources from source pages to destination pages.
         ///     </summary>
         /// <param name="sourceDocument">document from which OCGs should be copied</param>
         /// <param name="destinationDocument">document to which OCGs should be copied</param>
         /// <param name="sourceToDestPageMapping">page mapping, linking source pages to destination ones</param>
-        public static void CopyOCGProperties(PdfDocument sourceDocument, PdfDocument destinationDocument, IDictionary
+        internal static void CopyOCGProperties(PdfDocument sourceDocument, PdfDocument destinationDocument, IDictionary
             <PdfPage, PdfPage> sourceToDestPageMapping) {
             try {
                 // Configs are not copied
@@ -66,10 +66,11 @@ namespace iText.Kernel.Pdf {
                     D), toOcProperties, destinationDocument);
             }
             catch (Exception e) {
-                LOGGER.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCG_COPYING_ERROR, e.ToString(
-                    )));
+                LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.OCG_COPYING_ERROR, e.ToString
+                    ()));
             }
         }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
         internal static void GetUsedNonFlushedOCGsFromAnnotation(PdfAnnotation toAnnot, PdfAnnotation fromAnnot, ICollection
@@ -241,7 +242,7 @@ namespace iText.Kernel.Pdf {
                 toOcProperties.GetAsArray(PdfName.OCGs).Add(toOcg);
             }
             if (hasConflictingNames) {
-                LOGGER.LogWarning(iText.IO.Logs.IoLogMessageConstant.DOCUMENT_HAS_CONFLICTING_OCG_NAMES);
+                LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.DOCUMENT_HAS_CONFLICTING_OCG_NAMES);
             }
         }
 
@@ -303,10 +304,8 @@ namespace iText.Kernel.Pdf {
                 toDict.Put(fieldToCopy, fromName);
             }
             else {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.OcgPropertiesCopier));
-                String warnText = MessageFormatUtil.Format(KernelLogMessageConstant.INVALID_DDICTIONARY_FIELD_VALUE, fieldToCopy
-                    , fromName);
-                logger.LogWarning(warnText);
+                LOGGER.Warn(() => MessageFormatUtil.Format(KernelLogMessageConstant.INVALID_DDICTIONARY_FIELD_VALUE, fieldToCopy
+                    , fromName));
             }
         }
 
@@ -319,10 +318,8 @@ namespace iText.Kernel.Pdf {
                 toDict.Put(fieldToCopy, fromString);
             }
             else {
-                ILogger logger = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.OcgPropertiesCopier));
-                String warnText = MessageFormatUtil.Format(KernelLogMessageConstant.INVALID_DDICTIONARY_FIELD_VALUE, fieldToCopy
-                    , fromString);
-                logger.LogWarning(warnText);
+                LOGGER.Warn(() => MessageFormatUtil.Format(KernelLogMessageConstant.INVALID_DDICTIONARY_FIELD_VALUE, fieldToCopy
+                    , fromString));
             }
         }
 

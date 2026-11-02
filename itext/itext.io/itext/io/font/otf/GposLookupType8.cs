@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Font.Otf.Lookuptype8;
 
@@ -31,6 +32,14 @@ namespace iText.IO.Font.Otf {
     /// Chaining Contextual Positioning Subtable
     /// </summary>
     public class GposLookupType8 : GposLookupType7 {
+        /// <summary>Creates a new GPOS Lookup Type 8.</summary>
+        /// <param name="openReader">the OpenType font reader</param>
+        /// <param name="lookupFlag">
+        /// specifies processing options, e.g. whether to skip base glyphs, marks or
+        /// ligatures during glyph substitution or positioning. See
+        /// <a href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#lookup-table">Lookup table</a>
+        /// </param>
+        /// <param name="subTableLocations">the sub table locations</param>
         protected internal GposLookupType8(OpenTypeFontTableReader openReader, int lookupFlag, int[] subTableLocations
             )
             : base(openReader, lookupFlag, subTableLocations) {

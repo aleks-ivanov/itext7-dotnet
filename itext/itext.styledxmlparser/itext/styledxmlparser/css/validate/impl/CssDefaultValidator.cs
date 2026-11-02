@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.StyledXmlParser.Css;
 using iText.StyledXmlParser.Css.Validate;
@@ -78,6 +79,8 @@ namespace iText.StyledXmlParser.Css.Validate.Impl {
                 .INITIAL, CommonCssConstants.INHERIT, CommonCssConstants.NONE), new CssQuotesValidator()));
             defaultValidators.Put(CommonCssConstants.TRANSFORM, new SingleTypeDeclarationValidator(new CssTransformValidator
                 ()));
+            defaultValidators.Put(CommonCssConstants.TEXT_COMBINE_UPRIGHT, new MultiTypeDeclarationValidator(new CssEnumValidator
+                (CommonCssConstants.NONE, CommonCssConstants.ALL), inheritInitialUnsetValidator));
             defaultValidators.Put(CommonCssConstants.FONT_SIZE, new MultiTypeDeclarationValidator(new CssLengthValueValidator
                 (false), new CssPercentageValueValidator(false), relativeSizeValidator, absoluteSizeValidator));
             defaultValidators.Put(CommonCssConstants.WORD_SPACING, new MultiTypeDeclarationValidator(new CssLengthValueValidator

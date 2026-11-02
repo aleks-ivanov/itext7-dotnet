@@ -22,12 +22,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Signatures.Validation.Report.Pades {
 //\cond DO_NOT_DOCUMENT
     /// <summary>This class contains the rules specific for a document timestamp signature.</summary>
     internal class DocumentTimestampRequirements : AbstractPadesLevelRequirements {
-        public const String SUBFILTER_NOT_ETSI_RFC3161 = "Timestamp SubFilter entry value is not ETSI.RFC3161";
+//\cond DO_NOT_DOCUMENT
+        internal const String SUBFILTER_NOT_ETSI_RFC3161 = "Timestamp SubFilter entry value is not ETSI.RFC3161";
+//\endcond
 
         private static readonly IDictionary<PAdESLevel, AbstractPadesLevelRequirements.LevelChecks> CHECKS = new Dictionary
             <PAdESLevel, AbstractPadesLevelRequirements.LevelChecks>();
@@ -77,13 +80,14 @@ namespace iText.Signatures.Validation.Report.Pades {
             this.coveredByDss = coveredByDss;
         }
 
-        protected internal override IDictionary<PAdESLevel, AbstractPadesLevelRequirements.LevelChecks> GetChecks(
-            ) {
+//\cond DO_NOT_DOCUMENT
+        internal override IDictionary<PAdESLevel, AbstractPadesLevelRequirements.LevelChecks> GetChecks() {
             if (coveredByDss) {
                 return DSS_COVERED_TS_CHECKS;
             }
             return CHECKS;
         }
+//\endcond
     }
 //\endcond
 }

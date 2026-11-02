@@ -21,12 +21,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 
 namespace iText.Kernel.Crypto {
     /// <summary>An initialization vector generator for a CBC block encryption.</summary>
     /// <remarks>An initialization vector generator for a CBC block encryption. It's a random generator based on ARCFOUR.
     ///     </remarks>
+    [System.ObsoleteAttribute(@"internal class is no longer used")]
     public sealed class IVGenerator {
         private static readonly ARCFOUREncryption arcfour;
 

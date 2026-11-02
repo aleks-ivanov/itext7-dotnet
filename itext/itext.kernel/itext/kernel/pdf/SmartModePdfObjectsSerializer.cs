@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using iText.Commons.Digest;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Source;
 using iText.Kernel.Exceptions;
 
@@ -45,19 +46,24 @@ namespace iText.Kernel.Pdf {
         }
 //\endcond
 
-        public virtual void SaveSerializedObject(SerializedObjectContent serializedContent, PdfIndirectReference objectReference
-            ) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual void SaveSerializedObject(SerializedObjectContent serializedContent, PdfIndirectReference
+             objectReference) {
             serializedContentToObj.Put(serializedContent, objectReference);
         }
+//\endcond
 
-        public virtual PdfIndirectReference GetSavedSerializedObject(SerializedObjectContent serializedContent) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual PdfIndirectReference GetSavedSerializedObject(SerializedObjectContent serializedContent) {
             if (serializedContent != null) {
                 return serializedContentToObj.Get(serializedContent);
             }
             return null;
         }
+//\endcond
 
-        public virtual SerializedObjectContent SerializeObject(PdfObject obj) {
+//\cond DO_NOT_DOCUMENT
+        internal virtual SerializedObjectContent SerializeObject(PdfObject obj) {
             if (!obj.IsStream() && !obj.IsDictionary()) {
                 return null;
             }
@@ -78,6 +84,7 @@ namespace iText.Kernel.Pdf {
             }
             return new SerializedObjectContent(content);
         }
+//\endcond
 
         private void SerObject(PdfObject obj, ByteBuffer bb, int level, IDictionary<PdfIndirectReference, byte[]> 
             serializedCache) {

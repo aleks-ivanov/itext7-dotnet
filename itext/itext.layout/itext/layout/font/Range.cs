@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 
 namespace iText.Layout.Font {
@@ -153,7 +154,8 @@ namespace iText.Layout.Font {
                 return low - o.low;
             }
 
-            public virtual int CompareTo(int n) {
+//\cond DO_NOT_DOCUMENT
+            internal virtual int CompareTo(int n) {
                 if (n < low) {
                     return 1;
                 }
@@ -162,6 +164,7 @@ namespace iText.Layout.Font {
                 }
                 return 0;
             }
+//\endcond
 
             public override bool Equals(Object o) {
                 if (this == o) {
@@ -185,7 +188,7 @@ namespace iText.Layout.Font {
 //\endcond
 
 //\cond DO_NOT_DOCUMENT
-        internal class FullRange : Range {
+        internal class FullRange : iText.Layout.Font.Range {
 //\cond DO_NOT_DOCUMENT
             internal FullRange()
                 : base() {

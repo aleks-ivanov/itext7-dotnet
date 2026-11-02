@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Font.Cmap;
 using iText.IO.Font.Otf;
@@ -29,11 +30,11 @@ using iText.IO.Util;
 
 namespace iText.IO.Font {
     public class CidFont : FontProgram {
-        private String fontName;
+        private readonly String fontName;
 
         private int pdfFontFlags;
 
-        private ICollection<String> compatibleCmaps;
+        private readonly ICollection<String> compatibleCmaps;
 
 //\cond DO_NOT_DOCUMENT
         internal CidFont(String fontName, String cmap, ICollection<String> compatibleCmaps) {
@@ -50,6 +51,13 @@ namespace iText.IO.Font {
         }
 //\endcond
 
+        /// <summary>Tests whether this font supports a CMap.</summary>
+        /// <param name="cmap">the CMap name</param>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// for a compatible CMap
+        /// </returns>
         public virtual bool CompatibleWith(String cmap) {
             if (cmap.Equals(PdfEncodings.IDENTITY_H) || cmap.Equals(PdfEncodings.IDENTITY_V)) {
                 return true;

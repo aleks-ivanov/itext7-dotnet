@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <!-- The .csrpoj file uses ../Directory.Build.props as a source for some configurations -->
+  <PropertyGroup>
+    <AssemblyName>itext.webp-image-support</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+	  <PackageReference Include="SkiaSharp" Version="3.119.4" />
+	  <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\itext.io\itext.io.csproj" />
+  </ItemGroup>
+</Project>

@@ -67,7 +67,7 @@ namespace iText.Bouncycastle.Openssl {
             try {
                 readObject = parser.ReadObject();
             }
-            catch (PasswordException) {
+            catch (Org.BouncyCastle.OpenSsl.PasswordException) {
                 return new PrivateKeyBC(null);
             }
             if (readObject is X509Certificate) {
@@ -77,6 +77,14 @@ namespace iText.Bouncycastle.Openssl {
                 return new PrivateKeyBC((ICipherParameters)readObject);
             }
             return readObject;
+        }
+        
+        /// <summary>
+        /// Disposes the parser.
+        /// </summary>
+        public void Dispose()
+        {
+            parser.Dispose();
         }
 
         /// <summary>Indicates whether some other object is "equal to" this one.</summary>

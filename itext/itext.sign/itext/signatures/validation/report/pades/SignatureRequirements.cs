@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Signatures.Validation.Report.Pades {
 //\cond DO_NOT_DOCUMENT
@@ -69,10 +70,11 @@ namespace iText.Signatures.Validation.Report.Pades {
             : base(name) {
         }
 
-        protected internal override IDictionary<PAdESLevel, AbstractPadesLevelRequirements.LevelChecks> GetChecks(
-            ) {
+//\cond DO_NOT_DOCUMENT
+        internal override IDictionary<PAdESLevel, AbstractPadesLevelRequirements.LevelChecks> GetChecks() {
             return CHECKS;
         }
+//\endcond
     }
 //\endcond
 }

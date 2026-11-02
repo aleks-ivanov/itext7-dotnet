@@ -39,7 +39,7 @@ namespace iText.Svg.Processors.Impl {
         /// <summary>Temporary set of fonts used in the PDF.</summary>
         private FontSet tempFonts;
 
-        private readonly ResourceResolver resourceResolver;
+        private ResourceResolver resourceResolver;
 
         /// <summary>The device description.</summary>
         private MediaDeviceDescription deviceDescription;
@@ -68,8 +68,13 @@ namespace iText.Svg.Processors.Impl {
             if (fontProvider == null) {
                 fontProvider = new BasicFontProvider();
             }
-            resourceResolver = new ResourceResolver(converterProperties.GetBaseUri(), converterProperties.GetResourceRetriever
-                ());
+            if (converterProperties is SvgConverterProperties) {
+                resourceResolver = ((SvgConverterProperties)converterProperties).GetResourceResolver();
+            }
+            if (resourceResolver == null) {
+                resourceResolver = new ResourceResolver(converterProperties.GetBaseUri(), converterProperties.GetResourceRetriever
+                    ());
+            }
             cssStyleSheet = converterProperties.GetCssStyleSheet();
             if (cssStyleSheet == null) {
                 cssStyleSheet = new CssStyleSheet();
@@ -112,8 +117,8 @@ namespace iText.Svg.Processors.Impl {
         /// <param name="encoding">the encoding</param>
         /// <param name="alias">the alias</param>
         /// <param name="unicodeRange">the specific range of characters to be used from the font</param>
-        public virtual void AddTemporaryFont(FontProgram fontProgram, String encoding, String alias, Range unicodeRange
-            ) {
+        public virtual void AddTemporaryFont(FontProgram fontProgram, String encoding, String alias, iText.Layout.Font.Range
+             unicodeRange) {
             if (tempFonts == null) {
                 tempFonts = new FontSet();
             }

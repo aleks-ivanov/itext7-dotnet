@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Svg;
 using iText.Svg.Exceptions;
 using iText.Svg.Renderers;
@@ -165,6 +166,15 @@ namespace iText.Svg.Renderers.Impl {
             renderer.SetAttributesAndStyles(styles);
             float expected = 1;
             NUnit.Framework.Assert.AreEqual(expected, renderer.GetStopOpacity(), DELTA);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void GetStopOpacityPercentageValueTest() {
+            IDictionary<String, String> styles = new Dictionary<String, String>();
+            styles.Put(SvgConstants.Tags.STOP_OPACITY, "20%");
+            StopSvgNodeRenderer renderer = new StopSvgNodeRenderer();
+            renderer.SetAttributesAndStyles(styles);
+            NUnit.Framework.Assert.AreEqual(0.2F, renderer.GetStopOpacity(), DELTA);
         }
 
         [NUnit.Framework.Test]

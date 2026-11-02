@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Exceptions;
 using iText.IO.Util;
 
@@ -71,13 +72,17 @@ namespace iText.IO.Image {
 
         private const int JPX_JPXB = 0x6a707862;
 
-        public static void ProcessImage(ImageData image) {
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Parses JPEG 2000 image data.</summary>
+        /// <param name="image">JPEG 2000 image data to process</param>
+        internal static void ProcessImage(ImageData image) {
             if (image.GetOriginalType() != ImageType.JPEG2000) {
                 throw new ArgumentException("JPEG2000 image expected");
             }
             ProcessParameters((Jpeg2000ImageData)image);
             image.SetFilter("JPXDecode");
         }
+//\endcond
 
         /// <summary>This method checks if the image is a valid JPEG and processes some parameters.</summary>
         private static void ProcessParameters(Jpeg2000ImageData jp2) {
@@ -222,7 +227,7 @@ namespace iText.IO.Image {
         private static int Cio_read(int n, Stream jpeg2000Stream) {
             int v = 0;
             for (int i = n - 1; i >= 0; i--) {
-                v += jpeg2000Stream.Read() << (i << 3);
+                v += jpeg2000Stream.ReadByte() << (i << 3);
             }
             return v;
         }

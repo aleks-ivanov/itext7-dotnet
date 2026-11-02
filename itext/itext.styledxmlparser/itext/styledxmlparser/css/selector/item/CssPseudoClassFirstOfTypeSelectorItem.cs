@@ -21,6 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.StyledXmlParser.Css;
 using iText.StyledXmlParser.Node;
 
@@ -34,9 +35,12 @@ namespace iText.StyledXmlParser.Css.Selector.Item {
             : base(CommonCssConstants.FIRST_OF_TYPE) {
         }
 
-        public static iText.StyledXmlParser.Css.Selector.Item.CssPseudoClassFirstOfTypeSelectorItem GetInstance() {
+//\cond DO_NOT_DOCUMENT
+        internal static iText.StyledXmlParser.Css.Selector.Item.CssPseudoClassFirstOfTypeSelectorItem GetInstance(
+            ) {
             return instance;
         }
+//\endcond
 
         public override bool Matches(INode node) {
             if (!(node is IElementNode) || node is ICustomElementNode || node is IDocumentNode) {

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.StyledXmlParser.Css.Resolve;
 using iText.Test;
 
@@ -69,6 +70,17 @@ namespace iText.StyledXmlParser.Util {
                 equal &= kvp.Value.Equals(styles.Get(kvp.Key));
             }
             NUnit.Framework.Assert.IsTrue(equal);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void MergeParentDeclarationsCaseInsensitiveInheritTest() {
+            IDictionary<String, String> styles = new Dictionary<String, String>();
+            styles.Put("clip-path", " InHeRiT ");
+            styles.Put("mask", "\tINHERIT\n");
+            StyleUtil.MergeParentStyleDeclaration(styles, "clip-path", "url(#clip)", null, inheritanceRules);
+            StyleUtil.MergeParentStyleDeclaration(styles, "mask", "url(#mask)", null, inheritanceRules);
+            NUnit.Framework.Assert.AreEqual("url(#clip)", styles.Get("clip-path"));
+            NUnit.Framework.Assert.AreEqual("url(#mask)", styles.Get("mask"));
         }
 
         [NUnit.Framework.Test]

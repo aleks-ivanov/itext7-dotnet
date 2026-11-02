@@ -20,12 +20,13 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+using iText.Commons.Internal.Runtime;
 using iText.Test;
 
 namespace iText.Svg.Renderers.Factories {
     [NUnit.Framework.Category("UnitTest")]
     public class DefaultSvgNodeRendererMapperTest : ExtendedITextTest {
-        private DefaultSvgNodeRendererMapper mapper = new DefaultSvgNodeRendererMapper();
+        private readonly DefaultSvgNodeRendererMapper mapper = new DefaultSvgNodeRendererMapper();
 
         [NUnit.Framework.Test]
         public virtual void MapperNotEmptyTest() {

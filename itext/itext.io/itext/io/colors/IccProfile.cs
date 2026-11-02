@@ -23,14 +23,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Exceptions;
 using iText.IO.Source;
 
 namespace iText.IO.Colors {
     /// <summary>Class used to represent the International Color Consortium profile</summary>
     public class IccProfile {
+        /// <summary>The raw ICC profile bytes.</summary>
         protected internal byte[] data;
 
+        /// <summary>The number of color components described by this profile.</summary>
         protected internal int numComponents;
 
         private static IDictionary<String, int?> cstags = new Dictionary<String, int?>();

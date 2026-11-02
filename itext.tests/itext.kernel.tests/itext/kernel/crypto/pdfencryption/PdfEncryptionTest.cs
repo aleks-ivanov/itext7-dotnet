@@ -27,6 +27,7 @@ using iText.Bouncycastleconnector;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Bouncycastle.Crypto;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Crypto;
 using iText.Kernel.Crypto.Securityhandler;
@@ -343,9 +344,9 @@ namespace iText.Kernel.Crypto.Pdfencryption {
             int encryptionType = EncryptionConstants.ENCRYPTION_AES_256 | EncryptionConstants.EMBEDDED_FILES_ONLY;
             String outFileName = destinationFolder + filename;
             int permissions = EncryptionConstants.ALLOW_SCREENREADERS;
-            PdfWriter writer = new PdfWriter(outFileName, new WriterProperties().SetStandardEncryption(PdfEncryptionTestUtils
-                .USER, PdfEncryptionTestUtils.OWNER, permissions, encryptionType).AddXmpMetadata().SetPdfVersion(PdfVersion
-                .PDF_2_0));
+            PdfWriter writer = CompareTool.CreateTestPdfWriter(outFileName, new WriterProperties().SetStandardEncryption
+                (PdfEncryptionTestUtils.USER, PdfEncryptionTestUtils.OWNER, permissions, encryptionType).AddXmpMetadata
+                ().SetPdfVersion(PdfVersion.PDF_2_0));
             PdfDocument document = new PdfDocument(writer);
             document.GetDocumentInfo().SetMoreInfo(PdfEncryptionTestUtils.CUSTOM_INFO_ENTRY_KEY, PdfEncryptionTestUtils
                 .CUSTOM_INFO_ENTRY_VALUE);
@@ -548,8 +549,7 @@ namespace iText.Kernel.Crypto.Pdfencryption {
             if (isPdf2) {
                 writerProperties.SetPdfVersion(PdfVersion.PDF_2_0);
             }
-            PdfWriter writer = CompareTool.CreateTestPdfWriter(destinationFolder + filename, writerProperties.AddXmpMetadata
-                ());
+            PdfWriter writer = new PdfWriter(destinationFolder + filename, writerProperties.AddXmpMetadata());
             writer.SetCompressionLevel(compression);
             PdfDocument document = new PdfDocument(writer);
             document.GetDocumentInfo().SetMoreInfo(PdfEncryptionTestUtils.CUSTOM_INFO_ENTRY_KEY, PdfEncryptionTestUtils
@@ -567,9 +567,9 @@ namespace iText.Kernel.Crypto.Pdfencryption {
             ) {
             String outFileName = destinationFolder + filename;
             int permissions = EncryptionConstants.ALLOW_SCREENREADERS;
-            PdfWriter writer = CompareTool.CreateTestPdfWriter(outFileName, new WriterProperties().SetStandardEncryption
-                (PdfEncryptionTestUtils.USER, PdfEncryptionTestUtils.OWNER, permissions, encryptionType).AddXmpMetadata
-                ().SetFullCompressionMode(fullCompression));
+            PdfWriter writer = new PdfWriter(outFileName, new WriterProperties().SetStandardEncryption(PdfEncryptionTestUtils
+                .USER, PdfEncryptionTestUtils.OWNER, permissions, encryptionType).AddXmpMetadata().SetFullCompressionMode
+                (fullCompression));
             writer.SetCompressionLevel(compression);
             PdfDocument document = new PdfDocument(writer);
             document.GetDocumentInfo().SetMoreInfo(PdfEncryptionTestUtils.CUSTOM_INFO_ENTRY_KEY, PdfEncryptionTestUtils

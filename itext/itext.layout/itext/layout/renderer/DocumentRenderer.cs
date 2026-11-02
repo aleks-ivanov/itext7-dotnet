@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Utils.Collections;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
@@ -37,11 +39,17 @@ using iText.Layout.Tagging;
 
 namespace iText.Layout.Renderer {
     public class DocumentRenderer : RootRenderer {
+//\cond DO_NOT_DOCUMENT
+        internal readonly FootnotesCounterHandler footnotesCounterHandler = new FootnotesCounterHandler();
+//\endcond
+
         protected internal Document document;
 
         protected internal IList<int> wrappedContentPage = new List<int>();
 
         protected internal TargetCounterHandler targetCounterHandler = new TargetCounterHandler();
+
+        private ICollection<int> contentProcessedPages = new HashSet<int>();
 
         private DocumentRenderer.PageMarginBoxesDrawingHandler marginBoxesHandler;
 
@@ -105,12 +113,16 @@ namespace iText.Layout.Renderer {
             iText.Layout.Renderer.DocumentRenderer renderer = new iText.Layout.Renderer.DocumentRenderer(document, immediateFlush
                 );
             renderer.targetCounterHandler = new TargetCounterHandler(targetCounterHandler);
-            renderer.marginBoxesHandler = marginBoxesHandler.SetDocumentRenderer(renderer);
             return renderer;
         }
 
-        public override void Close() {
-            base.Close();
+        /// <summary>Removes renderer-owned event handlers before relayout replaces this renderer instance.</summary>
+        public virtual void RemoveEventHandlersForRelayout() {
+            document.GetPdfDocument().RemoveEventHandler(marginBoxesHandler);
+        }
+
+        protected internal override void FlushOnClose() {
+            base.FlushOnClose();
             document.GetPdfDocument().RemoveEventHandler(marginBoxesHandler);
             if (!document.GetPdfDocument().IsClosed()) {
                 for (int i = 1; i <= document.GetPdfDocument().GetNumberOfPages(); ++i) {
@@ -132,6 +144,10 @@ namespace iText.Layout.Renderer {
                 () : null;
             SectionBreak sectionBreak = overflowResult != null && overflowResult.GetSectionBreak() != null ? overflowResult
                 .GetSectionBreak() : null;
+            if (overflowResult != null && overflowResult.GetOccupiedArea() != null) {
+                // Persist margins for pages that already received content before moving layout to another page.
+                SavePageMarginsForProcessedPage(overflowResult.GetOccupiedArea().GetPageNumber());
+            }
             int currentPageNumber = currentArea == null ? 0 : currentArea.GetPageNumber();
             if (areaBreak != null && areaBreak.GetAreaType() == AreaBreakType.LAST_PAGE) {
                 while (currentPageNumber < document.GetPdfDocument().GetNumberOfPages()) {
@@ -167,6 +183,21 @@ namespace iText.Layout.Renderer {
             }
             if (sectionBreak != null) {
                 this.document.SetPageMargins(currentPageNumber, sectionBreak.GetPageMargins());
+                FootnotesProperties sectionBreakFootnotesProperties = sectionBreak.GetFootnotesProperties();
+                if (sectionBreakFootnotesProperties != null) {
+                    document.SetFootnotesProperties(sectionBreakFootnotesProperties);
+                }
+            }
+            FootnotesProperties footnotesProperties = document.GetFootnotesProperties();
+            FootnoteNumberingConfig footnoteNumberingConfig = footnotesProperties.GetFootnoteNumberingConfig();
+            if (sectionBreak != null && FootnoteNumberingConfig.PER_SECTION == footnoteNumberingConfig) {
+                this.latestFootnoteNumber.Put(currentPageNumber, 0);
+            }
+            else {
+                if (FootnoteNumberingConfig.PER_PAGE != footnoteNumberingConfig) {
+                    this.latestFootnoteNumber.Put(currentPageNumber, this.latestFootnoteNumber.GetOrDefault(currentPageNumber 
+                        - 1, 0));
+                }
             }
             ComputeLayoutMargins(currentPageNumber);
             if (sectionBreak != null) {
@@ -212,6 +243,15 @@ namespace iText.Layout.Renderer {
             }
         }
 
+        protected internal override void ShrinkCurrentAreaAndProcessRenderer(IRenderer renderer, IList<IRenderer> 
+            resultRenderers, LayoutResult result) {
+            if (result != null && result.GetOccupiedArea() != null) {
+                // Freeze margins when page content is laid out
+                SavePageMarginsForProcessedPage(result.GetOccupiedArea().GetPageNumber());
+            }
+            base.ShrinkCurrentAreaAndProcessRenderer(renderer, resultRenderers, result);
+        }
+
         /// <summary>Adds new page with defined page size to PDF document.</summary>
         /// <param name="customPageSize">the size of new page, can be null</param>
         /// <returns>the page size of created page</returns>
@@ -241,6 +281,13 @@ namespace iText.Layout.Renderer {
                 lastPageSize = AddNewPage(customPageSize);
             }
             return lastPageSize;
+        }
+
+        private void SavePageMarginsForProcessedPage(int pageNumber) {
+            if (!contentProcessedPages.Contains(pageNumber)) {
+                contentProcessedPages.Add(pageNumber);
+                document.SetPageMargins(pageNumber, document.GetPageMargins(pageNumber));
+            }
         }
 
         private Rectangle GetCurrentPageEffectiveArea(PageSize pageSize) {

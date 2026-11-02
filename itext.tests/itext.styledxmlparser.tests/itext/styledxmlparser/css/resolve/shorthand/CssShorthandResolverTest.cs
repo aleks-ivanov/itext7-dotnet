@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Text;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.StyledXmlParser.Css;
 using iText.Test;
@@ -369,6 +370,29 @@ namespace iText.StyledXmlParser.Css.Resolve.Shorthand {
             ICollection<String> expectedResolvedProperties = new HashSet<String>(JavaUtil.ArraysAsList("list-style-type: square"
                 , "list-style-position: inside", "list-style-image: repeating-linear-gradient(45deg,blue 7%,red 10%)")
                 );
+            IShorthandResolver resolver = ShorthandResolverFactory.GetShorthandResolver(CommonCssConstants.LIST_STYLE);
+            NUnit.Framework.Assert.IsNotNull(resolver);
+            IList<CssDeclaration> resolvedShorthandProps = resolver.ResolveShorthand(shorthandExpression);
+            CompareResolvedProps(resolvedShorthandProps, expectedResolvedProperties);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void RadialGradientInlistStyleImageTest() {
+            String shorthandExpression = "inside radial-gradient(red, green, blue)";
+            ICollection<String> expectedResolvedProperties = new HashSet<String>(JavaUtil.ArraysAsList("list-style-type: initial"
+                , "list-style-position: inside", "list-style-image: radial-gradient(red,green,blue)"));
+            IShorthandResolver resolver = ShorthandResolverFactory.GetShorthandResolver(CommonCssConstants.LIST_STYLE);
+            NUnit.Framework.Assert.IsNotNull(resolver);
+            IList<CssDeclaration> resolvedShorthandProps = resolver.ResolveShorthand(shorthandExpression);
+            CompareResolvedProps(resolvedShorthandProps, expectedResolvedProperties);
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void RepeatingRadialGradientInlistStyleImageTest() {
+            String shorthandExpression = "square inside repeating-radial-gradient(circle, blue 7%, red 10%)";
+            ICollection<String> expectedResolvedProperties = new HashSet<String>(JavaUtil.ArraysAsList("list-style-type: square"
+                , "list-style-position: inside", "list-style-image: repeating-radial-gradient(circle,blue 7%,red 10%)"
+                ));
             IShorthandResolver resolver = ShorthandResolverFactory.GetShorthandResolver(CommonCssConstants.LIST_STYLE);
             NUnit.Framework.Assert.IsNotNull(resolver);
             IList<CssDeclaration> resolvedShorthandProps = resolver.ResolveShorthand(shorthandExpression);

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Font;
 using iText.IO.Font.Constants;
 using iText.Kernel.Font;
@@ -478,8 +479,8 @@ namespace iText.Kernel.Pdf {
                 .Substring(pangramme.Length / 2)).EndText().Release();
             //There is only one just loaded and used document font.
             NUnit.Framework.Assert.AreEqual(1, pdfDoc.GetDocumentFonts().Count);
-            // TODO DEVSIX-9683 Replace abserif4_5.ttc in kernel
-            AddPagesWithFonts(pdfDoc, FONTS_FOLDER + "abserif4_5.ttf", "WinAnsi", TextSetWithABC);
+            AddPagesWithFonts(pdfDoc, FONTS_FOLDER + "NotoSansCanadianAboriginal-Regular.ttf", "WinAnsi", TextSetWithABC
+                );
             pdfDoc.Close();
             //We cannot rely on font name for a document font, so we treat them as two different fonts.
             NUnit.Framework.Assert.AreEqual(2, CountPdfFonts(filename));
@@ -542,8 +543,8 @@ namespace iText.Kernel.Pdf {
                 .Substring(pangramme.Length / 2)).EndText().Release();
             //There is only one just loaded and used document font.
             NUnit.Framework.Assert.AreEqual(1, pdfDoc.GetDocumentFonts().Count);
-            // TODO DEVSIX-9683 Replace abserif4_5.ttc in kernel
-            AddPagesWithFonts(pdfDoc, FONTS_FOLDER + "abserif4_5.ttf", encoding, TextSetWithABC);
+            AddPagesWithFonts(pdfDoc, FONTS_FOLDER + "NotoSansCanadianAboriginal-Regular.ttf", encoding, TextSetWithABC
+                );
             pdfDoc.Close();
             //We cannot rely on font name for a document font, so we treat them as two different fonts.
             NUnit.Framework.Assert.AreEqual(2, CountPdfFonts(filename));

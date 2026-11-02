@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 
 namespace iText.StyledXmlParser.Css {
@@ -51,6 +52,9 @@ namespace iText.StyledXmlParser.Css {
 
         /// <summary>The Constant ALIGN_SELF.</summary>
         public const String ALIGN_SELF = "align-self";
+
+        /// <summary>The Constant ALL.</summary>
+        public const String ALL = "all";
 
         /// <summary>The constant ATTRIBUTE.</summary>
         public const String ATTRIBUTE = "attr";
@@ -379,6 +383,9 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant HARD_LIGHT.</summary>
         public const String HARD_LIGHT = "hard-light";
 
+        /// <summary>The Constant HORIZONTAL_TB.</summary>
+        public const String HORIZONTAL_TB = "horizontal-tb";
+
         /// <summary>The Constant HUE.</summary>
         public const String HUE = "hue";
 
@@ -556,6 +563,15 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant UNICODE_BIDI.</summary>
         public const String UNICODE_BIDI = "unicode-bidi";
 
+        /// <summary>The Constant UPRIGHT.</summary>
+        public const String UPRIGHT = "upright";
+
+        /// <summary>The Constant VERTICAL_LR.</summary>
+        public const String VERTICAL_LR = "vertical-lr";
+
+        /// <summary>The Constant VERTICAL_RL.</summary>
+        public const String VERTICAL_RL = "vertical-rl";
+
         /// <summary>The Constant VISIBILITY.</summary>
         public const String VISIBILITY = "visibility";
 
@@ -593,6 +609,9 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant ARMENIAN.</summary>
         public const String ARMENIAN = "armenian";
 
+        /// <summary>The Constant AT.</summary>
+        public const String AT = "at";
+
         /// <summary>The Constant AVOID.</summary>
         public const String AVOID = "avoid";
 
@@ -628,6 +647,12 @@ namespace iText.StyledXmlParser.Css {
 
         /// <summary>The Constant CIRCLE.</summary>
         public const String CIRCLE = "circle";
+
+        /// <summary>The Constant CLOSEST_CORNER.</summary>
+        public const String CLOSEST_CORNER = "closest-corner";
+
+        /// <summary>The Constant CLOSEST_SIDE.</summary>
+        public const String CLOSEST_SIDE = "closest-side";
 
         /// <summary>The Constant CJK_IDEOGRAPHIC.</summary>
         public const String CJK_IDEOGRAPHIC = "cjk-ideographic";
@@ -686,8 +711,17 @@ namespace iText.StyledXmlParser.Css {
         /// <summary>The Constant EACH_LINE.</summary>
         public const String EACH_LINE = "each-line";
 
+        /// <summary>The Constant ELLIPSE.</summary>
+        public const String ELLIPSE = "ellipse";
+
         /// <summary>The Constant END.</summary>
         public const String END = "end";
+
+        /// <summary>The Constant FARTHEST_CORNER.</summary>
+        public const String FARTHEST_CORNER = "farthest-corner";
+
+        /// <summary>The Constant FARTHEST_SIDE.</summary>
+        public const String FARTHEST_SIDE = "farthest-side";
 
         /// <summary>The Constant FIRST.</summary>
         public const String FIRST = "first";
@@ -1106,6 +1140,12 @@ namespace iText.StyledXmlParser.Css {
 
         /// <summary>The Constant HAS.</summary>
         public const String HAS = "has";
+
+        /// <summary>The Constant IS.</summary>
+        public const String IS = "is";
+
+        /// <summary>The Constant WHERE.</summary>
+        public const String WHERE = "where";
 
         /// <summary>The Constant DISABLED.</summary>
         public const String DISABLED = "disabled";

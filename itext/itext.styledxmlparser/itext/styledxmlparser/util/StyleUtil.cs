@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Util;
 using iText.StyledXmlParser.Css;
 using iText.StyledXmlParser.Css.Resolve;
@@ -51,7 +52,7 @@ namespace iText.StyledXmlParser.Util {
         public static IDictionary<String, String> MergeParentStyleDeclaration(IDictionary<String, String> styles, 
             String styleProperty, String parentPropValue, String parentFontSizeString, ICollection<IStyleInheritance
             > inheritanceRules) {
-            String childPropValue = styles.Get(styleProperty);
+            String childPropValue = CssUtils.NormalizeCssProperty(styles.Get(styleProperty));
             if ((childPropValue == null && CheckInheritance(styleProperty, inheritanceRules)) || CommonCssConstants.INHERIT
                 .Equals(childPropValue)) {
                 if (ValueIsOfMeasurement(parentPropValue, CommonCssConstants.EM) || ValueIsOfMeasurement(parentPropValue, 

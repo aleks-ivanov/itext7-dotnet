@@ -23,8 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Colors;
 using iText.IO.Exceptions;
@@ -33,7 +33,7 @@ using iText.IO.Util;
 namespace iText.IO.Image {
 //\cond DO_NOT_DOCUMENT
     internal class JpegImageHelper {
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(JpegImageHelper));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(JpegImageHelper));
 
         /// <summary>This is a type of marker.</summary>
         private const int NOT_A_MARKER = -1;
@@ -76,13 +76,14 @@ namespace iText.IO.Image {
         /// <summary>sequence preceding Photoshop resolution data</summary>
         private static readonly byte[] PS_8BIM_RESO = new byte[] { 0x38, 0x42, 0x49, 0x4d, 0x03, (byte)0xed };
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Process the passed Image data as a JPEG image.</summary>
         /// <remarks>
         /// Process the passed Image data as a JPEG image.
         /// Image is loaded and all image attributes are initialized and/or updated.
         /// </remarks>
         /// <param name="image">the image to process as a JPEG image</param>
-        public static void ProcessImage(ImageData image) {
+        internal static void ProcessImage(ImageData image) {
             if (image.GetOriginalType() != ImageType.JPEG) {
                 throw new ArgumentException("JPEG image expected");
             }
@@ -114,6 +115,7 @@ namespace iText.IO.Image {
             }
             UpdateAttributes(image);
         }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
         internal static void AttemptToSetIccProfileToImage(byte[][] icc, ImageData image) {
@@ -135,7 +137,7 @@ namespace iText.IO.Image {
                     image.SetProfile(IccProfile.GetInstance(ficc, image.GetColorEncodingComponentsNumber()));
                 }
                 catch (Exception e) {
-                    LOGGER.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.DURING_CONSTRUCTION_OF_ICC_PROFILE_ERROR_OCCURRED
+                    LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.DURING_CONSTRUCTION_OF_ICC_PROFILE_ERROR_OCCURRED
                         , e.GetType().Name, e.Message));
                 }
             }
@@ -158,19 +160,19 @@ namespace iText.IO.Image {
         /// <summary>This method checks if the image is a valid JPEG and processes some parameters.</summary>
         private static void ProcessParameters(Stream jpegStream, String errorID, ImageData image) {
             byte[][] icc = null;
-            if (jpegStream.Read() != 0xFF || jpegStream.Read() != 0xD8) {
+            if (jpegStream.ReadByte() != 0xFF || jpegStream.ReadByte() != 0xD8) {
                 throw new iText.IO.Exceptions.IOException(IoExceptionMessageConstant.IS_NOT_A_VALID_JPEG_FILE).SetMessageParams
                     (errorID);
             }
             bool firstPass = true;
             int len;
             while (true) {
-                int v = jpegStream.Read();
+                int v = jpegStream.ReadByte();
                 if (v < 0) {
                     throw new iText.IO.Exceptions.IOException(IoExceptionMessageConstant.PREMATURE_EOF_WHILE_READING_JPEG);
                 }
                 if (v == 0xFF) {
-                    int marker = jpegStream.Read();
+                    int marker = jpegStream.ReadByte();
                     if (firstPass && marker == M_APP0) {
                         firstPass = false;
                         len = GetShort(jpegStream);
@@ -179,7 +181,7 @@ namespace iText.IO.Image {
                             continue;
                         }
                         byte[] bcomp = new byte[JFIF_ID.Length];
-                        int r = jpegStream.Read(bcomp);
+                        int r = jpegStream.JRead(bcomp);
                         if (r != bcomp.Length) {
                             throw new iText.IO.Exceptions.IOException(IoExceptionMessageConstant.CORRUPTED_JFIF_MARKER).SetMessageParams
                                 (errorID);
@@ -196,7 +198,7 @@ namespace iText.IO.Image {
                             continue;
                         }
                         StreamUtil.Skip(jpegStream, 2);
-                        int units = jpegStream.Read();
+                        int units = jpegStream.ReadByte();
                         int dx = GetShort(jpegStream);
                         int dy = GetShort(jpegStream);
                         if (units == 1) {
@@ -214,7 +216,7 @@ namespace iText.IO.Image {
                         len = GetShort(jpegStream) - 2;
                         byte[] byteappe = new byte[len];
                         for (int k = 0; k < len; ++k) {
-                            byteappe[k] = (byte)jpegStream.Read();
+                            byteappe[k] = (byte)jpegStream.ReadByte();
                         }
                         if (byteappe.Length >= 12) {
                             String appe = iText.Commons.Utils.JavaUtil.GetStringForBytes(byteappe, 0, 5, "ISO-8859-1");
@@ -228,7 +230,7 @@ namespace iText.IO.Image {
                         len = GetShort(jpegStream) - 2;
                         byte[] byteapp2 = new byte[len];
                         for (int k = 0; k < len; ++k) {
-                            byteapp2[k] = (byte)jpegStream.Read();
+                            byteapp2[k] = (byte)jpegStream.ReadByte();
                         }
                         if (byteapp2.Length >= 14) {
                             String app2 = iText.Commons.Utils.JavaUtil.GetStringForBytes(byteapp2, 0, 11, "ISO-8859-1");
@@ -254,7 +256,7 @@ namespace iText.IO.Image {
                         len = GetShort(jpegStream) - 2;
                         byte[] byteappd = new byte[len];
                         for (int k = 0; k < len; k++) {
-                            byteappd[k] = (byte)jpegStream.Read();
+                            byteappd[k] = (byte)jpegStream.ReadByte();
                         }
                         // search for '8BIM Resolution' marker
                         int k_1;
@@ -309,21 +311,25 @@ namespace iText.IO.Image {
                             if (unitsx == 1 || unitsx == 2) {
                                 dx = (unitsx == 2 ? (int)(dx * 2.54f + 0.5f) : dx);
                                 // make sure this is consistent with JFIF data
-                                if (image.GetDpiX() != 0 && image.GetDpiX() != dx) {
-                                    LOGGER.LogDebug(MessageFormatUtil.Format("Inconsistent metadata (dpiX: {0} vs {1})", image.GetDpiX(), dx));
+                                if (image.GetDpiX() == 0 || image.GetDpiX() == dx) {
+                                    image.SetDpi(dx, image.GetDpiY());
                                 }
                                 else {
-                                    image.SetDpi(dx, image.GetDpiY());
+                                    int logDx = dx;
+                                    LOGGER.Debug(() => MessageFormatUtil.Format("Inconsistent metadata (dpiX: {0} vs {1})", image.GetDpiX(), logDx
+                                        ));
                                 }
                             }
                             if (unitsy == 1 || unitsy == 2) {
                                 dy = (unitsy == 2 ? (int)(dy * 2.54f + 0.5f) : dy);
                                 // make sure this is consistent with JFIF data
-                                if (image.GetDpiY() != 0 && image.GetDpiY() != dy) {
-                                    LOGGER.LogDebug(MessageFormatUtil.Format("Inconsistent metadata (dpiY: {0} vs {1})", image.GetDpiY(), dy));
+                                if (image.GetDpiY() == 0 || image.GetDpiY() == dy) {
+                                    image.SetDpi(image.GetDpiX(), dx);
                                 }
                                 else {
-                                    image.SetDpi(image.GetDpiX(), dx);
+                                    int logDy = dy;
+                                    LOGGER.Debug(() => MessageFormatUtil.Format("Inconsistent metadata (dpiY: {0} vs {1})", image.GetDpiY(), logDy
+                                        ));
                                 }
                             }
                         }
@@ -333,13 +339,13 @@ namespace iText.IO.Image {
                     int markertype = Marker(marker);
                     if (markertype == VALID_MARKER) {
                         StreamUtil.Skip(jpegStream, 2);
-                        if (jpegStream.Read() != 0x08) {
+                        if (jpegStream.ReadByte() != 0x08) {
                             throw new iText.IO.Exceptions.IOException(IoExceptionMessageConstant.MUST_HAVE_8_BITS_PER_COMPONENT).SetMessageParams
                                 (errorID);
                         }
                         image.SetHeight(GetShort(jpegStream));
                         image.SetWidth(GetShort(jpegStream));
-                        image.SetColorEncodingComponentsNumber(jpegStream.Read());
+                        image.SetColorEncodingComponentsNumber(jpegStream.ReadByte());
                         image.SetBpc(8);
                         break;
                     }
@@ -363,7 +369,7 @@ namespace iText.IO.Image {
         /// <param name="jpegStream">the <c>InputStream</c></param>
         /// <returns>an int</returns>
         private static int GetShort(Stream jpegStream) {
-            return (jpegStream.Read() << 8) + jpegStream.Read();
+            return (jpegStream.ReadByte() << 8) + jpegStream.ReadByte();
         }
 
         /// <summary>Returns a type of marker.</summary>

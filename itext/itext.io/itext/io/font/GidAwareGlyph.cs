@@ -27,17 +27,32 @@ namespace iText.IO.Font {
     internal class GidAwareGlyph : Glyph {
         private int gid;
 
-        public GidAwareGlyph(int code, int width, int unicode, int[] bbox)
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Creates a glyph with an initially unset glyph identifier.</summary>
+        /// <param name="code">the character code</param>
+        /// <param name="width">the glyph width</param>
+        /// <param name="unicode">the Unicode code point</param>
+        /// <param name="bbox">the glyph bounding box</param>
+        internal GidAwareGlyph(int code, int width, int unicode, int[] bbox)
             : base(code, width, unicode, bbox) {
         }
+//\endcond
 
-        public virtual void SetGid(int index) {
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Sets the font glyph identifier.</summary>
+        /// <param name="index">the glyph identifier</param>
+        internal virtual void SetGid(int index) {
             this.gid = index;
         }
+//\endcond
 
-        public virtual int GetGid() {
+//\cond DO_NOT_DOCUMENT
+        /// <summary>Returns the font glyph identifier.</summary>
+        /// <returns>the glyph identifier</returns>
+        internal virtual int GetGid() {
             return gid;
         }
+//\endcond
     }
 //\endcond
 }

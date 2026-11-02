@@ -26,6 +26,7 @@ using iText.Bouncycastleconnector;
 using iText.Commons.Bouncycastle;
 using iText.Commons.Bouncycastle.Asn1;
 using iText.Commons.Digest;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Source;
 using iText.Kernel.Crypto;
@@ -152,8 +153,8 @@ namespace iText.Kernel.Mac {
                     )).GetEncoded();
                 byte[] actualMessageDigest = macContainerReader.ParseMessageDigest().GetEncoded();
                 byte[] actualMac = macContainerReader.ParseMac();
-                if (!JavaUtil.ArraysEquals(expectedMac, actualMac) || !JavaUtil.ArraysEquals(expectedMessageDigest, actualMessageDigest
-                    )) {
+                if (!JavaUtil.FixedTimeEquals(expectedMac, actualMac) || !JavaUtil.FixedTimeEquals(expectedMessageDigest, 
+                    actualMessageDigest)) {
                     throw new MacValidationException(KernelExceptionMessageConstant.MAC_VALIDATION_FAILED);
                 }
             }

@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Pdf;
@@ -47,6 +47,9 @@ namespace iText.Kernel.Pdf.Tagutils {
     /// <see cref="iText.Kernel.Pdf.PdfDocument.GetTagStructureContext()"/>.
     /// </remarks>
     public class TagStructureContext {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Kernel.Pdf.Tagutils.TagStructureContext
+            ));
+
         private static readonly ICollection<String> ALLOWED_ROOT_TAG_ROLES;
 
         static TagStructureContext() {
@@ -430,8 +433,7 @@ namespace iText.Kernel.Pdf.Tagutils {
             int maxIters = 100;
             while (mappingResolver.CurrentRoleShallBeMappedToStandard()) {
                 if (++i > maxIters) {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.Tagutils.TagStructureContext));
-                    logger.LogError(ComposeTooMuchTransitiveMappingsException(role, @namespace));
+                    LOGGER.Error(() => ComposeTooMuchTransitiveMappingsException(role, @namespace));
                     return null;
                 }
                 if (!mappingResolver.ResolveNextMapping()) {
@@ -779,8 +781,7 @@ namespace iText.Kernel.Pdf.Tagutils {
                     throw new PdfException(exMessage);
                 }
                 else {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.Tagutils.TagStructureContext));
-                    logger.LogWarning(exMessage);
+                    LOGGER.Warn(() => exMessage);
                 }
             }
         }
@@ -843,7 +844,6 @@ namespace iText.Kernel.Pdf.Tagutils {
                 IRoleMappingResolver resolvedMapping = ResolveMappingToStandardOrDomainSpecificRole(firstKid.GetRole().GetValue
                     (), firstKid.GetNamespace());
                 if (resolvedMapping == null || !resolvedMapping.CurrentRoleIsStandard()) {
-                    ILogger logger = ITextLogManager.GetLogger(typeof(iText.Kernel.Pdf.Tagutils.TagStructureContext));
                     String nsStr;
                     if (firstKid.GetNamespace() != null) {
                         nsStr = firstKid.GetNamespace().GetNamespaceName();
@@ -851,7 +851,7 @@ namespace iText.Kernel.Pdf.Tagutils {
                     else {
                         nsStr = StandardNamespaces.GetDefault();
                     }
-                    logger.LogWarning(String.Format(iText.IO.Logs.IoLogMessageConstant.EXISTING_TAG_STRUCTURE_ROOT_IS_NOT_STANDARD
+                    LOGGER.Warn(() => String.Format(iText.IO.Logs.IoLogMessageConstant.EXISTING_TAG_STRUCTURE_ROOT_IS_NOT_STANDARD
                         , firstKid.GetRole().GetValue(), nsStr));
                 }
                 if (resolvedMapping == null || !StandardNamespaces.PDF_1_7.Equals(resolvedMapping.GetNamespace().GetNamespaceName
@@ -884,9 +884,10 @@ namespace iText.Kernel.Pdf.Tagutils {
 
         private void ActualizeNamespacesInStructTreeRoot() {
             if (namespaces.Count > 0) {
+                ICollection<PdfDictionary> newNamespaces = new LinkedHashSet<PdfDictionary>(namespaces);
+                NormalizeDefaultNS(newNamespaces);
                 PdfStructTreeRoot structTreeRoot = GetDocument().GetStructTreeRoot();
                 PdfArray rootNamespaces = structTreeRoot.GetNamespacesObject();
-                ICollection<PdfDictionary> newNamespaces = new LinkedHashSet<PdfDictionary>(namespaces);
                 for (int i = 0; i < rootNamespaces.Size(); ++i) {
                     newNamespaces.Remove(rootNamespaces.GetAsDictionary(i));
                 }
@@ -895,6 +896,21 @@ namespace iText.Kernel.Pdf.Tagutils {
                 }
                 if (!newNamespaces.IsEmpty()) {
                     structTreeRoot.SetModified();
+                }
+            }
+        }
+
+        private void NormalizeDefaultNS(ICollection<PdfDictionary> newNamespaces) {
+            foreach (PdfDictionary nsDict in namespaces) {
+                PdfNamespace ns = new PdfNamespace(nsDict);
+                // replace newly created default ns with the one that is already registered in the document
+                if (StandardNamespaces.GetDefault().Equals(ns.GetNamespaceName()) && ns.GetSchema() == null && ns.GetNamespaceRoleMap
+                    () == null) {
+                    // register default
+                    PdfNamespace fromDoc = PdfNamespace.GetDefault(GetDocument());
+                    if (fromDoc.GetSchema() == null && fromDoc.GetNamespaceRoleMap() == null) {
+                        newNamespaces.Remove(nsDict);
+                    }
                 }
             }
         }

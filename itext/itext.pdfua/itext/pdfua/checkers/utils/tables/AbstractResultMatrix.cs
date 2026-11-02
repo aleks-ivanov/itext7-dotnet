@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Text;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Tagging;
@@ -37,7 +38,9 @@ namespace iText.Pdfua.Checkers.Utils.Tables {
     /// </remarks>
     /// <typeparam name="T">the type of the cell</typeparam>
     internal abstract class AbstractResultMatrix<T> {
-        protected internal readonly ITableIterator<T> iterator;
+//\cond DO_NOT_DOCUMENT
+        internal readonly ITableIterator<T> iterator;
+//\endcond
 
         // We can't use an array because it is not autoportable.
         private readonly IList<T> cellMatrix;
@@ -69,8 +72,9 @@ namespace iText.Pdfua.Checkers.Utils.Tables {
                  cols, null);
         }
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Runs the algorithm to check if the table has valid headers and scopes for the cells.</summary>
-        public virtual void CheckValidTableTagging() {
+        internal virtual void CheckValidTableTagging() {
             ICollection<String> knownIds = new HashSet<String>();
             // We use boxed boolean array so we can don't duplicate our setCell methods.
             // But we fill default with false so we can avoid the null check.
@@ -120,6 +124,7 @@ namespace iText.Pdfua.Checkers.Utils.Tables {
             }
             ValidateTableCells(knownIds, scopeMatrix, hasUnknownHeaders);
         }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
         internal abstract IList<byte[]> GetHeaders(T cell);

@@ -31,6 +31,7 @@ using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Font;
 using iText.Layout.Properties;
+using iText.Layout.Testutil;
 using iText.Test;
 using iText.Test.Attributes;
 
@@ -42,31 +43,26 @@ namespace iText.Layout {
 
         public static readonly String destinationFolder = TestUtil.GetOutputPath() + "/layout/BlockTest/";
 
-        private const String textByronNarrow = "When a man hath no freedom to fight for at home, " + "Let him combat for that of his neighbours; "
-             + "Let him think of the glories of Greece and of Rome, " + "And get knocked on the head for his labours. "
-             + "\n" + "To do good to Mankind is the chivalrous plan, " + "And is always as nobly requited; " + "Then battle for Freedom wherever you can, "
-             + "And, if not shot or hanged, you'll get knighted.";
-
-        private const String textByron = "When a man hath no freedom to fight for at home,\n" + "    Let him combat for that of his neighbours;\n"
-             + "Let him think of the glories of Greece and of Rome,\n" + "    And get knocked on the head for his labours.\n"
-             + "\n" + "To do good to Mankind is the chivalrous plan,\n" + "    And is always as nobly requited;\n"
-             + "Then battle for Freedom wherever you can,\n" + "    And, if not shot or hanged, you'll get knighted.";
-
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
             CreateOrClearDestinationFolder(destinationFolder);
         }
 
-        [LogMessage(iText.IO.Logs.IoLogMessageConstant.CLIP_ELEMENT, Count = 2)]
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
+        }
+
         [NUnit.Framework.Test]
+        [LogMessage(iText.IO.Logs.IoLogMessageConstant.CLIP_ELEMENT, Count = 2)]
         public virtual void BlockWithSetHeightProperties01() {
             String outFileName = destinationFolder + "blockWithSetHeightProperties01.pdf";
             String cmpFileName = sourceFolder + "cmp_blockWithSetHeightProperties01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
-            Paragraph p = new Paragraph(textByron);
+            Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
             for (int i = 0; i < 10; i++) {
-                p.Add(textByron);
+                p.Add(TestResourceUtil.GetByronStanza());
             }
             p.SetBorder(new SolidBorder(0.5f));
             doc.Add(new Paragraph("Default layout:"));
@@ -110,9 +106,9 @@ namespace iText.Layout {
         public virtual void BlockWithSetHeightProperties02() {
             String outFileName = destinationFolder + "blockWithSetHeightProperties02.pdf";
             String cmpFileName = sourceFolder + "cmp_blockWithSetHeightProperties02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
-            Paragraph p = new Paragraph(textByron);
+            Paragraph p = new Paragraph(TestResourceUtil.GetByronStanza());
             Div div = new Div();
             div.SetBorder(new SolidBorder(ColorConstants.RED, 2));
             for (int i = 0; i < 5; i++) {
@@ -163,11 +159,11 @@ namespace iText.Layout {
             //Relative height declaration tests
             String outFileName = destinationFolder + "blockWithSetHeightProperties03.pdf";
             String cmpFileName = sourceFolder + "cmp_blockWithSetHeightProperties03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             float parentHeight = 650;
             Div d = new Div();
-            d.Add(new Paragraph(textByron));
+            d.Add(new Paragraph(TestResourceUtil.GetByronStanza()));
             d.SetBorder(new SolidBorder(0.5f));
             doc.Add(new Paragraph("Default layout:"));
             Div parent = new Div();
@@ -246,11 +242,11 @@ namespace iText.Layout {
             //Relative height declaration tests
             String outFileName = destinationFolder + "blockWithSetHeightProperties04.pdf";
             String cmpFileName = sourceFolder + "cmp_blockWithSetHeightProperties04.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             float parentHeight = 650;
             Paragraph p = new Paragraph();
-            p.Add(new Text(textByron));
+            p.Add(new Text(TestResourceUtil.GetByronStanza()));
             p.SetBorder(new SolidBorder(0.5f));
             doc.Add(new Paragraph("Default layout:"));
             Div parent = new Div();
@@ -328,12 +324,12 @@ namespace iText.Layout {
             // TODO DEVSIX-1373
             String outFileName = destinationFolder + "overflowTest01.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Paragraph explanation = new Paragraph("In this sample iText will not try to fit text in container's width, because overflow property is set. However no text is hidden."
                 );
             doc.Add(explanation);
-            Paragraph p = new Paragraph(textByronNarrow);
+            Paragraph p = new Paragraph(TestResourceUtil.GetByronStanzaNarrow());
             p.SetWidth(200);
             p.SetBorder(new SolidBorder(ColorConstants.BLUE, 1));
             p.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.HIDDEN);
@@ -352,7 +348,7 @@ namespace iText.Layout {
         public virtual void OverflowTest02() {
             String outFileName = destinationFolder + "overflowTest02.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Paragraph p = new Paragraph();
             p.SetWidth(200);
@@ -360,7 +356,7 @@ namespace iText.Layout {
             p.SetBorder(new SolidBorder(ColorConstants.BLUE, 1));
             p.SetBackgroundColor(ColorConstants.YELLOW);
             for (int i = 0; i < 10; i++) {
-                p.Add(textByronNarrow);
+                p.Add(TestResourceUtil.GetByronStanzaNarrow());
             }
             p.SetProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
             doc.Add(p);
@@ -374,7 +370,7 @@ namespace iText.Layout {
         public virtual void OverflowTest03() {
             String outFileName = destinationFolder + "overflowTest03.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Paragraph p = new Paragraph();
             p.SetWidth(1400);
@@ -382,7 +378,7 @@ namespace iText.Layout {
             p.SetBorder(new SolidBorder(ColorConstants.BLUE, 1));
             p.SetBackgroundColor(ColorConstants.YELLOW);
             for (int i = 0; i < 100; i++) {
-                p.Add(textByronNarrow);
+                p.Add(TestResourceUtil.GetByronStanzaNarrow());
             }
             p.SetProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
             p.SetProperty(Property.OVERFLOW_X, OverflowPropertyValue.VISIBLE);
@@ -398,7 +394,7 @@ namespace iText.Layout {
         public virtual void OverflowTest04() {
             String outFileName = destinationFolder + "overflowTest04.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest04.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             iText.Layout.Element.Image image = new iText.Layout.Element.Image(ImageDataFactory.Create(sourceFolder + "Desert.jpg"
                 ));
             image.SetWidth(200);
@@ -423,7 +419,7 @@ namespace iText.Layout {
         public virtual void OverflowTest05() {
             String outFileName = destinationFolder + "overflowTest05.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest05.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             div.SetWidth(100);
@@ -449,14 +445,14 @@ namespace iText.Layout {
         public virtual void OverflowTest06() {
             String outFileName = destinationFolder + "overflowTest06.pdf";
             String cmpFileName = sourceFolder + "cmp_overflowTest06.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             div.SetWidth(100);
             div.SetHeight(100);
             div.SetBackgroundColor(ColorConstants.GREEN);
             div.SetProperty(Property.OVERFLOW_Y, OverflowPropertyValue.VISIBLE);
-            div.Add(new Paragraph(textByron));
+            div.Add(new Paragraph(TestResourceUtil.GetByronStanza()));
             doc.Add(div);
             doc.Add(new Paragraph("Hello!!!").SetBackgroundColor(ColorConstants.RED));
             doc.Close();
@@ -468,14 +464,11 @@ namespace iText.Layout {
         public virtual void BlockFillAvailableArea01() {
             String outFileName = destinationFolder + "blockFillAvailableArea01.pdf";
             String cmpFileName = sourceFolder + "cmp_blockFillAvailableArea01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
-            String textByron = "When a man hath no freedom to fight for at home,\n" + "    Let him combat for that of his neighbours;\n"
-                 + "Let him think of the glories of Greece and of Rome,\n" + "    And get knocked on the head for his labours.\n"
-                 + "\n" + "To do good to Mankind is the chivalrous plan,\n" + "    And is always as nobly requited;\n"
-                 + "Then battle for Freedom wherever you can,\n" + "    And, if not shot or hanged, you'll get knighted."
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
+            String textByron = TestResourceUtil.GetByronStanza() + "To do good to Mankind is the chivalrous plan,\n" +
+                 "    And is always as nobly requited;\n" + "Then battle for Freedom wherever you can,\n" + "    And, if not shot or hanged, you'll get knighted."
                  + "To do good to Mankind is the chivalrous plan,\n" + "    And is always as nobly requited;\n" + "Then battle for Freedom wherever you can,\n"
-                 + "    And, if not shot or hanged, you'll get knighted." + "To do good to Mankind is the chivalrous plan,\n"
-                 + "    And is always as nobly requited;\n" + "Then battle for Freedom wherever you can,\n" + "    And, if not shot or hanged, you'll get knighted.";
+                 + "    And, if not shot or hanged, you'll get knighted.";
             textByron = textByron + textByron;
             Document doc = new Document(pdfDocument);
             DeviceRgb blue = new DeviceRgb(80, 114, 153);
@@ -521,7 +514,7 @@ namespace iText.Layout {
         public virtual void MarginsBordersPaddingOverflow01() {
             String outFileName = destinationFolder + "marginsBordersPaddingOverflow01.pdf";
             String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             div.SetHeight(760).SetBackgroundColor(ColorConstants.DARK_GRAY);
@@ -538,7 +531,7 @@ namespace iText.Layout {
         public virtual void MarginsBordersPaddingOverflow02() {
             String outFileName = destinationFolder + "marginsBordersPaddingOverflow02.pdf";
             String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             // TODO DEVSIX-1092 div with fixed height is bigger than 60pt
             Div div = new Div();
@@ -555,7 +548,7 @@ namespace iText.Layout {
         public virtual void MarginsBordersPaddingOverflow03() {
             String outFileName = destinationFolder + "marginsBordersPaddingOverflow03.pdf";
             String cmpFileName = sourceFolder + "cmp_marginsBordersPaddingOverflow03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             div.SetHeight(710).SetBackgroundColor(ColorConstants.DARK_GRAY);
@@ -583,7 +576,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest01() {
             String outFileName = destinationFolder + "borderRadiusTest01.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             Style divStyle = new Style().SetHeight(500).SetWidth(500).SetBackgroundColor(ColorConstants.BLUE);
@@ -623,7 +616,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest02() {
             String outFileName = destinationFolder + "borderRadiusTest02.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             // width and height > 2 * radius
             Div div = new Div();
@@ -651,7 +644,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest03() {
             String outFileName = destinationFolder + "borderRadiusTest03.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             Style divStyle = new Style().SetHeight(500).SetWidth(500).SetBackgroundColor(ColorConstants.GREEN);
@@ -695,7 +688,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest04() {
             String outFileName = destinationFolder + "borderRadiusTest04.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest04.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             Style divStyle = new Style().SetHeight(120).SetWidth(120).SetBackgroundColor(ColorConstants.MAGENTA);
@@ -739,7 +732,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest05() {
             String outFileName = destinationFolder + "borderRadiusTest05.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest05.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             Style divStyle = new Style().SetHeight(460).SetWidth(360).SetBackgroundColor(ColorConstants.MAGENTA);
@@ -783,7 +776,7 @@ namespace iText.Layout {
         public virtual void BorderRadiusTest06() {
             String outFileName = destinationFolder + "borderRadiusTest06.pdf";
             String cmpFileName = sourceFolder + "cmp_borderRadiusTest06.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div();
             Style divStyle = new Style().SetHeight(460).SetWidth(360).SetBackgroundColor(ColorConstants.MAGENTA);
@@ -829,7 +822,7 @@ namespace iText.Layout {
             // then the element's height should be increased up to height
             String outFileName = destinationFolder + "heightShouldBeIncreasedUpToSetHeightTest01.pdf";
             String cmpFileName = sourceFolder + "cmp_heightShouldBeIncreasedUpToSetHeightTest01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             Div div = new Div().SetWidth(100).SetMinHeight(100).SetHeight(200).SetBackgroundColor(ColorConstants.BLUE);
             doc.Add(div);
@@ -843,7 +836,7 @@ namespace iText.Layout {
         public virtual void ParagraphVerticalAlignmentTest01() {
             String outFileName = destinationFolder + "paragraphVerticalAlignmentTest01.pdf";
             String cmpFileName = sourceFolder + "paragraphVerticalAlignmentTest01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document doc = new Document(pdfDocument);
             FontProvider fontProvider = new FontProvider();
             fontProvider.AddStandardPdfFonts();

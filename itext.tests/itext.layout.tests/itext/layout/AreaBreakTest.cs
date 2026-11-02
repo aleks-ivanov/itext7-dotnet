@@ -28,10 +28,12 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Utils;
 using iText.Layout.Element;
 using iText.Layout.Layout;
+using iText.Layout.Logs;
 using iText.Layout.Properties;
 using iText.Layout.Renderer;
 using iText.Layout.Tagging;
 using iText.Test;
+using iText.Test.Attributes;
 
 namespace iText.Layout {
     [NUnit.Framework.Category("IntegrationTest")]
@@ -46,11 +48,16 @@ namespace iText.Layout {
             CreateDestinationFolder(destinationFolder);
         }
 
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
+        }
+
         [NUnit.Framework.Test]
         public virtual void PageBreakTest1() {
             String outFileName = destinationFolder + "pageBreak1.pdf";
             String cmpFileName = sourceFolder + "cmp_pageBreak1.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             document.Add(new AreaBreak());
             document.Close();
@@ -59,10 +66,11 @@ namespace iText.Layout {
         }
 
         [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.FLEX_CONTAINER_SHOULD_NOT_CONTAIN_AREA_OR_SECTION_BREAK)]
         public virtual void AreaBreakInsideFlexContainerTest() {
             String outFileName = destinationFolder + "areaBreakInsideFlexContainer.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideFlexContainer.pdf";
-            Document document = new Document(new PdfDocument(new PdfWriter(outFileName)));
+            Document document = new Document(new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName)));
             Div div = new Div().Add(new Div().Add(new Paragraph("test1"))).Add(new AreaBreak()).Add(new Div().Add(new 
                 Paragraph("test2")));
             div.SetNextRenderer(new FlexContainerRenderer(div));
@@ -76,7 +84,7 @@ namespace iText.Layout {
         public virtual void PageBreakTest2() {
             String outFileName = destinationFolder + "pageBreak2.pdf";
             String cmpFileName = sourceFolder + "cmp_pageBreak2.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             document.Add(new Paragraph("Hello World!")).Add(new AreaBreak(new PageSize(200, 200)));
             document.Close();
@@ -88,7 +96,7 @@ namespace iText.Layout {
         public virtual void PageBreakTest03() {
             String outFileName = destinationFolder + "pageBreak3.pdf";
             String cmpFileName = sourceFolder + "cmp_pageBreak3.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             document.SetRenderer(new ColumnDocumentRenderer(document, new Rectangle[] { new Rectangle(30, 30, 200, 600
@@ -105,7 +113,8 @@ namespace iText.Layout {
             String inputFileName = sourceFolder + "input.pdf";
             String cmpFileName = sourceFolder + "cmp_lastPageAreaBreakTest01.pdf";
             String outFileName = destinationFolder + "lastPageAreaBreakTest01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfReader(inputFileName), new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(new PdfReader(inputFileName), CompareTool.CreateTestPdfWriter(outFileName
+                ));
             Document document = new Document(pdfDocument);
             document.Add(new AreaBreak(AreaBreakType.LAST_PAGE)).Add(new Paragraph("Hello there on the last page!").SetFontSize
                 (30).SetWidth(200).SetMarginTop(250));
@@ -118,7 +127,7 @@ namespace iText.Layout {
         public virtual void LastPageAreaBreakTest02() {
             String cmpFileName = sourceFolder + "cmp_lastPageAreaBreakTest02.pdf";
             String outFileName = destinationFolder + "lastPageAreaBreakTest02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.AddNewPage();
             Document document = new Document(pdfDocument);
             document.Add(new AreaBreak(AreaBreakType.LAST_PAGE)).Add(new Paragraph("Hello there on the last page!").SetFontSize
@@ -132,7 +141,7 @@ namespace iText.Layout {
         public virtual void LastPageAreaBreakTest03() {
             String cmpFileName = sourceFolder + "cmp_lastPageAreaBreakTest03.pdf";
             String outFileName = destinationFolder + "lastPageAreaBreakTest03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.AddNewPage();
             pdfDocument.AddNewPage();
             Document document = new Document(pdfDocument);
@@ -148,7 +157,8 @@ namespace iText.Layout {
             String inputFileName = sourceFolder + "input.pdf";
             String cmpFileName = sourceFolder + "cmp_lastPageAreaBreakTest04.pdf";
             String outFileName = destinationFolder + "lastPageAreaBreakTest04.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfReader(inputFileName), new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(new PdfReader(inputFileName), CompareTool.CreateTestPdfWriter(outFileName
+                ));
             Document document = new Document(pdfDocument);
             document.Add(new AreaBreak(AreaBreakType.LAST_PAGE)).Add(new AreaBreak(AreaBreakType.LAST_PAGE)).Add(new Paragraph
                 ("Hello there on the last page!").SetFontSize(30).SetWidth(200).SetMarginTop(250));
@@ -161,7 +171,7 @@ namespace iText.Layout {
         public virtual void AreaBreakInsideDiv01Test() {
             String outFileName = destinationFolder + "areaBreakInsideDiv01.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideDiv01.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Div div = new Div().Add(new Paragraph("Hello")).Add(new AreaBreak()).Add(new Paragraph("World"));
             document.Add(div);
@@ -174,7 +184,7 @@ namespace iText.Layout {
         public virtual void AreaBreakInsideDiv02Test() {
             String outFileName = destinationFolder + "areaBreakInsideDiv02.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideDiv02.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Div div = new Div().Add(new Paragraph("Hello")).Add(new AreaBreak(PageSize.A5)).Add(new AreaBreak(PageSize
                 .A6)).Add(new Paragraph("World"));
@@ -188,7 +198,7 @@ namespace iText.Layout {
         public virtual void AreaBreakInsideDiv03Test() {
             String outFileName = destinationFolder + "areaBreakInsideDiv03.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideDiv03.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div div = new Div().Add(new Paragraph("Hello")).Add(new AreaBreak()).Add(new Paragraph("World"));
@@ -203,7 +213,7 @@ namespace iText.Layout {
         public virtual void AreaBreakInsideDiv04Test() {
             String outFileName = destinationFolder + "areaBreakInsideDiv04.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideDiv04.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Div div = new Div().Add(new Paragraph("Hello")).Add(new AreaBreak(AreaBreakType.NEXT_PAGE)).Add(new Paragraph
                 ("World"));
@@ -218,7 +228,7 @@ namespace iText.Layout {
         public virtual void AreaBreakInsideDivInTaggedDocumentTest() {
             String outFileName = destinationFolder + "areaBreakInsideDivInTaggedDocument.pdf";
             String cmpFileName = sourceFolder + "cmp_areaBreakInsideDivInTaggedDocument.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             pdfDocument.GetDiContainer().Register(typeof(ProhibitedTagRelationsResolver), new ProhibitedTagRelationsResolver
                 (pdfDocument));
@@ -228,6 +238,93 @@ namespace iText.Layout {
             document.Close();
             NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, destinationFolder
                 , "diff"));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.AREA_BREAK_IGNORED)]
+        public virtual void AreaBreakInsideTableHeaderTest() {
+            String fileName = "areaBreakInsideTableHeader";
+            String outFileName = destinationFolder + fileName + ".pdf";
+            String cmpFileName = sourceFolder + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Div().Add(new Paragraph("Before area break")).Add(new AreaBreak(PageSize.A5)).Add(
+                        new Paragraph("After area break")));
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell("Table cell content 3");
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, destinationFolder
+                , "diff_" + fileName));
+        }
+
+        // TODO DEVSIX-10049 Fix AreaBreak page size change not working
+        [NUnit.Framework.Test]
+        public virtual void AreaBreakInsideTableBodyTest() {
+            String fileName = "areaBreakInsideTableBody";
+            String outFileName = destinationFolder + fileName + ".pdf";
+            String cmpFileName = sourceFolder + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell(new Div().Add(new Paragraph("Before area break")).Add(new AreaBreak(PageSize.A5)).Add(new Paragraph
+                        ("After area break")));
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, destinationFolder
+                , "diff_" + fileName));
+        }
+
+        [NUnit.Framework.Test]
+        [LogMessage(LayoutLogMessageConstant.AREA_BREAK_IGNORED)]
+        public virtual void AreaBreakInsideTableFooterTest() {
+            String fileName = "areaBreakInsideTableFooter";
+            String outFileName = destinationFolder + fileName + ".pdf";
+            String cmpFileName = sourceFolder + "cmp_" + fileName + ".pdf";
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName))) {
+                using (Document document = new Document(pdfDoc)) {
+                    Table table = new Table(4);
+                    table.AddHeaderCell("Header text");
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddHeaderCell(new Cell());
+                    table.AddCell("Table cell content 1");
+                    table.AddCell("Table cell content 2");
+                    table.AddCell("Table cell content 3");
+                    table.AddCell("Table cell content 4");
+                    table.AddFooterCell("Footer text");
+                    table.AddFooterCell(new Cell());
+                    table.AddFooterCell(new Div().Add(new Paragraph("Before area break")).Add(new AreaBreak(PageSize.A5)).Add(
+                        new Paragraph("After area break")));
+                    table.AddFooterCell(new Cell());
+                    document.Add(table);
+                }
+            }
+            NUnit.Framework.Assert.IsNull(new CompareTool().CompareByContent(outFileName, cmpFileName, destinationFolder
+                , "diff_" + fileName));
         }
 
         private class DivRendererWithAreas : DivRenderer {

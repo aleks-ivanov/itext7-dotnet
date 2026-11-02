@@ -26,6 +26,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using iText.Commons.Exceptions;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.Commons.Utils {
     /// <summary>Allows writing entries into a zip file.</summary>
@@ -81,7 +82,7 @@ namespace iText.Commons.Utils {
             AddEntryToZip(fileName, zos => {
                 byte[] bytes = new byte[1024];
                 int length;
-                while ((length = inputStream.Read(bytes)) > 0) {
+                while ((length = inputStream.JRead(bytes)) > 0) {
                     zos.Write(bytes, 0, length);
                 }
             });
@@ -93,6 +94,7 @@ namespace iText.Commons.Utils {
         /// <param name="fileName">the target name of the file inside zip after writing</param>
         /// <param name="objectToAdd">the object to serialize as JSON</param>
         /// <exception cref="IOException">if some I/O exception occurs</exception>
+        [Obsolete(@"Not used anywhere")]
         public void AddJsonEntry(String fileName, Object objectToAdd) {
             if (objectToAdd == null) {
                 throw new IOException(CommonsExceptionMessageConstant.JSON_OBJECT_CAN_NOT_BE_NULL);

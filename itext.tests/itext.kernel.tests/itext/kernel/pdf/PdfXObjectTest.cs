@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Image;
 using iText.Kernel.Geom;
@@ -293,7 +294,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);
@@ -317,7 +319,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);
@@ -342,7 +345,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);
@@ -365,7 +369,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);
@@ -387,7 +392,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);
@@ -410,7 +416,8 @@ namespace iText.Kernel.Pdf {
             if (appendMode) {
                 props.UseAppendMode();
             }
-            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(destPdf), props)) {
+            using (PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(destPdf
+                ), props)) {
                 PdfPage firstPage = pdfDocument.GetFirstPage();
                 PdfResources pageResources = firstPage.GetResources();
                 PdfDictionary xObjectDict = pageResources.GetResource(PdfName.XObject);

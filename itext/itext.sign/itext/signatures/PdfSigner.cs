@@ -31,6 +31,7 @@ using iText.Commons.Bouncycastle.Asn1.Esf;
 using iText.Commons.Bouncycastle.Cert;
 using iText.Commons.Bouncycastle.Crypto;
 using iText.Commons.Digest;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Forms;
 using iText.Forms.Fields;
@@ -668,7 +669,7 @@ namespace iText.Signatures {
             IMessageDigest messageDigest = tsa.GetMessageDigest();
             byte[] buf = new byte[4096];
             int n;
-            while ((n = data.Read(buf)) > 0) {
+            while ((n = data.JRead(buf)) > 0) {
                 messageDigest.Update(buf, 0, n);
             }
             byte[] tsImprint = messageDigest.Digest();
@@ -1509,7 +1510,8 @@ namespace iText.Signatures {
                 this.reader = null;
             }
 
-            public virtual void Apply(PdfSigner.ISignatureDataProvider signatureDataProvider) {
+//\cond DO_NOT_DOCUMENT
+            internal virtual void Apply(PdfSigner.ISignatureDataProvider signatureDataProvider) {
                 StampingProperties properties = new StampingProperties().PreserveEncryption();
                 properties.RegisterDependency(typeof(IMacContainerLocator), () => new SignatureMacContainerLocator());
                 // This IdleOutputStream writer does nothing and only required to be able to apply MAC if needed.
@@ -1532,6 +1534,7 @@ namespace iText.Signatures {
                     }
                 }
             }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
             internal virtual void Apply(PdfDocument document, PdfSigner.ISignatureDataProvider signatureDataProvider) {
@@ -1579,9 +1582,11 @@ namespace iText.Signatures {
             }
 //\endcond
 
-            public virtual Stream GetDataToSign() {
+//\cond DO_NOT_DOCUMENT
+            internal virtual Stream GetDataToSign() {
                 return new RASInputStream(new RandomAccessSourceFactory().CreateRanged(readerSource, gaps));
             }
+//\endcond
         }
 //\endcond
 

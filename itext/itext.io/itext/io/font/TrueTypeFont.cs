@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using iText.Commons.Datastructures;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.IO.Exceptions;
 using iText.IO.Font.Constants;
@@ -31,11 +32,14 @@ using iText.IO.Font.Otf;
 using iText.IO.Util;
 
 namespace iText.IO.Font {
+    /// <summary>Font program backed by an OpenType/TrueType font or a TrueType Collection member.</summary>
     public class TrueTypeFont : FontProgram {
         private OpenTypeParser fontParser;
 
+        /// <summary>Per-glyph bounding boxes indexed by glyph ID, in normalized glyph units.</summary>
         protected internal int[][] bBoxes;
 
+        /// <summary>Indicates that the selected CMap uses vertical writing metrics.</summary>
         protected internal bool isVertical;
 
         private GlyphSubstitutionTableReader gsubTable;
@@ -62,18 +66,31 @@ namespace iText.IO.Font {
             InitializeFontProperties();
         }
 
+        /// <summary>Creates an uninitialized font.</summary>
         protected internal TrueTypeFont() {
             fontNames = new FontNames();
         }
 
+        /// <summary>Loads a standalone OpenType or TrueType font from a path.</summary>
+        /// <param name="path">path to the font file</param>
         public TrueTypeFont(String path)
             : this(new OpenTypeParser(path)) {
         }
 
+        /// <summary>Loads a standalone OpenType or TrueType font from its binary contents.</summary>
+        /// <param name="ttf">font bytes</param>
         public TrueTypeFont(byte[] ttf)
             : this(new OpenTypeParser(ttf)) {
         }
 
+        /// <summary>Loads a font from binary contents.</summary>
+        /// <param name="ttf">font bytes</param>
+        /// <param name="isLenientMode">
+        /// 
+        /// <see langword="true"/>
+        /// to enable lenient parser behavior, see
+        /// <see cref="OpenTypeParser.OpenTypeParser(byte[], bool)"/>
+        /// </param>
         public TrueTypeFont(byte[] ttf, bool isLenientMode)
             : this(new OpenTypeParser(ttf, isLenientMode)) {
         }
@@ -105,10 +122,18 @@ namespace iText.IO.Font {
             return kerning.Get((first.GetCode() << 16) + second.GetCode());
         }
 
+        /// <summary>Checks whether this OpenType font stores a CFF table.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// for CFF-flavored OpenType fonts
+        /// </returns>
         public virtual bool IsCff() {
             return fontParser.IsCff();
         }
 
+        /// <summary>Gets the preferred character-to-glyph CMap selected from the font.</summary>
+        /// <returns>mapping from character code to CMap data</returns>
         public virtual IDictionary<int, int[]> GetActiveCmap() {
             OpenTypeParser.CmapTable cmaps = fontParser.GetCmapTable();
             if (cmaps.cmap310 != null) {
@@ -134,6 +159,8 @@ namespace iText.IO.Font {
             }
         }
 
+        /// <summary>Gets the bytes of the font.</summary>
+        /// <returns>CFF bytes for CFF fonts or complete font bytes otherwise</returns>
         public virtual byte[] GetFontStreamBytes() {
             if (fontStreamBytes != null) {
                 return fontStreamBytes;
@@ -178,14 +205,20 @@ namespace iText.IO.Font {
             return fontParser.directoryOffset;
         }
 
+        /// <summary>Gets the GSUB table reader.</summary>
+        /// <returns>substitution table reader</returns>
         public virtual GlyphSubstitutionTableReader GetGsubTable() {
             return gsubTable;
         }
 
+        /// <summary>Gets the GPOS table reader.</summary>
+        /// <returns>positioning table reader</returns>
         public virtual GlyphPositioningTableReader GetGposTable() {
             return gposTable;
         }
 
+        /// <summary>Gets the GDEF table reader.</summary>
+        /// <returns>glyph definition table reader</returns>
         public virtual OpenTypeGdefTableReader GetGdefTable() {
             return gdefTable;
         }
@@ -325,6 +358,44 @@ namespace iText.IO.Font {
             return cmaps.cmapEncodings.Count;
         }
 
+        /// <summary>Extracts features from GSUB and GPOS tables based on the passed script tags.</summary>
+        /// <remarks>
+        /// Extracts features from GSUB and GPOS tables based on the passed script tags.
+        /// The features are put in the passed extractedFeatures map
+        /// </remarks>
+        /// <param name="otfScriptTags">the script tags to extract the features for</param>
+        /// <param name="extractedFeatures">the features will be added to this map</param>
+        /// <returns>
+        /// the script tag which was used to extract features.
+        /// It may be null if no features were extracted or default script tag was used.
+        /// </returns>
+        public virtual String ExtractFeatures(ICollection<String> otfScriptTags, IDictionary<String, IList<OpenTableLookup
+            >> extractedFeatures) {
+            IList<String> otfScriptTagsList;
+            otfScriptTagsList = new List<String>();
+            if (otfScriptTags != null) {
+                otfScriptTagsList.AddAll(otfScriptTags);
+            }
+            String dfltScriptTag = "DFLT";
+            otfScriptTagsList.Add(dfltScriptTag);
+            GlyphSubstitutionTableReader gsubTableReader = GetGsubTable();
+            String usedScriptTag = ExtractFeaturesFromTable(gsubTableReader, otfScriptTagsList, extractedFeatures);
+            String finalUsedScriptTag = null;
+            if (usedScriptTag != null && !dfltScriptTag.Equals(usedScriptTag)) {
+                // In case there are more than one version of script, let's try use it for both gsub and gpos.
+                // For this reason reinit otfScriptTagsList without other versions of scripts
+                otfScriptTagsList = JavaUtil.ArraysAsList(usedScriptTag, dfltScriptTag);
+                finalUsedScriptTag = usedScriptTag;
+            }
+            GlyphPositioningTableReader gposTableReader = GetGposTable();
+            usedScriptTag = ExtractFeaturesFromTable(gposTableReader, otfScriptTagsList, extractedFeatures);
+            if (finalUsedScriptTag == null) {
+                finalUsedScriptTag = usedScriptTag;
+            }
+            return finalUsedScriptTag;
+        }
+
+        /// <summary>Reads the GDEF table.</summary>
         protected internal virtual void ReadGdefTable() {
             int[] gdef = fontParser.tables.Get("GDEF");
             if (gdef != null) {
@@ -336,6 +407,7 @@ namespace iText.IO.Font {
             gdefTable.ReadTable();
         }
 
+        /// <summary>Creates the GSUB table reader when the font supplies a GSUB table.</summary>
         protected internal virtual void ReadGsubTable() {
             int[] gsub = fontParser.tables.Get("GSUB");
             if (gsub != null) {
@@ -344,6 +416,7 @@ namespace iText.IO.Font {
             }
         }
 
+        /// <summary>Creates the GPOS table reader.</summary>
         protected internal virtual void ReadGposTable() {
             int[] gpos = fontParser.tables.Get("GPOS");
             if (gpos != null) {
@@ -486,6 +559,7 @@ namespace iText.IO.Font {
             return Object.Equals(fontParser.fileName, fontProgram);
         }
 
+        /// <summary>Closes the underlying font parser and releases its source data.</summary>
         public virtual void Close() {
             if (fontParser != null) {
                 fontParser.Close();
@@ -603,6 +677,29 @@ namespace iText.IO.Font {
                 }
             }
             return missingGlyphs;
+        }
+
+        private static String ExtractFeaturesFromTable(OpenTypeFontTableReader table, IEnumerable<String> otfScriptTagsList
+            , IDictionary<String, IList<OpenTableLookup>> extractedFeatures) {
+            String usedScriptTag = null;
+            LanguageRecord languageRecord = null;
+            if (table != null) {
+                foreach (String scriptTag in otfScriptTagsList) {
+                    languageRecord = table.GetLanguageRecord(scriptTag);
+                    if (languageRecord != null) {
+                        usedScriptTag = scriptTag;
+                        break;
+                    }
+                }
+            }
+            if (languageRecord != null) {
+                foreach (int featureIndex in languageRecord.GetFeatures()) {
+                    FeatureRecord feature = table.GetFeatureRecords()[featureIndex];
+                    IList<OpenTableLookup> lookups = table.GetLookups(new FeatureRecord[] { feature });
+                    extractedFeatures.Put(feature.GetTag(), lookups);
+                }
+            }
+            return usedScriptTag;
         }
     }
 }

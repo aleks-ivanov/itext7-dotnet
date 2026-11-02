@@ -24,11 +24,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 using Versions.Attributes;
-using iText.Commons;
 using iText.Commons.Actions.Contexts;
 using iText.Commons.Actions.Sequence;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font;
 using iText.IO.Font.Otf;
@@ -45,6 +45,8 @@ namespace iText.Layout.Renderer {
 
         private static AbstractTypographyApplier applierInstance;
 
+        private static AbstractTypographyApplier defaultApplierInstance;
+
         static TypographyUtils() {
             try {
                 Type type = GetTypographyClass(TYPOGRAPHY_PACKAGE + TYPOGRAPHY_APPLIER);
@@ -58,8 +60,9 @@ namespace iText.Layout.Renderer {
             catch (Exception) {
             }
             // do nothing
+            defaultApplierInstance = new DefaultTypographyApplier();
             if (applierInstance == null) {
-                SetTypographyApplierInstance(new DefaultTypographyApplier());
+                SetTypographyApplierInstance(defaultApplierInstance);
             }
         }
 
@@ -92,6 +95,13 @@ namespace iText.Layout.Renderer {
 
         public static IDictionary<String, byte[]> LoadShippedFonts() {
             return applierInstance.LoadShippedFonts();
+        }
+
+        public static AbstractTypographyApplier GetApplierInstance(bool vertical) {
+            if (vertical) {
+                return defaultApplierInstance;
+            }
+            return applierInstance;
         }
 
 //\cond DO_NOT_DOCUMENT
@@ -171,8 +181,8 @@ namespace iText.Layout.Renderer {
                         }
                     }
                     if (type == null && fileLoadExceptionMessage != null) {
-                        ILogger logger = ITextLogManager.GetLogger(typeof(TypographyUtils));
-                        logger.LogError(fileLoadExceptionMessage);
+                        LazyLogger logger = new LazyLogger(typeof(TypographyUtils));
+                        logger.Error(() => fileLoadExceptionMessage);
                     }
                 }
             }

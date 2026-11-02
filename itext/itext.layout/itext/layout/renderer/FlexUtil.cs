@@ -22,12 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.Kernel.Geom;
 using iText.Layout.Exceptions;
 using iText.Layout.Layout;
+using iText.Layout.Logs;
 using iText.Layout.Minmaxwidth;
 using iText.Layout.Properties;
 
@@ -40,11 +41,12 @@ namespace iText.Layout.Renderer {
 
         private const float FLEX_SHRINK_INITIAL_VALUE = 1F;
 
-        private static readonly ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.FlexUtil));
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Renderer.FlexUtil));
 
         private FlexUtil() {
         }
 
+//\cond DO_NOT_DOCUMENT
         // Do nothing
         /// <summary>Performs flex layout algorithm.</summary>
         /// <remarks>
@@ -56,7 +58,7 @@ namespace iText.Layout.Renderer {
         /// <param name="flexContainerBBox">bounding box in which flex container should be rendered</param>
         /// <param name="flexContainerRenderer">flex container's renderer</param>
         /// <returns>list of lines</returns>
-        public static IList<IList<FlexItemInfo>> CalculateChildrenRectangles(Rectangle flexContainerBBox, FlexContainerRenderer
+        internal static IList<IList<FlexItemInfo>> CalculateChildrenRectangles(Rectangle flexContainerBBox, FlexContainerRenderer
              flexContainerRenderer) {
             Rectangle layoutBox = flexContainerBBox.Clone();
             flexContainerRenderer.ApplyMarginsBordersPaddings(layoutBox, false);
@@ -159,6 +161,7 @@ namespace iText.Layout.Renderer {
             }
             return layoutTable;
         }
+//\endcond
 
         private static void ApplyAlignContent(IList<IList<FlexUtil.FlexItemCalculationInfo>> lines, FlexContainerRenderer
              renderer, float? crossSize, Rectangle layoutBox, float gap) {
@@ -717,7 +720,10 @@ namespace iText.Layout.Renderer {
                         }
                     }
                     else {
-                        logger.LogError(iText.IO.Logs.IoLogMessageConstant.FLEX_ITEM_LAYOUT_RESULT_IS_NOT_FULL);
+                        LOGGER.Error(() => LayoutLogMessageConstant.FLEX_ITEM_LAYOUT_RESULT_IS_NOT_FULL);
+                        if (result.GetAreaBreak() != null || result.GetSectionBreak() != null) {
+                            LOGGER.Warn(() => LayoutLogMessageConstant.FLEX_ITEM_CONTAINS_AREA_BREAK_OR_SECTION_BREAK);
+                        }
                         info.hypotheticalCrossSize = 0;
                     }
                 }
@@ -1277,10 +1283,12 @@ namespace iText.Layout.Renderer {
                 }
             }
 
-            public virtual Rectangle ToRectangle() {
+//\cond DO_NOT_DOCUMENT
+            internal virtual Rectangle ToRectangle() {
                 return isColumnDirection ? new Rectangle(xShift, yShift, GetOuterCrossSize(crossSize), GetOuterMainSize(mainSize
                     )) : new Rectangle(xShift, yShift, GetOuterMainSize(mainSize), GetOuterCrossSize(crossSize));
             }
+//\endcond
 
 //\cond DO_NOT_DOCUMENT
             internal virtual float GetOuterMainSize(float size) {

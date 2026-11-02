@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Exceptions;
 using iText.IO.Font;
 
@@ -30,6 +31,8 @@ namespace iText.IO.Image {
 //\cond DO_NOT_DOCUMENT
     internal sealed class BmpImageHelper {
         private class BmpParameters {
+            /// <summary>Creates a parsing context for a BMP image.</summary>
+            /// <param name="image">image being decoded</param>
             public BmpParameters(BmpImageData image) {
                 this.image = image;
             }
@@ -169,13 +172,14 @@ namespace iText.IO.Image {
 
         private const int BI_BITFIELDS = 3;
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Process the passed Image data as a BMP image.</summary>
         /// <remarks>
         /// Process the passed Image data as a BMP image.
         /// Image is loaded and all image attributes are initialized and/or updated
         /// </remarks>
         /// <param name="image">the image to process as a BMP image</param>
-        public static void ProcessImage(ImageData image) {
+        internal static void ProcessImage(ImageData image) {
             if (image.GetOriginalType() != ImageType.BMP) {
                 throw new ArgumentException("BMP image expected");
             }
@@ -200,6 +204,7 @@ namespace iText.IO.Image {
             }
             RawImageHelper.UpdateImageAttributes(bmp.image, bmp.additional);
         }
+//\endcond
 
         private static void Process(BmpImageHelper.BmpParameters bmp, Stream stream) {
             bmp.inputStream = stream;
@@ -1072,7 +1077,7 @@ namespace iText.IO.Image {
                         bdata[l++] = (byte)(((int)(((uint)v) >> blue_shift) & blue_mask) * 256 / blue_factor);
                     }
                     for (int m = 0; m < padding; m++) {
-                        bmp.inputStream.Read();
+                        bmp.inputStream.ReadByte();
                     }
                 }
             }
@@ -1090,7 +1095,7 @@ namespace iText.IO.Image {
                         bdata[l++] = (byte)(((int)(((uint)v) >> blue_shift) & blue_mask) * 256 / blue_factor);
                     }
                     for (int m = 0; m < padding; m++) {
-                        bmp.inputStream.Read();
+                        bmp.inputStream.ReadByte();
                     }
                 }
             }
@@ -1262,7 +1267,7 @@ namespace iText.IO.Image {
         // Windows defined data type reading methods - everything is little endian
         // Unsigned 8 bits
         private static int ReadUnsignedByte(Stream stream) {
-            return stream.Read() & 0xff;
+            return stream.ReadByte() & 0xff;
         }
 
         // Unsigned 2 bytes

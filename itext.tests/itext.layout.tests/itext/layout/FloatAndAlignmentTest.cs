@@ -21,6 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using iText.Commons.Internal.Runtime;
 using iText.Kernel.Colors;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
@@ -50,6 +51,11 @@ namespace iText.Layout {
             CreateOrClearDestinationFolder(destinationFolder);
         }
 
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
+        }
+
         [NUnit.Framework.Test]
         public virtual void BlocksInsideDiv() {
             /* this test shows different combinations of 3 float values blocks  within divParent containers
@@ -57,7 +63,7 @@ namespace iText.Layout {
             String testName = "blocksInsideDiv";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div div1 = CreateDiv(ColorConstants.RED, HorizontalAlignment.CENTER, ClearPropertyValue.BOTH, FloatPropertyValue
@@ -96,7 +102,7 @@ namespace iText.Layout {
             String testName = "blocksInsideDivFloat";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div div1 = CreateDiv(ColorConstants.RED, HorizontalAlignment.CENTER, ClearPropertyValue.BOTH, FloatPropertyValue
@@ -135,7 +141,7 @@ namespace iText.Layout {
             String testName = "blocksInsideEachOther";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div divRed = CreateDiv(ColorConstants.RED, HorizontalAlignment.CENTER, ClearPropertyValue.BOTH, FloatPropertyValue
@@ -176,7 +182,7 @@ namespace iText.Layout {
             String testName = "blocksInsideEachOther_sameFixedWidthsNesting";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div divRed = CreateDiv(ColorConstants.RED, HorizontalAlignment.CENTER, ClearPropertyValue.BOTH, FloatPropertyValue
@@ -254,7 +260,7 @@ namespace iText.Layout {
         }
 
         private void CreateDocumentWithBlocks(String outFileName, HorizontalAlignment? horizontalAlignment) {
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Div divRed = CreateDiv(ColorConstants.RED, horizontalAlignment, ClearPropertyValue.NONE, FloatPropertyValue
@@ -287,7 +293,7 @@ namespace iText.Layout {
             String testName = "inlineBlocksAndFloatsWithTextAlignmentTest01";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Paragraph parentPara = new Paragraph().SetTextAlignment(TextAlignment.RIGHT);
@@ -307,7 +313,7 @@ namespace iText.Layout {
             String testName = "inlineBlocksAndFloatsWithTextAlignmentTest02";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Paragraph parentPara = new Paragraph().SetTextAlignment(TextAlignment.JUSTIFIED);
@@ -328,7 +334,7 @@ namespace iText.Layout {
             String testName = "inlineBlocksAndFloatsWithTextAlignmentTest03";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             // making an inline float a last element in the line
@@ -351,7 +357,7 @@ namespace iText.Layout {
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
             try {
-                using (PdfWriter writer = new PdfWriter(outFileName)) {
+                using (PdfWriter writer = CompareTool.CreateTestPdfWriter(outFileName)) {
                     using (PdfDocument pdfDocument = new PdfDocument(writer)) {
                         pdfDocument.SetDefaultPageSize(PageSize.A5);
                         using (Document document = new Document(pdfDocument)) {
@@ -381,7 +387,7 @@ namespace iText.Layout {
             String testName = "floatsOnlyJustificationTest01";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             pdfDocument.SetTagged();
             Document document = new Document(pdfDocument);
             Paragraph parentPara = new Paragraph().SetTextAlignment(TextAlignment.JUSTIFIED);
@@ -400,7 +406,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithAlignmentNextToRightFloat.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithAlignmentNextToRightFloat.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT);
             Table table2 = CreateTable(HorizontalAlignment.LEFT);
@@ -428,7 +434,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithAlignmentNextToLeftFloat.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithAlignmentNextToLeftFloat.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT);
             Table table2 = CreateTable(HorizontalAlignment.LEFT);
@@ -456,7 +462,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithAlignmentBetweenFloats.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithAlignmentBetweenFloats.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT).SetWidth(250);
             Table table2 = CreateTable(HorizontalAlignment.LEFT).SetWidth(250);
@@ -489,7 +495,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithBigLeftMarginAfterFloat.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithBigLeftMarginAfterFloat.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT);
             table1.SetMarginLeft(300);
@@ -520,7 +526,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithBigRightMarginAfterFloat.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithBigRightMarginAfterFloat.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT);
             table1.SetMarginRight(300);
@@ -551,7 +557,7 @@ namespace iText.Layout {
             //TODO DEVSIX-4021 update cmp file after fix
             String outFileName = destinationFolder + "tableWithSideMarginsBetweenFloat.pdf";
             String cmpFileName = sourceFolder + "cmp_tableWithSideMarginsBetweenFloat.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfWriter(outFileName));
+            PdfDocument pdfDocument = new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName));
             Document document = new Document(pdfDocument);
             Table table1 = CreateTable(HorizontalAlignment.RIGHT);
             table1.SetMarginRight(150).SetMarginLeft(150);
@@ -587,7 +593,7 @@ namespace iText.Layout {
             String testName = "floatPositioningOutsideBlocks";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            using (Document document = new Document(new PdfDocument(new PdfWriter(outFileName)))) {
+            using (Document document = new Document(new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName)))) {
                 Div floatLeft = new Div().SetBorder(new SolidBorder(ColorConstants.GREEN, 3)).SetBackgroundColor(ColorConstants
                     .GREEN, 0.3f).SetWidth(100).SetHeight(100);
                 floatLeft.SetProperty(Property.FLOAT, FloatPropertyValue.LEFT);
@@ -631,7 +637,7 @@ namespace iText.Layout {
             String testName = "floatPositioningOutsideFlexContainer";
             String outFileName = destinationFolder + testName + ".pdf";
             String cmpFileName = sourceFolder + "cmp_" + testName + ".pdf";
-            using (Document document = new Document(new PdfDocument(new PdfWriter(outFileName)))) {
+            using (Document document = new Document(new PdfDocument(CompareTool.CreateTestPdfWriter(outFileName)))) {
                 Div floatLeft = new Div().SetBorder(new SolidBorder(ColorConstants.GREEN, 1)).SetBackgroundColor(ColorConstants
                     .GREEN, 0.3f).SetWidth(100).SetHeight(100);
                 floatLeft.SetProperty(Property.FLOAT, FloatPropertyValue.LEFT);

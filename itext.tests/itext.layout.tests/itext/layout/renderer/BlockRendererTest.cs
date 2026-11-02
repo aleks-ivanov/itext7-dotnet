@@ -56,6 +56,11 @@ namespace iText.Layout.Renderer {
             CreateOrClearDestinationFolder(DESTINATION_FOLDER);
         }
 
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(DESTINATION_FOLDER);
+        }
+
         [NUnit.Framework.Test]
         public virtual void ApplyMinHeightForSpecificDimensionsCausingFloatPrecisionErrorTest() {
             float divHeight = 42.55f;
@@ -100,14 +105,14 @@ namespace iText.Layout.Renderer {
         }
 
         [NUnit.Framework.Test]
-        [LogMessage(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED, Count = 2, LogLevel
+        [LogMessage(iText.IO.Logs.IoLogMessageConstant.OCCUPIED_AREA_HAS_NOT_BEEN_INITIALIZED, Count = 3, LogLevel
              = LogLevelConstants.ERROR)]
         public virtual void ParentBoxWrapAroundChildBoxesTest() {
             // TODO DEVSIX-6488 all elements should be layouted first in case when parent box should wrap around child boxes
             String cmpFileName = SOURCE_FOLDER + "cmp_parentBoxWrapAroundChildBoxes.pdf";
             String outFile = DESTINATION_FOLDER + "parentBoxWrapAroundChildBoxes.pdf";
             int enoughDivsToOccupyWholePage = 30;
-            Document document = new Document(new PdfDocument(new PdfWriter(outFile)));
+            Document document = new Document(new PdfDocument(CompareTool.CreateTestPdfWriter(outFile)));
             Div div = new Div();
             div.SetBackgroundColor(ColorConstants.CYAN);
             div.SetProperty(Property.POSITION, LayoutPosition.ABSOLUTE);
@@ -186,7 +191,7 @@ namespace iText.Layout.Renderer {
         public virtual void EnableForcePlacementIfCauseOfNothingNotInOverflowTreeTest() {
             String cmpFileName = SOURCE_FOLDER + "cmp_enableForcePlacementIfCauseOfNothingNotInOverflowTree.pdf";
             String outFile = DESTINATION_FOLDER + "enableForcePlacementIfCauseOfNothingNotInOverflowTree.pdf";
-            PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile));
+            PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFile));
             Document doc = new Document(pdfDoc);
             // In this test we use custom DivRenderer implementation to break parent tree of cause of nothing element to
             // check that RootRenderer.tryDisableKeepTogether catches that case and switches to enabling forced placement
@@ -212,7 +217,7 @@ namespace iText.Layout.Renderer {
         public virtual void AbsolutePositionedChildIsNotDroppedWhenParentSplitsTest() {
             String cmpFileName = SOURCE_FOLDER + "cmp_absolutePositionedChildIsNotDroppedWhenParentSplits.pdf";
             String outFile = DESTINATION_FOLDER + "absolutePositionedChildIsNotDroppedWhenParentSplits.pdf";
-            using (PdfDocument pdfDoc = new PdfDocument(new PdfWriter(outFile))) {
+            using (PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(outFile))) {
                 using (Document doc = new Document(pdfDoc)) {
                     Div tocEntry = new Div();
                     tocEntry.SetProperty(Property.POSITION, LayoutPosition.RELATIVE);

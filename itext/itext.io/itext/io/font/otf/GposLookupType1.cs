@@ -22,12 +22,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.IO.Font.Otf {
     /// <summary>Lookup Type 1: Single Adjustment Positioning Subtable</summary>
     public class GposLookupType1 : OpenTableLookup {
-        private IDictionary<int, GposValueRecord> valueRecordMap = new Dictionary<int, GposValueRecord>();
+        private readonly IDictionary<int, GposValueRecord> valueRecordMap = new Dictionary<int, GposValueRecord>();
 
+        /// <summary>Creates a new GPOS Lookup Type 1.</summary>
+        /// <param name="openReader">the OpenType font reader</param>
+        /// <param name="lookupFlag">
+        /// specifies processing options, e.g. whether to skip base glyphs, marks or
+        /// ligatures during glyph substitution or positioning. See
+        /// <a href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#lookup-table">Lookup table</a>
+        /// </param>
+        /// <param name="subTableLocations">the sub table locations</param>
         public GposLookupType1(OpenTypeFontTableReader openReader, int lookupFlag, int[] subTableLocations)
             : base(openReader, lookupFlag, subTableLocations) {
             ReadSubTables();
@@ -48,6 +57,8 @@ namespace iText.IO.Font.Otf {
                 Glyph newGlyph = new Glyph(line.Get(line.GetIdx()));
                 newGlyph.SetXAdvance((short)(newGlyph.GetXAdvance() + valueRecord.GetXAdvance()));
                 newGlyph.SetYAdvance((short)(newGlyph.GetYAdvance() + valueRecord.GetYAdvance()));
+                newGlyph.SetXPlacement((short)(newGlyph.GetXPlacement() + valueRecord.GetXPlacement()));
+                newGlyph.SetYPlacement((short)(newGlyph.GetYPlacement() + valueRecord.GetYPlacement()));
                 line.Set(line.GetIdx(), newGlyph);
                 positionApplied = true;
             }

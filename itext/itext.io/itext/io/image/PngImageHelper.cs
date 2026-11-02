@@ -24,8 +24,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Colors;
 using iText.IO.Exceptions;
@@ -35,6 +35,8 @@ using iText.IO.Util;
 namespace iText.IO.Image {
 //\cond DO_NOT_DOCUMENT
     internal class PngImageHelper {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(PngImageHelper));
+
         private class PngParameters {
 //\cond DO_NOT_DOCUMENT
             internal PngParameters(PngImageData image) {
@@ -144,38 +146,60 @@ namespace iText.IO.Image {
 //\endcond
         }
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Some PNG specific values.</summary>
-        public static readonly int[] PNGID = new int[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+        internal static readonly int[] PNGID = new int[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String IHDR = "IHDR";
+        internal const String IHDR = "IHDR";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String PLTE = "PLTE";
+        internal const String PLTE = "PLTE";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String IDAT = "IDAT";
+        internal const String IDAT = "IDAT";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String IEND = "IEND";
+        internal const String IEND = "IEND";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String tRNS = "tRNS";
+        internal const String tRNS = "tRNS";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String pHYs = "pHYs";
+        internal const String pHYs = "pHYs";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String gAMA = "gAMA";
+        internal const String gAMA = "gAMA";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String cHRM = "cHRM";
+        internal const String cHRM = "cHRM";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String sRGB = "sRGB";
+        internal const String sRGB = "sRGB";
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>A PNG marker.</summary>
-        public const String iCCP = "iCCP";
+        internal const String iCCP = "iCCP";
+//\endcond
 
         private const int TRANSFERSIZE = 4096;
 
@@ -193,7 +217,8 @@ namespace iText.IO.Image {
             .RELATIVE_COLORIMETRIC, PngImageHelperConstants.SATURATION, PngImageHelperConstants.ABSOLUTE_COLORMETRIC
              };
 
-        public static void ProcessImage(ImageData image) {
+//\cond DO_NOT_DOCUMENT
+        internal static void ProcessImage(ImageData image) {
             if (image.GetOriginalType() != ImageType.PNG) {
                 throw new ArgumentException("PNG image expected");
             }
@@ -222,13 +247,14 @@ namespace iText.IO.Image {
             }
             RawImageHelper.UpdateImageAttributes(png.image, png.additional);
         }
+//\endcond
 
         private static void ProcessPng(Stream pngStream, PngImageHelper.PngParameters png) {
             ReadPng(pngStream, png);
             int colorType = png.image.GetColorType();
             if (png.iccProfile != null && png.iccProfile.GetNumComponents() != GetExpectedNumberOfColorComponents(png)
                 ) {
-                ITextLogManager.GetLogger(typeof(PngImageHelper)).LogWarning(iText.IO.Logs.IoLogMessageConstant.PNG_IMAGE_HAS_ICC_PROFILE_WITH_INCOMPATIBLE_NUMBER_OF_COLOR_COMPONENTS
+                LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.PNG_IMAGE_HAS_ICC_PROFILE_WITH_INCOMPATIBLE_NUMBER_OF_COLOR_COMPONENTS
                     );
             }
             try {
@@ -347,7 +373,7 @@ namespace iText.IO.Image {
 
         private static void ReadPng(Stream pngStream, PngImageHelper.PngParameters png) {
             for (int i = 0; i < PNGID.Length; i++) {
-                if (PNGID[i] != pngStream.Read()) {
+                if (PNGID[i] != pngStream.ReadByte()) {
                     throw new System.IO.IOException("file.is.not.a.valid.png");
                 }
             }
@@ -409,7 +435,7 @@ namespace iText.IO.Image {
                                 if (len > 0) {
                                     png.trans = new byte[len];
                                     for (int k = 0; k < len; ++k) {
-                                        png.trans[k] = (byte)pngStream.Read();
+                                        png.trans[k] = (byte)pngStream.ReadByte();
                                     }
                                     len = 0;
                                 }
@@ -422,18 +448,18 @@ namespace iText.IO.Image {
                         if (IHDR.Equals(marker)) {
                             png.width = GetInt(pngStream);
                             png.height = GetInt(pngStream);
-                            png.bitDepth = pngStream.Read();
-                            png.image.SetColorType(pngStream.Read());
-                            png.compressionMethod = pngStream.Read();
-                            png.filterMethod = pngStream.Read();
-                            png.interlaceMethod = pngStream.Read();
+                            png.bitDepth = pngStream.ReadByte();
+                            png.image.SetColorType(pngStream.ReadByte());
+                            png.compressionMethod = pngStream.ReadByte();
+                            png.filterMethod = pngStream.ReadByte();
+                            png.interlaceMethod = pngStream.ReadByte();
                         }
                         else {
                             if (PLTE.Equals(marker)) {
                                 if (png.image.IsIndexed()) {
                                     ByteBuffer colorTableBuf = new ByteBuffer();
                                     while ((len--) > 0) {
-                                        colorTableBuf.Append(pngStream.Read());
+                                        colorTableBuf.Append(pngStream.ReadByte());
                                     }
                                     png.image.SetColorPalette(colorTableBuf.ToByteArray());
                                 }
@@ -445,7 +471,7 @@ namespace iText.IO.Image {
                                 if (pHYs.Equals(marker)) {
                                     int dx = GetInt(pngStream);
                                     int dy = GetInt(pngStream);
-                                    int unit = pngStream.Read();
+                                    int unit = pngStream.ReadByte();
                                     if (unit == 1) {
                                         png.dpiX = (int)(dx * 0.0254f + 0.5f);
                                         png.dpiY = (int)(dy * 0.0254f + 0.5f);
@@ -470,7 +496,7 @@ namespace iText.IO.Image {
                                     }
                                     else {
                                         if (sRGB.Equals(marker)) {
-                                            int ri = pngStream.Read();
+                                            int ri = pngStream.ReadByte();
                                             png.intent = intents[ri];
                                             png.image.SetGamma(2.2f);
                                             PngChromaticities pngChromaticities = new PngChromaticities(0.3127f, 0.329f, 0.64f, 0.33f, 0.3f, 0.6f, 0.15f
@@ -494,8 +520,8 @@ namespace iText.IO.Image {
                                                     do {
                                                         --len;
                                                     }
-                                                    while (pngStream.Read() != 0);
-                                                    pngStream.Read();
+                                                    while (pngStream.ReadByte() != 0);
+                                                    pngStream.ReadByte();
                                                     --len;
                                                     byte[] icccom = new byte[len];
                                                     int p = 0;
@@ -630,7 +656,7 @@ namespace iText.IO.Image {
                 // Read the filter type byte and a row of data
                 int filter = 0;
                 try {
-                    filter = png.dataStream.Read();
+                    filter = png.dataStream.ReadByte();
                     StreamUtil.ReadFully(png.dataStream, curr, 0, bytesPerRow);
                 }
                 catch (Exception) {
@@ -923,30 +949,37 @@ namespace iText.IO.Image {
             }
         }
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Gets an <c>int</c> from an <c>InputStream</c>.</summary>
         /// <param name="pngStream">an <c>InputStream</c></param>
         /// <returns>the value of an <c>int</c></returns>
-        public static int GetInt(Stream pngStream) {
-            return (pngStream.Read() << 24) + (pngStream.Read() << 16) + (pngStream.Read() << 8) + pngStream.Read();
+        internal static int GetInt(Stream pngStream) {
+            return (pngStream.ReadByte() << 24) + (pngStream.ReadByte() << 16) + (pngStream.ReadByte() << 8) + pngStream
+                .ReadByte();
         }
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Gets a <c>word</c> from an <c>InputStream</c>.</summary>
         /// <param name="pngStream">an <c>InputStream</c></param>
         /// <returns>the value of an <c>int</c></returns>
-        public static int GetWord(Stream pngStream) {
-            return (pngStream.Read() << 8) + pngStream.Read();
+        internal static int GetWord(Stream pngStream) {
+            return (pngStream.ReadByte() << 8) + pngStream.ReadByte();
         }
+//\endcond
 
+//\cond DO_NOT_DOCUMENT
         /// <summary>Gets a <c>String</c> from an <c>InputStream</c>.</summary>
         /// <param name="pngStream">an <c>InputStream</c></param>
         /// <returns>the value of an <c>int</c></returns>
-        public static String GetString(Stream pngStream) {
+        internal static String GetString(Stream pngStream) {
             StringBuilder buf = new StringBuilder();
             for (int i = 0; i < 4; i++) {
-                buf.Append((char)pngStream.Read());
+                buf.Append((char)pngStream.ReadByte());
             }
             return buf.ToString();
         }
+//\endcond
     }
 //\endcond
 }

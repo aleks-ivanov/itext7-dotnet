@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Forms.Fields;
 using iText.Kernel.Pdf;
 using iText.Kernel.Utils;
@@ -40,12 +41,17 @@ namespace iText.Forms {
             CreateDestinationFolder(destinationFolder);
         }
 
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
+        }
+
         [NUnit.Framework.Test]
         public virtual void FillingFormWithKidsTest() {
             String srcPdf = sourceFolder + "formWithKids.pdf";
             String cmpPdf = sourceFolder + "cmp_fillingFormWithKidsTest.pdf";
             String outPdf = destinationFolder + "fillingFormWithKidsTest.pdf";
-            PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), new PdfWriter(outPdf));
+            PdfDocument pdfDocument = new PdfDocument(new PdfReader(srcPdf), CompareTool.CreateTestPdfWriter(outPdf));
             PdfAcroForm acroForm = PdfFormCreator.GetAcroForm(pdfDocument, false);
             IDictionary<String, PdfFormField> formFields = acroForm.GetAllFormFields();
             foreach (String key in formFields.Keys) {
@@ -63,8 +69,8 @@ namespace iText.Forms {
         [NUnit.Framework.Test]
         public virtual void AutosizeInheritedDAFormFieldsTest() {
             String inPdf = destinationFolder + "autosizeInheritedDAFormFields.pdf";
-            PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "autosizeInheritedDAFormFields.pdf"), new 
-                PdfWriter(inPdf));
+            PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "autosizeInheritedDAFormFields.pdf"), CompareTool
+                .CreateTestPdfWriter(inPdf));
             PdfAcroForm form = PdfFormCreator.GetAcroForm(pdfDoc, true);
             IDictionary<String, PdfFormField> fields = form.GetAllFormFields();
             fields.Get("field_1").SetValue("1111 2222 3333 4444");
@@ -79,7 +85,7 @@ namespace iText.Forms {
         public virtual void AutosizeInheritedDAFormFieldsWithKidsTest() {
             String inPdf = destinationFolder + "autosizeInheritedDAFormFieldsWithKids.pdf";
             PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + "autosizeInheritedDAFormFieldsWithKids.pdf"
-                ), new PdfWriter(inPdf));
+                ), CompareTool.CreateTestPdfWriter(inPdf));
             PdfAcroForm form = PdfFormCreator.GetAcroForm(pdfDoc, true);
             form.GetField("root.child.text1").SetValue("surname surname surname surname surname");
             form.GetField("root.child.text2").SetValue("surname surname surname surname surname");
@@ -92,7 +98,8 @@ namespace iText.Forms {
         public virtual void AlignmentInheritanceInFieldsTest() {
             String name = "alignmentInheritanceInFields";
             String fileName = destinationFolder + name + ".pdf";
-            PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + name + ".pdf"), new PdfWriter(fileName));
+            PdfDocument pdfDoc = new PdfDocument(new PdfReader(sourceFolder + name + ".pdf"), CompareTool.CreateTestPdfWriter
+                (fileName));
             PdfAcroForm form = PdfFormCreator.GetAcroForm(pdfDoc, true);
             form.SetGenerateAppearance(false);
             IDictionary<String, PdfFormField> fields = form.GetAllFormFields();

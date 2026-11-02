@@ -21,12 +21,21 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 
 namespace iText.IO.Font.Otf {
     /// <summary>LookupType 3: Alternate Substitution Subtable</summary>
     public class GsubLookupType3 : OpenTableLookup {
         private IDictionary<int, int[]> substMap;
 
+        /// <summary>Creates a new GSUB Lookup Type 3.</summary>
+        /// <param name="openReader">the OpenType font reader</param>
+        /// <param name="lookupFlag">
+        /// specifies processing options, e.g. whether to skip base glyphs, marks or
+        /// ligatures during glyph substitution or positioning. See
+        /// <a href="https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#lookup-table">Lookup table</a>
+        /// </param>
+        /// <param name="subTableLocations">the sub table locations</param>
         public GsubLookupType3(OpenTypeFontTableReader openReader, int lookupFlag, int[] subTableLocations)
             : base(openReader, lookupFlag, subTableLocations) {
             substMap = new Dictionary<int, int[]>();

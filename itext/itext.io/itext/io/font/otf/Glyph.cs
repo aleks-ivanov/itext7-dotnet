@@ -21,9 +21,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 
 namespace iText.IO.Font.Otf {
+    /// <summary>Represents a glyph and its Unicode mapping, metrics, and layout adjustments.</summary>
     public class Glyph {
         private const char REPLACEMENT_CHARACTER = '\ufffd';
 
@@ -138,7 +140,17 @@ namespace iText.IO.Font.Otf {
             this.anchorDelta = glyph.anchorDelta;
         }
 
-        /// <summary>Copy a Glyph and assign new placement and advance offsets and a new index delta to base glyph</summary>
+        /// <summary>Copy a Glyph and assign new advance offsets.</summary>
+        /// <param name="glyph">Glyph to copy</param>
+        /// <param name="xAdvance">x - advance offset</param>
+        /// <param name="yAdvance">y - advance offset</param>
+        public Glyph(iText.IO.Font.Otf.Glyph glyph, int xAdvance, int yAdvance)
+            : this(glyph) {
+            this.xAdvance = (short)xAdvance;
+            this.yAdvance = (short)yAdvance;
+        }
+
+        /// <summary>Copy a Glyph and assign new placement and advance offsets and a new index delta to base glyph.</summary>
         /// <param name="glyph">Glyph to copy</param>
         /// <param name="xPlacement">x - placement offset</param>
         /// <param name="yPlacement">y - placement offset</param>
@@ -148,11 +160,9 @@ namespace iText.IO.Font.Otf {
         ///     </param>
         public Glyph(iText.IO.Font.Otf.Glyph glyph, int xPlacement, int yPlacement, int xAdvance, int yAdvance, int
              anchorDelta)
-            : this(glyph) {
+            : this(glyph, xAdvance, yAdvance) {
             this.xPlacement = (short)xPlacement;
             this.yPlacement = (short)yPlacement;
-            this.xAdvance = (short)xAdvance;
-            this.yAdvance = (short)yAdvance;
             this.anchorDelta = (short)anchorDelta;
         }
 
@@ -163,92 +173,179 @@ namespace iText.IO.Font.Otf {
             : this(glyph.code, glyph.width, unicode, GetChars(unicode), glyph.IsMark()) {
         }
 
+        /// <summary>
+        /// Returns the
+        /// <c>code</c>
+        /// or
+        /// <c>id</c>
+        /// by which this is represented in the Font File.
+        /// </summary>
+        /// <returns>the requested result</returns>
         public virtual int GetCode() {
             return code;
         }
 
+        /// <summary>Returns the normalized width of this Glyph.</summary>
+        /// <returns>the requested result</returns>
         public virtual int GetWidth() {
             return width;
         }
 
+        /// <summary>Returns the normalized bbox of this Glyph.</summary>
+        /// <returns>the requested result</returns>
         public virtual int[] GetBbox() {
             return bbox;
         }
 
+        /// <summary>Determines whether valid unicode applies.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if the operation succeeds; otherwise
+        /// <see langword="false"/>
+        /// </returns>
         public virtual bool HasValidUnicode() {
             return unicode > -1;
         }
 
+        /// <summary>Returns the unicode (utf-32 representation of Glyph).</summary>
+        /// <returns>the requested result</returns>
         public virtual int GetUnicode() {
             return unicode;
         }
 
+        /// <summary>Updates the Unicode text represented by this Glyph.</summary>
+        /// <param name="unicode">the utf-32 representation of Glyph</param>
         public virtual void SetUnicode(int unicode) {
             this.unicode = unicode;
             this.chars = GetChars(unicode);
         }
 
+        /// <summary>Returns the Unicode text represented by this Glyph.</summary>
+        /// <returns>the requested result</returns>
         public virtual char[] GetChars() {
             return chars;
         }
 
+        /// <summary>Updates the Unicode text represented by this Glyph.</summary>
+        /// <param name="chars">the Unicode text represented by this Glyph</param>
         public virtual void SetChars(char[] chars) {
             this.chars = chars;
         }
 
+        /// <summary>Determines whether this Glyph is Mark.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if this Glyph is Mark; otherwise
+        /// <see langword="false"/>
+        /// </returns>
         public virtual bool IsMark() {
             return isMark;
         }
 
+        /// <summary>Returns the placement x offset.</summary>
+        /// <returns>the requested result</returns>
         public virtual short GetXPlacement() {
             return xPlacement;
         }
 
+        /// <summary>Updates the placement x offset.</summary>
+        /// <param name="xPlacement">the x offset for placement</param>
         public virtual void SetXPlacement(short xPlacement) {
             this.xPlacement = xPlacement;
         }
 
+        /// <summary>Returns the placement y offset.</summary>
+        /// <returns>the requested result</returns>
         public virtual short GetYPlacement() {
             return yPlacement;
         }
 
+        /// <summary>Updates the placement y offset.</summary>
+        /// <param name="yPlacement">the y offset for placement</param>
         public virtual void SetYPlacement(short yPlacement) {
             this.yPlacement = yPlacement;
         }
 
+        /// <summary>Returns the advance x offset.</summary>
+        /// <returns>the requested result</returns>
         public virtual short GetXAdvance() {
             return xAdvance;
         }
 
+        /// <summary>Updates the advance x offset.</summary>
+        /// <param name="xAdvance">the x advance</param>
         public virtual void SetXAdvance(short xAdvance) {
             this.xAdvance = xAdvance;
         }
 
+        /// <summary>Returns the advance y offset.</summary>
+        /// <returns>the requested result</returns>
         public virtual short GetYAdvance() {
             return yAdvance;
         }
 
+        /// <summary>Updates the advance y offset.</summary>
+        /// <param name="yAdvance">the y advance</param>
         public virtual void SetYAdvance(short yAdvance) {
             this.yAdvance = yAdvance;
         }
 
+        /// <summary>Gets the index delta to base glyph.</summary>
+        /// <returns>the index delta to base glyph</returns>
         public virtual short GetAnchorDelta() {
+            // Non-zero value potentially means that the glyph is mark (isMark is never used, seems as something to improve).
             return anchorDelta;
         }
 
+        /// <summary>Sets the index delta to base glyph.</summary>
+        /// <param name="anchorDelta">the index delta to base glyph to be set</param>
         public virtual void SetAnchorDelta(short anchorDelta) {
             this.anchorDelta = anchorDelta;
         }
 
+        /// <summary>Checks whether the glyph has any offsets either own or advance or both at the same time.</summary>
+        /// <remarks>
+        /// Checks whether the glyph has any offsets either own or advance or both at the same time.
+        /// <para />
+        /// See
+        /// <see cref="HasPlacement()"/>
+        /// and
+        /// <see cref="HasAdvance()"/>.
+        /// </remarks>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if glyph has any offsets,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
         public virtual bool HasOffsets() {
             return HasAdvance() || HasPlacement();
         }
 
-        // In case some of placement values are not zero we always expect anchorDelta to be non-zero
+        /// <summary>Checks whether the glyph has own offsets: either for X axis or Y axis or both at the same time.</summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if glyph has any own offsets,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
         public virtual bool HasPlacement() {
-            return anchorDelta != 0;
+            return xPlacement != 0 || yPlacement != 0;
         }
 
+        /// <summary>Checks whether the glyph has advance offsets: either for X axis or Y axis or both at the same time.
+        ///     </summary>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if glyph has any advance offsets,
+        /// <see langword="false"/>
+        /// otherwise
+        /// </returns>
         public virtual bool HasAdvance() {
             return xAdvance != 0 || yAdvance != 0;
         }
@@ -263,8 +360,12 @@ namespace iText.IO.Font.Otf {
         }
 
         /// <summary>Two Glyphs are equal if their unicode characters, code and normalized width are equal.</summary>
-        /// <param name="obj">The object</param>
-        /// <returns>True if this equals obj cast to Glyph, false otherwise.</returns>
+        /// <param name="obj">еhe object</param>
+        /// <returns>
+        /// 
+        /// <see langword="true"/>
+        /// if this equals obj cast to Glyph, false otherwise
+        /// </returns>
         public override bool Equals(Object obj) {
             if (this == obj) {
                 return true;
@@ -312,6 +413,8 @@ namespace iText.IO.Font.Otf {
             }
         }
 
+        /// <summary>Returns a string representation of this glyph.</summary>
+        /// <returns>the requested result</returns>
         public override String ToString() {
             return MessageFormatUtil.Format("[id={0}, chars={1}, uni={2}, width={3}]", ToHex(code), chars != null ? JavaUtil.ArraysToString
                 (chars) : "null", ToHex(unicode), width);

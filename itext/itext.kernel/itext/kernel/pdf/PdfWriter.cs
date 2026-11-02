@@ -23,8 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Source;
 using iText.Kernel.Exceptions;
@@ -39,6 +39,8 @@ namespace iText.Kernel.Pdf {
     /// <see cref="WriterProperties"/>.
     /// </remarks>
     public class PdfWriter : PdfOutputStream {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Kernel.Pdf.PdfWriter));
+
         private static readonly byte[] OBJ = ByteUtils.GetIsoBytes(" obj\n");
 
         private static readonly byte[] ENDOBJ = ByteUtils.GetIsoBytes("\nendobj\n");
@@ -67,7 +69,7 @@ namespace iText.Kernel.Pdf {
             <PdfIndirectReference, PdfIndirectReference>();
 
         /// <summary>Is used in smart mode to serialize and store serialized objects content.</summary>
-        private readonly SmartModePdfObjectsSerializer smartModeSerializer = new SmartModePdfObjectsSerializer();
+        private SmartModePdfObjectsSerializer smartModeSerializer;
 
         private Stream originalOutputStream;
 
@@ -320,8 +322,7 @@ namespace iText.Kernel.Pdf {
                 obj = PdfNull.PDF_NULL;
             }
             if (CheckTypeOfPdfDictionary(obj, PdfName.Catalog)) {
-                ILogger logger = ITextLogManager.GetLogger(typeof(PdfReader));
-                logger.LogWarning(iText.IO.Logs.IoLogMessageConstant.MAKE_COPY_OF_CATALOG_DICTIONARY_IS_FORBIDDEN);
+                LOGGER.Warn(() => iText.IO.Logs.IoLogMessageConstant.MAKE_COPY_OF_CATALOG_DICTIONARY_IS_FORBIDDEN);
                 obj = PdfNull.PDF_NULL;
             }
             PdfIndirectReference indirectReference = obj.GetIndirectReference();
@@ -335,6 +336,9 @@ namespace iText.Kernel.Pdf {
             SerializedObjectContent serializedContent = null;
             if (properties.smartMode && tryToFindDuplicate && !CheckTypeOfPdfDictionary(obj, PdfName.Page) && !CheckTypeOfPdfDictionary
                 (obj, PdfName.OCG) && !CheckTypeOfPdfDictionary(obj, PdfName.OCMD)) {
+                if (smartModeSerializer == null) {
+                    smartModeSerializer = new SmartModePdfObjectsSerializer();
+                }
                 serializedContent = smartModeSerializer.SerializeObject(obj);
                 PdfIndirectReference objectRef = smartModeSerializer.GetSavedSerializedObject(serializedContent);
                 if (objectRef != null) {

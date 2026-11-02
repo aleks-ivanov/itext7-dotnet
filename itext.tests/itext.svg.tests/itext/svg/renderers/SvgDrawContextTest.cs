@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.IO.Util;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
@@ -51,6 +52,41 @@ namespace iText.Svg.Renderers {
         public virtual void DrawContextEmptyStackCountTest() {
             SvgDrawContext context = new SvgDrawContext(null, null);
             NUnit.Framework.Assert.AreEqual(0, context.Size());
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void MaskIdCycleDetectionTest() {
+            SvgDrawContext context = new SvgDrawContext(null, null);
+            NUnit.Framework.Assert.IsFalse(context.IsCurrentMaskId("first"));
+            NUnit.Framework.Assert.IsTrue(context.PushMaskId("first"));
+            NUnit.Framework.Assert.IsTrue(context.IsCurrentMaskId("first"));
+            NUnit.Framework.Assert.IsTrue(context.PushMaskId("second"));
+            NUnit.Framework.Assert.IsTrue(context.IsCurrentMaskId("second"));
+            NUnit.Framework.Assert.IsFalse(context.IsCurrentMaskId("first"));
+            NUnit.Framework.Assert.IsFalse(context.PushMaskId("first"));
+            NUnit.Framework.Assert.IsTrue(context.IsCurrentMaskId("second"));
+            context.PopMaskId();
+            NUnit.Framework.Assert.IsTrue(context.IsCurrentMaskId("first"));
+            context.PopMaskId();
+            NUnit.Framework.Assert.IsFalse(context.IsCurrentMaskId("first"));
+            NUnit.Framework.Assert.IsTrue(context.PushMaskId("first"));
+            context.PopMaskId();
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void NestedMaskRenderingModesTest() {
+            SvgDrawContext context = new SvgDrawContext(null, null);
+            NUnit.Framework.Assert.IsFalse(context.IsRenderingLuminosityMask());
+            context.PushMaskRenderingMode(true);
+            NUnit.Framework.Assert.IsTrue(context.IsRenderingLuminosityMask());
+            context.PushMaskRenderingMode(false);
+            NUnit.Framework.Assert.IsFalse(context.IsRenderingLuminosityMask());
+            context.PopMaskRenderingMode();
+            NUnit.Framework.Assert.IsTrue(context.IsRenderingLuminosityMask());
+            context.PopMaskRenderingMode();
+            NUnit.Framework.Assert.IsFalse(context.IsRenderingLuminosityMask());
+            context.PopMaskRenderingMode();
+            NUnit.Framework.Assert.IsFalse(context.IsRenderingLuminosityMask());
         }
 
         [NUnit.Framework.Test]

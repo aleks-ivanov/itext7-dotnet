@@ -23,11 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using iText.Commons.Datastructures;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Kernel.Exceptions;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Layout.Element;
 using iText.Layout.Exceptions;
+using iText.Layout.Logs;
 using iText.Layout.Properties;
 using iText.Layout.Properties.Margins;
 using iText.Layout.Renderer;
@@ -48,6 +51,8 @@ namespace iText.Layout {
     /// <see cref="SetRenderer(iText.Layout.Renderer.DocumentRenderer)"></see>.
     /// </remarks>
     public class Document : RootElement<iText.Layout.Document> {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Document));
+
         private readonly IDictionary<int, PageMarginBoxes> pageMargins = new Dictionary<int, PageMarginBoxes>();
 
         private readonly IList<Tuple2<Predicate<int>, PageMarginBoxes>> pageMarginsRules = new List<Tuple2<Predicate
@@ -227,6 +232,9 @@ namespace iText.Layout {
             IRenderer nextRelayoutRenderer = rootRenderer != null ? rootRenderer.GetNextRenderer() : null;
             if (nextRelayoutRenderer == null || !(nextRelayoutRenderer is RootRenderer)) {
                 nextRelayoutRenderer = new DocumentRenderer(this, immediateFlush);
+            }
+            if (rootRenderer is DocumentRenderer && rootRenderer != nextRelayoutRenderer) {
+                ((DocumentRenderer)rootRenderer).RemoveEventHandlersForRelayout();
             }
             // Even though #relayout() only makes sense when immediateFlush=false and therefore no elements
             // should have been written to document, still empty pages are created during layout process
@@ -439,6 +447,53 @@ namespace iText.Layout {
         }
 
         /// <summary>
+        /// Gets
+        /// <see cref="iText.Layout.Properties.Margins.FootnotesProperties"/>
+        /// specified for the document to customize footnotes.
+        /// </summary>
+        /// <returns>
+        /// 
+        /// <see cref="iText.Layout.Properties.Margins.FootnotesProperties"/>
+        /// specified for the document
+        /// </returns>
+        public virtual FootnotesProperties GetFootnotesProperties() {
+            FootnotesProperties property = this.GetProperty<FootnotesProperties>(Property.FOOTNOTES_PROPERTIES);
+            return property != null ? property : this.GetDefaultProperty<FootnotesProperties>(Property.FOOTNOTES_PROPERTIES
+                );
+        }
+
+        /// <summary>
+        /// Sets
+        /// <see cref="iText.Layout.Properties.Margins.FootnotesProperties"/>
+        /// for the document.
+        /// </summary>
+        /// <param name="footnotesProperties">
+        /// 
+        /// <see cref="iText.Layout.Properties.Margins.FootnotesProperties"/>
+        /// to customize footnotes
+        /// </param>
+        public virtual void SetFootnotesProperties(FootnotesProperties footnotesProperties) {
+            FootnotesProperties currentProperties = this.GetFootnotesProperties();
+            FootnoteNumberingConfig footnoteNumberingConfig = currentProperties.GetFootnoteNumberingConfig();
+            if (footnotesProperties != null) {
+                if (FootnoteNumberingConfig.PER_DOCUMENT == footnotesProperties.GetFootnoteNumberingConfig()) {
+                    if (this.HasOwnProperty(Property.FOOTNOTES_PROPERTIES) && FootnoteNumberingConfig.PER_DOCUMENT != footnoteNumberingConfig
+                        ) {
+                        LOGGER.Warn(() => LayoutLogMessageConstant.FOOTNOTE_NUM_PER_DOCUMENT_SHOULD_BE_FIRST);
+                        footnotesProperties.SetFootnoteNumberingConfig(footnoteNumberingConfig);
+                    }
+                }
+                else {
+                    if (FootnoteNumberingConfig.PER_DOCUMENT == footnoteNumberingConfig) {
+                        LOGGER.Warn(() => LayoutLogMessageConstant.FOOTNOTE_NUM_PER_DOCUMENT_CANNOT_BE_CHANGED);
+                        footnotesProperties.SetFootnoteNumberingConfig(FootnoteNumberingConfig.PER_DOCUMENT);
+                    }
+                }
+            }
+            this.SetProperty(Property.FOOTNOTES_PROPERTIES, footnotesProperties);
+        }
+
+        /// <summary>
         /// Returns the area that will actually be used to write on the page, given
         /// the current margins.
         /// </summary>
@@ -474,6 +529,10 @@ namespace iText.Layout {
                 case Property.MARGIN_RIGHT:
                 case Property.MARGIN_TOP: {
                     return (T1)(Object)36f;
+                }
+
+                case Property.FOOTNOTES_PROPERTIES: {
+                    return (T1)(Object)new FootnotesProperties();
                 }
 
                 default: {

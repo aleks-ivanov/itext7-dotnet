@@ -183,6 +183,8 @@ namespace iText.Layout.Properties {
 
         public const int FONT_SIZE = 24;
 
+        public const int FOOTNOTES_PROPERTIES = 160;
+
         public const int FORCED_PLACEMENT = 26;
 
         public const int FULL = 25;
@@ -238,11 +240,15 @@ namespace iText.Layout.Properties {
 
         public const int LEFT = 34;
 
+        public const int LINK_ANNOTATION = 88;
+
+        public const int LINE_CAP_STYLE = 166;
+
         public const int LINE_DRAWER = 35;
 
         public const int LINE_HEIGHT = 124;
 
-        public const int LINK_ANNOTATION = 88;
+        public const int LINE_JOIN_STYLE = 167;
 
         public const int LIST_START = 36;
 
@@ -279,6 +285,8 @@ namespace iText.Layout.Properties {
         public const int MIN_HEIGHT = 85;
 
         public const int MIN_WIDTH = 80;
+
+        public const int MITER_LIMIT = 168;
 
         public const int NO_SOFT_WRAP_INLINE = 118;
 
@@ -408,6 +416,22 @@ namespace iText.Layout.Properties {
 
         public const int TREAT_AS_CONTINUOUS_CONTAINER_RESULT = 141;
 
+        public const int IGNORE_AREA_AND_SECTION_BREAKS = 161;
+
+        public const int TOP_CALCULATED = 162;
+
+        public const int LEFT_CALCULATED = 163;
+
+        public const int POSITIONED_ELEMENT_WRAPPED = 164;
+
+        public const int POSITIONED_ELEMENT_WRAPPER_LAYOUT = 165;
+
+        public const int WRITING_MODE = 169;
+
+        public const int TEXT_ORIENTATION = 170;
+
+        public const int TEXT_COMBINE_UPRIGHT = 171;
+
         /// <summary>
         /// Some properties must be passed to
         /// <see cref="iText.Layout.IPropertyContainer"/>
@@ -419,11 +443,11 @@ namespace iText.Layout.Properties {
         /// <see cref="iText.Layout.IPropertyContainer"/>
         /// objects that
         /// are lower in the document's hierarchy. Most inherited properties are
-        /// related to textual operations. Indicates whether or not this type of property is inheritable.
+        /// related to textual operations. Indicates whether this type of property is inheritable.
         /// </remarks>
         private static readonly bool[] INHERITED_PROPERTIES;
 
-        private const int MAX_INHERITED_PROPERTY_ID = 157;
+        private const int MAX_INHERITED_PROPERTY_ID = 171;
 
         static Property() {
             INHERITED_PROPERTIES = new bool[MAX_INHERITED_PROPERTY_ID + 1];
@@ -444,6 +468,7 @@ namespace iText.Layout.Properties {
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.FONT_SIZE] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.FONT_STYLE] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.FONT_WEIGHT] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.FOOTNOTES_PROPERTIES] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.FORCED_PLACEMENT] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.HYPHENATION] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.ITALIC_SIMULATION] = true;
@@ -471,6 +496,14 @@ namespace iText.Layout.Properties {
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.META_INFO] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.ADD_MARKED_CONTENT_TEXT] = true;
             INHERITED_PROPERTIES[iText.Layout.Properties.Property.TREAT_AS_CONTINUOUS_CONTAINER] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.IGNORE_AREA_AND_SECTION_BREAKS] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.POSITIONED_ELEMENT_WRAPPER_LAYOUT] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.LINE_CAP_STYLE] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.LINE_JOIN_STYLE] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.MITER_LIMIT] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.WRITING_MODE] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.TEXT_ORIENTATION] = true;
+            INHERITED_PROPERTIES[iText.Layout.Properties.Property.TEXT_COMBINE_UPRIGHT] = true;
         }
 
         private Property() {

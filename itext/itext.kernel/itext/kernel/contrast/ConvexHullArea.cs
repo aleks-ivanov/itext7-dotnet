@@ -21,6 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Geom;
 
@@ -45,6 +46,7 @@ namespace iText.Kernel.Contrast {
         private ConvexHullArea() {
         }
 
+//\cond DO_NOT_DOCUMENT
         // Utility class
         /// <summary>Computes the convex hull of a set of points using Andrew's monotone chain algorithm.</summary>
         /// <remarks>
@@ -71,7 +73,7 @@ namespace iText.Kernel.Contrast {
         /// If the input contains 0 or 1 points, returns the input list unchanged.
         /// If all points are collinear, returns the two extreme points.
         /// </returns>
-        public static IList<Point> ConvexHull(IList<Point> points) {
+        internal static IList<Point> ConvexHull(IList<Point> points) {
             IList<Point> copiedPoints = new List<Point>(points);
             if (copiedPoints.Count <= 1) {
                 return copiedPoints;
@@ -102,6 +104,7 @@ namespace iText.Kernel.Contrast {
             lower.AddAll(upper);
             return lower;
         }
+//\endcond
 
         private static void BuildHull(IList<Point> lower, Point p) {
             while (lower.Count >= MIN_POINTS_FOR_HULL) {

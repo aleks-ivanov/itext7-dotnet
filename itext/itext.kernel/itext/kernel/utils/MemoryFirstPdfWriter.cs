@@ -24,6 +24,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using iText.Commons.Internal.Runtime;
 using iText.Commons.Utils;
 using iText.Kernel.Pdf;
 
@@ -73,6 +74,10 @@ namespace iText.Kernel.Utils {
         internal static void Cleanup(String path) {
             if (path == null) {
                 throw new ArgumentException("Provided path is null");
+            }
+            if (iText.Kernel.Utils.MemoryFirstPdfWriter.waitingStreams.JRemove(path) != null) {
+                // We don't expect to have any other streams with the same path, so we can return here
+                return;
             }
             foreach (String filePath in iText.Kernel.Utils.MemoryFirstPdfWriter.waitingStreams.Keys) {
                 if (filePath.StartsWith(path)) {

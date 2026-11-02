@@ -28,10 +28,10 @@ using iText.Test;
 namespace iText.Svg.Css {
     [NUnit.Framework.Category("IntegrationTest")]
     public class ColorTest : SvgIntegrationTest {
-        public static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
+        private static readonly String SOURCE_FOLDER = iText.Test.TestUtil.GetParentProjectDirectory(NUnit.Framework.TestContext
             .CurrentContext.TestDirectory) + "/resources/itext/svg/css/ColorTest/";
 
-        public static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/svg/css/ColorTest/";
+        private static readonly String DESTINATION_FOLDER = TestUtil.GetOutputPath() + "/svg/css/ColorTest/";
 
         [NUnit.Framework.OneTimeSetUp]
         public static void BeforeClass() {
@@ -69,6 +69,11 @@ namespace iText.Svg.Css {
         public virtual void ColorTypesTest() {
             //TODO DEVSIX-8748: update cmp files after supporting
             ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "color-types");
+        }
+
+        [NUnit.Framework.Test]
+        public virtual void RgbaTypesTest() {
+            ConvertAndCompareSinglePage(SOURCE_FOLDER, DESTINATION_FOLDER, "rgba-types");
         }
     }
 }

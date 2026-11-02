@@ -22,15 +22,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Internal.Runtime;
+using iText.Commons.Logs;
 using iText.Commons.Utils;
 using iText.IO.Font.Constants;
+using iText.Kernel.Exceptions;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
 using iText.Kernel.Numbering;
 using iText.Kernel.Pdf.Tagging;
 using iText.Layout.Element;
+using iText.Layout.Exceptions;
 using iText.Layout.Layout;
 using iText.Layout.Minmaxwidth;
 using iText.Layout.Properties;
@@ -38,6 +40,8 @@ using iText.Layout.Tagging;
 
 namespace iText.Layout.Renderer {
     public class ListRenderer : BlockRenderer {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Renderer.ListRenderer));
+
         /// <summary>Creates a ListRenderer from its corresponding layout object.</summary>
         /// <param name="modelElement">
         /// the
@@ -323,8 +327,14 @@ namespace iText.Layout.Renderer {
                 (LayoutResult.PARTIAL);
             newOverflowRenderer.DeleteOwnProperty(Property.FORCED_PLACEMENT);
             // ListItemRenderer for not rendered children of firstListItemRenderer
-            newOverflowRenderer.childRenderers.Add(((ListItemRenderer)firstListItemRenderer).CreateOverflowRenderer(LayoutResult
-                .PARTIAL));
+            if (firstListItemRenderer is ListItemRenderer) {
+                newOverflowRenderer.childRenderers.Add(((ListItemRenderer)firstListItemRenderer).CreateOverflowRenderer(LayoutResult
+                    .PARTIAL));
+            }
+            else {
+                throw new PdfException(MessageFormatUtil.Format(LayoutExceptionMessageConstant.INCORRECT_LIST_CHILD, firstListItemRenderer
+                    .GetType()));
+            }
             newOverflowRenderer.childRenderers.AddAll(splitRenderer.GetChildRenderers().SubList(1, splitRenderer.GetChildRenderers
                 ().Count));
             IList<IRenderer> childrenStillRemainingToRender = new List<IRenderer>(firstListItemRenderer.GetChildRenderers
@@ -407,8 +417,7 @@ namespace iText.Layout.Renderer {
                     UnitValue marginToSetUV = childRenderer.GetProperty<UnitValue>(marginToSet, UnitValue.CreatePointValue(0f)
                         );
                     if (!marginToSetUV.IsPointValue()) {
-                        ILogger logger = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.ListRenderer));
-                        logger.LogError(MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
+                        LOGGER.Error(() => MessageFormatUtil.Format(iText.IO.Logs.IoLogMessageConstant.PROPERTY_IN_PERCENTS_NOT_SUPPORTED
                             , marginToSet));
                     }
                     float calculatedMargin = marginToSetUV.GetValue();
@@ -418,7 +427,20 @@ namespace iText.Layout.Renderer {
                     }
                     childRenderer.SetProperty(marginToSet, UnitValue.CreatePointValue(calculatedMargin));
                     IRenderer symbolRenderer = symbolRenderers[listItemNum++];
-                    ((ListItemRenderer)childRenderer).AddSymbolRenderer(symbolRenderer, maxSymbolWidth);
+                    if (childRenderer is ListItemRenderer) {
+                        ((ListItemRenderer)childRenderer).AddSymbolRenderer(symbolRenderer, maxSymbolWidth);
+                    }
+                    else {
+                        if (childRenderer is AbsolutelyPositionedRenderer && ((AbsolutelyPositionedRenderer)childRenderer).GetWrappedRenderer
+                            () is ListItemRenderer) {
+                            ((ListItemRenderer)((AbsolutelyPositionedRenderer)childRenderer).GetWrappedRenderer()).AddSymbolRenderer(symbolRenderer
+                                , maxSymbolWidth);
+                        }
+                        else {
+                            throw new PdfException(MessageFormatUtil.Format(LayoutExceptionMessageConstant.INCORRECT_LIST_CHILD, childRenderer
+                                .GetType()));
+                        }
+                    }
                     if (symbolRenderer != null) {
                         LayoutTaggingHelper taggingHelper = this.GetProperty<LayoutTaggingHelper>(Property.TAGGING_HELPER);
                         if (taggingHelper != null) {

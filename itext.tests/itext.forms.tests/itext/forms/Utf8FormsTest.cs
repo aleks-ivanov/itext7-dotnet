@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
 using System.Collections.Generic;
+using iText.Commons.Internal.Runtime;
 using iText.Forms.Fields;
 using iText.IO.Font;
 using iText.Kernel.Font;
@@ -46,6 +47,11 @@ namespace iText.Forms {
         [NUnit.Framework.SetUp]
         public virtual void Before() {
             CreateDestinationFolder(destinationFolder);
+        }
+
+        [NUnit.Framework.OneTimeTearDown]
+        public static void AfterClass() {
+            CompareTool.Cleanup(destinationFolder);
         }
 
         [NUnit.Framework.Test]
@@ -78,7 +84,8 @@ namespace iText.Forms {
         [NUnit.Framework.Test]
         public virtual void WriteUtf8FieldNameAndValue() {
             //TODO DEVSIX-2798
-            PdfDocument pdfDoc = new PdfDocument(new PdfWriter(destinationFolder + "writeUtf8FieldNameAndValue.pdf"));
+            PdfDocument pdfDoc = new PdfDocument(CompareTool.CreateTestPdfWriter(destinationFolder + "writeUtf8FieldNameAndValue.pdf"
+                ));
             PdfAcroForm form = PdfFormCreator.GetAcroForm(pdfDoc, true);
             PdfTextFormField field = new TextFormFieldBuilder(pdfDoc, "").SetWidgetRectangle(new Rectangle(99, 753, 425
                 , 15)).CreateText();

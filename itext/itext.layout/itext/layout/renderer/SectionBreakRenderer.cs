@@ -21,9 +21,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using iText.Commons;
+using iText.Commons.Logs;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -45,13 +43,13 @@ namespace iText.Layout.Renderer {
     /// layout element.
     /// Will terminate the current page content if any and start a new page.
     /// </remarks>
-    public class SectionBreakRenderer : IRenderer {
-        private static readonly ILogger LOGGER = ITextLogManager.GetLogger(typeof(iText.Layout.Renderer.SectionBreakRenderer
+    public class SectionBreakRenderer : AbstractBreakRenderer {
+        private static readonly LazyLogger LOGGER = new LazyLogger(typeof(iText.Layout.Renderer.SectionBreakRenderer
             ));
 
         private readonly SectionBreak sectionBreak;
 
-        private IRenderer parent;
+        protected internal LayoutArea occupiedArea;
 
         /// <summary>
         /// Creates new
@@ -70,21 +68,38 @@ namespace iText.Layout.Renderer {
         /// <summary>
         /// Logs a warning about unexpected use of
         /// <see cref="SectionBreakRenderer"/>
+        /// if not ignored,
         /// because instances of this class are only used for terminating the current page content.
         /// </summary>
         /// <param name="renderer">
         /// 
         /// <inheritDoc/>
         /// </param>
-        public virtual void AddChild(IRenderer renderer) {
-            LOGGER.LogWarning(LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+        public override void AddChild(IRenderer renderer) {
+            if (this.GetProperty<bool?>(Property.IGNORE_AREA_AND_SECTION_BREAKS) == null) {
+                LOGGER.Warn(() => LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+            }
         }
 
-        public virtual LayoutResult Layout(LayoutContext layoutContext) {
+        public override LayoutResult Layout(LayoutContext layoutContext) {
+            if (true.Equals(this.GetProperty<bool?>(Property.IGNORE_AREA_AND_SECTION_BREAKS))) {
+                if (occupiedArea == null) {
+                    LOGGER.Warn(() => LayoutLogMessageConstant.SECTION_BREAK_IGNORED);
+                }
+                Rectangle layoutContextAreaBbox = layoutContext.GetArea().GetBBox();
+                Rectangle occupiedAreaBbox = new Rectangle(layoutContextAreaBbox.GetLeft(), layoutContextAreaBbox.GetTop()
+                    , 0, 0);
+                occupiedArea = new LayoutArea(layoutContext.GetArea().GetPageNumber(), occupiedAreaBbox);
+                return new LayoutResult(LayoutResult.FULL, occupiedArea, null, null, this);
+            }
             bool anythingPlaced = false;
             bool pageMarginsChanged = false;
             bool pageSizeChanged = false;
             int pageNumber = layoutContext.GetArea().GetPageNumber();
+            if (pageNumber == 0) {
+                LOGGER.Warn(() => LayoutLogMessageConstant.SECTION_BREAK_LAYOUT_ON_PAGE_0);
+                pageNumber = 1;
+            }
             IRenderer parentRenderer = GetParent();
             while (parentRenderer != null) {
                 if (parentRenderer is DocumentRenderer) {
@@ -110,8 +125,8 @@ namespace iText.Layout.Renderer {
                 parentRenderer = parentRenderer.GetParent();
             }
             // We're interested only in bottom coordinate of the already placed content.
-            LayoutArea updatedArea = new LayoutArea(layoutContext.GetArea().GetPageNumber(), new Rectangle(0, layoutContext
-                .GetArea().GetBBox().GetTop(), 0, 0));
+            LayoutArea updatedArea = new LayoutArea(pageNumber, new Rectangle(0, layoutContext.GetArea().GetBBox().GetTop
+                (), 0, 0));
             SectionBreakUtil.BreakPage(sectionBreak, pageSizeChanged || (anythingPlaced && pageMarginsChanged));
             return new LayoutResult(LayoutResult.NOTHING, anythingPlaced ? updatedArea : null, null, null, this).SetSectionBreak
                 (sectionBreak);
@@ -120,123 +135,42 @@ namespace iText.Layout.Renderer {
         /// <summary>
         /// Logs a warning about unexpected use of
         /// <see cref="SectionBreakRenderer"/>
+        /// if not ignored,
         /// because instances of this class are only used for terminating the current page content.
         /// </summary>
         /// <param name="drawContext">
         /// 
         /// <inheritDoc/>
         /// </param>
-        public virtual void Draw(DrawContext drawContext) {
-            LOGGER.LogWarning(LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+        public override void Draw(DrawContext drawContext) {
+            if (this.GetProperty<bool?>(Property.IGNORE_AREA_AND_SECTION_BREAKS) == null) {
+                LOGGER.Warn(() => LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+            }
         }
 
         /// <summary>
-        /// Throws an UnsupportedOperationException because instances of this
+        /// Throws an UnsupportedOperationException if not ignored, because instances of this
         /// class are only used for terminating the current page content.
         /// </summary>
-        /// <remarks>
-        /// Throws an UnsupportedOperationException because instances of this
-        /// class are only used for terminating the current page content.
-        /// <para />
-        /// In case there is no current page content, empty area will be returned.
-        /// </remarks>
         /// <returns>
         /// 
         /// <inheritDoc/>
         /// </returns>
-        public virtual LayoutArea GetOccupiedArea() {
+        public override LayoutArea GetOccupiedArea() {
+            if (true.Equals(this.GetProperty<bool?>(Property.IGNORE_AREA_AND_SECTION_BREAKS))) {
+                return occupiedArea;
+            }
             throw new NotSupportedException();
         }
 
-        public virtual bool HasProperty(int property) {
-            return false;
-        }
-
-        public virtual bool HasOwnProperty(int property) {
-            return false;
-        }
-
-        /// <summary>
-        /// Throws an UnsupportedOperationException because instances of this
-        /// class are only used for terminating the current page content.
-        /// </summary>
-        /// <param name="property">
-        /// 
-        /// <inheritDoc/>
-        /// </param>
-        /// <param name="defaultValue">
-        /// 
-        /// <inheritDoc/>
-        /// </param>
-        /// <typeparam name="T1">
-        /// 
-        /// <inheritDoc/>
-        /// </typeparam>
-        /// <returns>
-        /// 
-        /// <inheritDoc/>
-        /// </returns>
-        public virtual T1 GetProperty<T1>(int property, T1 defaultValue) {
-            throw new NotSupportedException();
-        }
-
-        public virtual T1 GetProperty<T1>(int key) {
-            return (T1)(Object)null;
-        }
-
-        public virtual T1 GetOwnProperty<T1>(int property) {
-            return (T1)(Object)null;
-        }
-
-        public virtual T1 GetDefaultProperty<T1>(int property) {
-            return (T1)(Object)null;
-        }
-
-        /// <summary>
-        /// Logs a warning about unexpected use of
-        /// <see cref="SectionBreakRenderer"/>
-        /// because instances of this class are only used for terminating the current page content.
-        /// </summary>
-        /// <param name="property">
-        /// 
-        /// <inheritDoc/>
-        /// </param>
-        /// <param name="value">
-        /// 
-        /// <inheritDoc/>
-        /// </param>
-        public virtual void SetProperty(int property, Object value) {
-            LOGGER.LogWarning(LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
-        }
-
-        public virtual void DeleteOwnProperty(int property) {
-        }
-
-        // Do nothing.
-        public virtual IRenderer SetParent(IRenderer parent) {
-            this.parent = parent;
-            return this;
-        }
-
-        public virtual IPropertyContainer GetModelElement() {
+        public override IPropertyContainer GetModelElement() {
             return sectionBreak;
         }
 
-        public virtual IRenderer GetParent() {
-            return this.parent;
-        }
-
-        public virtual IList<IRenderer> GetChildRenderers() {
-            return null;
-        }
-
-        public virtual bool IsFlushed() {
-            return false;
-        }
-
         /// <summary>
         /// Logs a warning about unexpected use of
         /// <see cref="SectionBreakRenderer"/>
+        /// if not ignored,
         /// because instances of this class are only used for terminating the current page content.
         /// </summary>
         /// <param name="dx">
@@ -247,11 +181,13 @@ namespace iText.Layout.Renderer {
         /// 
         /// <inheritDoc/>
         /// </param>
-        public virtual void Move(float dx, float dy) {
-            LOGGER.LogWarning(LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+        public override void Move(float dx, float dy) {
+            if (this.GetProperty<bool?>(Property.IGNORE_AREA_AND_SECTION_BREAKS) == null) {
+                LOGGER.Warn(() => LayoutLogMessageConstant.SECTION_BREAK_UNEXPECTED);
+            }
         }
 
-        public virtual IRenderer GetNextRenderer() {
+        public override IRenderer GetNextRenderer() {
             return null;
         }
 
